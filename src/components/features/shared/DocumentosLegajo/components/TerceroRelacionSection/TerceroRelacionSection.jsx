@@ -1,23 +1,33 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  FiUser,
-  FiPlus,
-  FiChevronDown,
-  FiEdit2,
-  FiTrash2,
-  FiMail,
-  FiPhone,
-  FiMapPin,
-  FiAlertCircle,
-} from "react-icons/fi";
+import { FiUser, FiPlus, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
+import s from "../TerceroCard/TerceroCard.module.css";
+import { TerceroCard, TerceroEmpty } from "../TerceroCard/TerceroCard";
+import { ordenarPendientesPrimero } from "../TerceroCard/terceroCardUtils";
 import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
-import { EstadoRevisionChip, AvisoRevisionTercero } from "../EstadoRevisionChip/EstadoRevisionChip";
+import { AvisoRevisionTercero } from "../EstadoRevisionChip/EstadoRevisionChip";
+
+// Contacto + domicilio + CUIT (sin DNI: ver el comentario de la sección).
+const calcularFaltantes = (t) => {
+  const faltantes = [];
+  const sEmail = t.email || t.mail || t.Mail || "";
+  const sCel = t.celular || t.telefono || t.Telefono || "";
+  const sDir = t.direccion || t.calle || "";
+  const sProv = t.provincia || t.provinciaid || "";
+
+  if (!sEmail) faltantes.push("Email");
+  if (!sCel) faltantes.push("Teléfono");
+  if (!sDir || !sProv) faltantes.push("Domicilio completo");
+
+  const cuitLimpio = String(t.cuit || "").replace(/\D/g, "");
+  if (!cuitLimpio) faltantes.push("CUIT válido");
+  return faltantes;
+};
 
 // Versión genérica de RepresentantesSection/ApoderadosSection: misma lógica
 // de carga (contacto + domicilio, sin DNI ni campos propios de accionista o
@@ -45,6 +55,14 @@ export function TerceroRelacionSection({
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(items.map((r) => r.id), cadenaValorId);
+
+  const entradas = ordenarPendientesPrimero(
+    items.map((item) => ({
+      item,
+      faltantes: calcularFaltantes(item),
+      cdaRechazado: estadoCdaMap?.get(Number(item.id)) === "rechazado",
+    })),
+  );
 
   const abrirModal = (item = null) => {
     setEditItem(item);
@@ -80,159 +98,78 @@ export function TerceroRelacionSection({
           )}
 
           {items.length === 0 ? (
-            <div
-              className={styles.emptySlot}
-              style={{ minHeight: "6rem", padding: "1.5rem" }}
-            >
-              <p className={styles.emptyTitle}>No hay registros de {titulo} cargados</p>
-              <span className={styles.emptyText}>
-                Haga click en "Agregar {titulo}" para dar de alta.
-              </span>
-            </div>
+            <TerceroEmpty
+              icon={<FiUser size={20} />}
+              titulo={`Todavía no cargaste a nadie como ${titulo}`}
+              hint={`Usá «Agregar ${titulo}» para dar de alta el primero.`}
+            />
           ) : (
-            <div className={styles.sociosList}>
-              {items.map((item) => {
-                const faltantes = [];
-                const sEmail = item.email || item.mail || item.Mail || "";
-                const sCel = item.celular || item.telefono || item.Telefono || "";
-                const sDir = item.direccion || item.calle || "";
-                const sProv = item.provincia || item.provinciaid || "";
-
-                if (!sEmail) faltantes.push("Email");
-                if (!sCel) faltantes.push("Teléfono");
-                if (!sDir || !sProv) faltantes.push("Domicilio completo");
-
-                const cuitLimpio = String(item.cuit || "").replace(/\D/g, "");
-                if (!cuitLimpio) faltantes.push("CUIT válido");
-
-                const cdaRechazado = estadoCdaMap?.get(Number(item.id)) === "rechazado";
-
-                return (
-                <div key={item.id} className={`${styles.socioCard} ${cdaRechazado ? (isAdmin ? styles.socioCardRejected : styles.socioCardWarning) : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
-                  <div className={styles.socioCardHeaderRow}>
-                    <button
-                      type="button"
-                      className={styles.socioCardBtn}
-                      onClick={() =>
-                        setExpandedItem(expandedItem === item.id ? null : item.id)
-                      }
-                    >
-                      {faltantes.length > 0 && (
-                        <div className={styles.socioWarningWrapper}>
-                          <FiAlertCircle className={styles.socioWarningIcon} />
-                          <div className={styles.socioWarningTooltip}>
-                            <strong>Faltan datos obligatorios:</strong>
-                            <ul>
-                              {faltantes.map((f, i) => (
-                                <li key={i}>{f}</li>
-                              ))}
-                            </ul>
-                          </div>
+            <div className={s.lista}>
+              {entradas.map(({ item, faltantes, cdaRechazado }) => (
+                <TerceroCard
+                  key={item.id}
+                  nombre={item.nombre}
+                  detalle={`CUIT ${item.cuit}`}
+                  faltantes={faltantes}
+                  cdaRechazado={cdaRechazado}
+                  isAdmin={isAdmin}
+                  expanded={expandedItem === item.id}
+                  onToggle={() =>
+                    setExpandedItem(expandedItem === item.id ? null : item.id)
+                  }
+                  onEdit={() => abrirModal(item)}
+                  onDelete={() => handleEliminarRelacion(item)}
+                  editTitle={`Editar ${titulo}`}
+                  deleteTitle={`Eliminar ${titulo}`}
+                >
+                  {cdaRechazado && !isAdmin && <AvisoRevisionTercero />}
+                  <div className={styles.socioDetailGrid}>
+                    {item.email && (
+                      <div className={styles.socioDetail}>
+                        <FiMail className={styles.socioDetailIcon} />
+                        <div>
+                          <span className={styles.socioDetailLabel}>
+                            Email
+                          </span>
+                          <span className={styles.socioDetailVal}>
+                            {item.email}
+                          </span>
                         </div>
-                      )}
-                      <div className={styles.socioAvatar}>
-                        <FiUser size={16} />
                       </div>
-                      <div className={styles.socioMainInfo}>
-                        <span className={styles.socioName}>{item.nombre}</span>
-                        <span className={styles.socioCuit}>
-                          CUIT: {item.cuit}
-                        </span>
-                        <span
-                          className={`${styles.roleBadge} ${styles.roleBadgeMobile} ${styles.roleGenerico}`}
-                        >
-                          {titulo}
-                        </span>
+                    )}
+                    {item.telefono && (
+                      <div className={styles.socioDetail}>
+                        <FiPhone className={styles.socioDetailIcon} />
+                        <div>
+                          <span className={styles.socioDetailLabel}>
+                            Celular / Teléfono
+                          </span>
+                          <span className={styles.socioDetailVal}>
+                            {item.telefono}
+                          </span>
+                        </div>
                       </div>
-                      <span
-                        className={`${styles.roleBadge} ${styles.roleBadgeDesktop} ${styles.roleGenerico}`}
-                      >
-                        {titulo}
-                      </span>
-                      {cdaRechazado && <EstadoRevisionChip isAdmin={isAdmin} />}
-                      <FiChevronDown
-                        className={`${styles.socioChevron} ${expandedItem === item.id ? styles.socioChevronOpen : ""}`}
-                      />
-                    </button>
-                    <div
-                      className={styles.socioHeaderActions}
-                      style={{ paddingRight: "1rem" }}
-                    >
-                      <button
-                        type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
-                        onClick={() => abrirModal(item)}
-                        title={`Editar ${titulo}`}
-                      >
-                        <FiEdit2 size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
-                        onClick={() => handleEliminarRelacion(item)}
-                        title={`Eliminar ${titulo}`}
-                      >
-                        <FiTrash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`${styles.socioExpand} ${expandedItem === item.id ? styles.socioExpandOpen : ""}`}
-                  >
-                    {cdaRechazado && !isAdmin && <AvisoRevisionTercero />}
-                    <div className={styles.socioDetailGrid}>
-                      {item.email && (
-                        <div className={styles.socioDetail}>
-                          <FiMail className={styles.socioDetailIcon} />
-                          <div>
-                            <span className={styles.socioDetailLabel}>
-                              Email
-                            </span>
-                            <span className={styles.socioDetailVal}>
-                              {item.email}
-                            </span>
-                          </div>
+                    )}
+                    {item.direccion && (
+                      <div className={styles.socioDetail}>
+                        <FiMapPin className={styles.socioDetailIcon} />
+                        <div>
+                          <span className={styles.socioDetailLabel}>
+                            Dirección
+                          </span>
+                          <span className={styles.socioDetailVal}>
+                            {item.direccion}
+                            {item.codpos ? ` (${item.codpos})` : ""}
+                          </span>
                         </div>
-                      )}
-                      {item.telefono && (
-                        <div className={styles.socioDetail}>
-                          <FiPhone className={styles.socioDetailIcon} />
-                          <div>
-                            <span className={styles.socioDetailLabel}>
-                              Celular / Teléfono
-                            </span>
-                            <span className={styles.socioDetailVal}>
-                              {item.telefono}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {item.direccion && (
-                        <div className={styles.socioDetail}>
-                          <FiMapPin className={styles.socioDetailIcon} />
-                          <div>
-                            <span className={styles.socioDetailLabel}>
-                              Dirección
-                            </span>
-                            <span className={styles.socioDetailVal}>
-                              {item.direccion}
-                              {item.codpos ? ` (${item.codpos})` : ""}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {isAdmin && (
-                      <TerceroCdaEstado
-                        terceroId={item.id}
-                        socioIdActivo={socioIdActivo}
-                      />
+                      </div>
                     )}
                   </div>
-                </div>
-                );
-              })}
+                  {isAdmin && (
+                    <TerceroCdaEstado terceroId={item.id} socioIdActivo={socioIdActivo} />
+                  )}
+                </TerceroCard>
+              ))}
             </div>
           )}
         </div>
