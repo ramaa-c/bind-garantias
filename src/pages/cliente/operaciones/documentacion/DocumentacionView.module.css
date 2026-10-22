@@ -190,10 +190,10 @@
    un alto mínimo fijo y aire vacío abajo.
    Rango 2 = (max-width: 1440px) o (max-height: 716px): alto natural, la
    página scrollea, con un piso razonable para el área de trabajo.
-   En los dos, más ancho que antes (64rem) para aprovechar la pantalla. */
+   Ancho: punto medio entre el original (64rem) y el máximo probado (92rem). */
 @media (min-width: 64rem) {
   .pageContainer {
-    max-width: 92rem;
+    max-width: 78rem;
     height: calc(100dvh - 4.5rem);
     margin: 0 auto;
     padding: 1.25rem 2rem 1.5rem;
@@ -213,9 +213,14 @@
 
 @media (min-width: 64rem) and (max-width: 1440px),
   (min-width: 64rem) and (max-height: 716px) {
+  /* flex: none + min-height: auto - si no, como hijo flex del layout
+     (flex: 1, min-height: 0) se encogía al alto visible y el final del
+     contenido quedaba fuera de la página en vez de hacerla scrollear. */
   .pageContainer {
-    max-width: 80rem;
+    max-width: 72rem;
+    flex: none;
     height: auto;
+    min-height: auto;
     padding: 1rem 1.5rem 1.5rem;
   }
 

@@ -394,3 +394,46 @@
     align-self: center;
   }
 }
+
+/* ── ESCRITORIO · RANGOS (mismo umbral único que admin, altas, Legajo y
+   Documentación) ──────────────────────────────────────────────────────────
+   Rango 1: alto fijo debajo del navbar (4.5rem) y la lista scrollea por
+   dentro (ya lo hacía con height: 100%). Rango 2 = (max-width: 1440px) o
+   (max-height: 716px): alto natural y scrollea la página entera - con el
+   alto fijo + overflow: hidden el final de la lista quedaba cortado.
+   Ancho: punto medio entre el original (64rem) y el de pantalla completa. */
+@media (min-width: 64rem) {
+  .pageContainer {
+    max-width: 78rem;
+    height: calc(100dvh - 4.5rem);
+    min-height: 0;
+    padding: 1.5rem 2rem;
+  }
+
+  .compactHeader {
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 64rem) and (max-width: 1440px),
+  (min-width: 64rem) and (max-height: 716px) {
+  .pageContainer {
+    max-width: 72rem;
+    flex: none;
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  .compactHeader {
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .main,
+  .listContainer {
+    flex: none;
+    overflow: visible;
+  }
+}
