@@ -4,7 +4,7 @@ import { FiUsers, FiPlus, FiMail, FiPhone, FiMapPin, FiPercent } from "react-ico
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
 import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
-import { colorParticipacion, ordenarPendientesPrimero } from "../TerceroCard/terceroCardUtils";
+import { colorParticipacion, ordenarPendientesPrimero, sugerenciasPara } from "../TerceroCard/terceroCardUtils";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
@@ -115,6 +115,7 @@ export function AccionistasSection({
   cargandoArchivos = false,
   dniTerceros,
   cadenaValorId,
+  personasLegajo = [],
 }) {
   const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
   const [editAccionista, setEditAccionista] = useState(null);
@@ -243,6 +244,7 @@ export function AccionistasSection({
       )}
 
       <SocioAccionistaModal
+        sugerencias={sugerenciasPara(personasLegajo, accionistas)}
         isOpen={modalAccionistaOpen}
         onClose={() => {
           setModalAccionistaOpen(false);

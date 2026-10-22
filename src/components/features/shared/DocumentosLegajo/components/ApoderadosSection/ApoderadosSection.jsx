@@ -4,7 +4,7 @@ import { FiUser, FiPlus, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
 import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
-import { ordenarPendientesPrimero } from "../TerceroCard/terceroCardUtils";
+import { ordenarPendientesPrimero, sugerenciasPara } from "../TerceroCard/terceroCardUtils";
 import { ApoderadoModal } from "../../../ApoderadoModal/ApoderadoModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
@@ -39,6 +39,7 @@ export function ApoderadosSection({
   cargarSocios,
   socioIdActivo,
   cadenaValorId,
+  personasLegajo = [],
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editApoderado, setEditApoderado] = useState(null);
@@ -162,6 +163,7 @@ export function ApoderadosSection({
       )}
 
       <ApoderadoModal
+        sugerencias={sugerenciasPara(personasLegajo, apoderados)}
         isOpen={modalOpen}
         onClose={cerrarModal}
         onSuccess={() => cargarSocios()}

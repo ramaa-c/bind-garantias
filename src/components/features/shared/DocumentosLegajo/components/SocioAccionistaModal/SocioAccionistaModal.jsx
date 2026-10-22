@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiSearch } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -25,6 +25,7 @@ import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincr
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
 import { parseAddress, armarDireccion } from "../../../../../../utils/direccionParser";
 import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresaPorCuit";
+import { SugerenciasTerceros } from "../TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 
 import styles from "./SocioAccionistaModal.module.css";
@@ -166,7 +167,9 @@ const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, fase
 const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
-export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
+const DEFAULT_SUGERENCIAS = [];
+
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS, sugerencias = DEFAULT_SUGERENCIAS }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
@@ -467,8 +470,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setFilesChanged(false);
   }
 
-  const handleAfipLookup = async () => {
-    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+  // `cuitElegido`: CUIT de una persona elegida en SugerenciasTerceros. Desde
+  // el botón "Validar" llega el evento del click, por eso el chequeo de tipo.
+  const handleAfipLookup = async (cuitElegido) => {
+    const cuitLimpio = String(
+      (typeof cuitElegido === "string" ? cuitElegido : cuitValue) || "",
+    ).replace(/\D/g, "");
     if (!cuitLimpio || cuitLimpio.length !== 11) {
       setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
       return;
@@ -1298,11 +1305,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   conserva el botón aparte en azul. */}
               <div className={styles.cuitSearchHead}>
                 <span className={`${styles.cuitSearchIcon} ${isAdmin ? styles.cuitSearchIconAdmin : ""}`} aria-hidden="true">
-                  <FiSearch />
+                  <FiUser />
                 </span>
                 <div className={styles.cuitSearchHeadText}>
-                  <p className={styles.cuitSearchTitle}>Buscá al accionista por CUIT</p>
-                  <p className={styles.cuitSearchSub}>Con el CUIT completamos sus datos automáticamente.</p>
+                  <p className={styles.cuitSearchTitle}>¿Quién va a ser accionista?</p>
+                  <p className={styles.cuitSearchSub}>Ingresá su CUIT y completamos sus datos.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1319,6 +1326,15 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 />
                 <p className={styles.cuitSearchAyuda}>Son 11 números, sin guiones.</p>
               </div>
+              <SugerenciasTerceros
+                sugerencias={sugerencias}
+                isAdmin={isAdmin}
+                disabled={validando}
+                onUsar={(persona) => {
+                  setValue("cuit", persona.cuit, { shouldDirty: true });
+                  handleAfipLookup(persona.cuit);
+                }}
+              />
             </div>
           ) : (
             <>

@@ -56,6 +56,7 @@ import {
   resolverRelacionesBaseActivas,
 } from "../../../../utils/relacionesTercerosUtils";
 import { ESTRUCTURA_SOCIOS } from "./SociosLegajo.constants";
+import { soloDigitos } from "../DocumentosLegajo/components/TerceroCard/terceroCardUtils";
 
 const ID_POR_CLAVE_BASE = Object.fromEntries(
   RELACIONES_TERCEROS_BASE.map((r) => [r.clave, r.tipoRelacionSocioId]),
@@ -401,6 +402,31 @@ export function SociosLegajo({
   const representantes = representantesYApoderados.filter((r) => Number(r.rolId) === RELACION_REPRESENTANTE_LEGAL_ID);
   const apoderados = representantesYApoderados.filter((r) => Number(r.rolId) === RELACION_APODERADO_ID);
   const agentesBolsa = socioLegajoData?.agentesBolsa || [];
+
+  // Todas las personas ya cargadas en el legajo (sin agentes de bolsa, que
+  // son sociedades), una sola vez por CUIT con todos sus roles. Alimenta el
+  // atajo "O elegí a alguien que ya está en tu legajo" de los modales de alta.
+  const personasLegajo = useMemo(() => {
+    const porCuit = new Map();
+    const sumar = (lista, rol) =>
+      (lista || []).forEach((p) => {
+        const cuit = soloDigitos(p.cuit);
+        if (cuit.length !== 11) return;
+        const previa = porCuit.get(cuit);
+        if (previa) {
+          if (!previa.roles.includes(rol)) previa.roles.push(rol);
+        } else {
+          porCuit.set(cuit, { cuit, nombre: p.nombre || "", roles: [rol] });
+        }
+      });
+    sumar(accionistas, "Accionista");
+    sumar(representantes, "Representante legal");
+    sumar(apoderados, "Apoderado");
+    tabsDisponibles
+      .filter((doc) => Number.isInteger(Number(doc.key)) && Number(doc.key) > 0)
+      .forEach((doc) => sumar(socioLegajoData?.porTipoRelacion?.[doc.key], doc.title));
+    return Array.from(porCuit.values());
+  }, [accionistas, representantes, apoderados, tabsDisponibles, socioLegajoData]);
 
   // `actualizando` cubre la ventana entre "se guardó algo" y "las queries ya
   // refetchearon de verdad" — antes, la modal (SocioAccionistaModal/
@@ -795,6 +821,7 @@ export function SociosLegajo({
                   <VincularUsuarioSection socioIdActivo={socioIdActivo} />
                 ) : isAccionistas ? (
                   <AccionistasSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     totalParticipacion={totalParticipacion}
                     accionistas={accionistas}
@@ -808,6 +835,7 @@ export function SociosLegajo({
                   />
                 ) : isRepresentantes ? (
                   <RepresentantesSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     representantes={representantes}
                     handleEliminarRelacion={handleEliminarRelacion}
@@ -817,6 +845,7 @@ export function SociosLegajo({
                   />
                 ) : isApoderados ? (
                   <ApoderadosSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     apoderados={apoderados}
                     handleEliminarRelacion={handleEliminarRelacion}
@@ -834,6 +863,7 @@ export function SociosLegajo({
                   />
                 ) : isExtra ? (
                   <TerceroRelacionSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     items={
                       idRelacionExtra === RELACION_FIADOR_ID && accionistaUnico

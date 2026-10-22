@@ -4,7 +4,7 @@ import { FiUser, FiPlus, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
 import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
-import { ordenarPendientesPrimero } from "../TerceroCard/terceroCardUtils";
+import { ordenarPendientesPrimero, sugerenciasPara } from "../TerceroCard/terceroCardUtils";
 import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
@@ -45,6 +45,7 @@ export function TerceroRelacionSection({
   socioIdActivo,
   evitarCoincidenciaCon,
   cadenaValorId,
+  personasLegajo = [],
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -170,6 +171,7 @@ export function TerceroRelacionSection({
       )}
 
       <RepresentanteModal
+        sugerencias={sugerenciasPara(personasLegajo, items, evitarCoincidenciaCon?.cuit)}
         isOpen={modalOpen}
         onClose={cerrarModal}
         onSuccess={() => cargarSocios()}
