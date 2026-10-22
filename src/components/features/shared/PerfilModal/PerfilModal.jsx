@@ -438,13 +438,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       key: "cuenta",
       label: "Mi cuenta",
       icon: FiUser,
-      hint: "Este nombre se muestra dentro de la plataforma.",
-    },
-    {
-      key: "seguridad",
-      label: "Seguridad",
-      icon: FiLock,
-      hint: "Usá una contraseña que no utilices en otros sitios.",
+      hint: "Tu nombre dentro de la plataforma y tu contraseña.",
     },
   ];
   const seccionActiva = secciones.find((s) => s.key === tab) || secciones[0];
@@ -494,7 +488,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
           ? "Gestioná el acceso a tu cuenta."
           : "Gestioná los datos de tu empresa y el acceso a tu cuenta."
       }
-      maxWidth="52rem"
+      maxWidth="40rem"
     >
       {/* Mobile first: identidad, segmentos y contenido apilados. Desde
           48rem pasa a dos columnas con menú lateral (ver .layout en el
@@ -566,7 +560,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
             className={styles.panel}
           >
             <header className={styles.panelHeader}>
-              <h3 className={styles.panelTitle}>{seccionActiva.label}</h3>
               <p className={styles.panelHint}>{seccionActiva.hint}</p>
             </header>
 
@@ -674,12 +667,16 @@ export const PerfilModal = ({ isOpen, onClose }) => {
               ))}
 
             {seccionActiva.key === "cuenta" &&
-              (renderEstadoUsuario(["6rem"]) || (
+              (renderEstadoUsuario(["6rem", "14rem"]) || (
+                <>
                 <form
                   className={styles.formCard}
                   onSubmit={handleUsernameSubmit(onSubmitUsername)}
                   noValidate
                 >
+                  <h4 className={styles.formTitulo}>
+                    <FiUser aria-hidden="true" /> Nombre de usuario
+                  </h4>
                   <div className={styles.formBody}>
                     <InputSimple
                       name="denominacion"
@@ -701,15 +698,15 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                     </Button>
                   </div>
                 </form>
-              ))}
 
-            {seccionActiva.key === "seguridad" &&
-              (renderEstadoUsuario(["14rem"]) || (
                 <form
                   className={styles.formCard}
                   onSubmit={handlePasswordSubmit(onSubmitPassword)}
                   noValidate
                 >
+                  <h4 className={styles.formTitulo}>
+                    <FiLock aria-hidden="true" /> Contraseña
+                  </h4>
                   <div className={styles.formBody}>
                     <InputSimple
                       name="oldPassword"
@@ -763,6 +760,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                     </Button>
                   </div>
                 </form>
+                </>
               ))}
           </section>
         </div>
