@@ -1,9 +1,8 @@
-/* Rediseño 2026-10. Mobile first: columna única sin tarjeta. Desde 48rem
-   el wizard va dentro de una tarjeta, y desde 64rem la tarjeta se divide en
-   dos columnas: formulario + "Cómo sigue el alta" (recorrido de 3 pasos).
-   Rangos de escritorio con el umbral único de la app:
-   Rango 2 = (max-width: 1440px) o (max-height: 716px).
-   Fondo: el mismo degradado azul que Legajo (SociosView). */
+/* Rediseño 2026-10: una sola columna centrada (stepper compacto → cabecera
+   → contenido del paso), sin la tarjeta envolvente ni el stepper lateral.
+   Mobile first; desde 64rem entra el shell de escritorio (sidebar) y los
+   dos rangos de escritorio comparten el umbral único de la app:
+   Rango 2 = (max-width: 1440px) o (max-height: 716px). */
 
 /* ── BASE MOBILE ─────────────────────────────────────────────────────────────── */
 
@@ -16,6 +15,8 @@
   min-height: 100%;
 }
 
+/* Mismo fondo degradado azul que Legajo (SociosView): sin tarjeta
+   envolvente, es lo que le da profundidad a la pantalla. */
 .pageContainer::before {
   content: "";
   position: fixed;
@@ -62,14 +63,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 2rem;
-}
-
-.columnaPrincipal {
-  display: flex;
-  flex-direction: column;
   gap: 1.75rem;
-  min-width: 0;
 }
 
 /* ── CABECERA ────────────────────────────────────────────────────────────── */
@@ -111,7 +105,7 @@
   color: var(--text-muted);
   font-size: 1rem;
   line-height: 1.55;
-  max-width: 36rem;
+  max-width: 34rem;
 }
 
 /* ── CONTENIDO DEL PASO ──────────────────────────────────────────────────── */
@@ -134,111 +128,7 @@
   flex: 1;
 }
 
-/* ── RECORRIDO ("Cómo sigue el alta") ────────────────────────────────────── */
-
-.recorrido {
-  display: flex;
-  flex-direction: column;
-  gap: 1.125rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.recorridoTitulo {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.recorridoLista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.recorridoItem {
-  position: relative;
-  display: flex;
-  gap: 0.875rem;
-  padding-bottom: 1.25rem;
-}
-
-.recorridoItem:last-child {
-  padding-bottom: 0;
-}
-
-/* Conector vertical entre puntos. */
-.recorridoItem:not(:last-child)::before {
-  content: "";
-  position: absolute;
-  left: 0.875rem;
-  top: 2rem;
-  bottom: 0.25rem;
-  width: 2px;
-  border-radius: 2px;
-  background: var(--border);
-}
-
-.recorrido_hecho:not(:last-child)::before {
-  background: var(--success-green);
-}
-
-.recorridoDot {
-  position: relative;
-  flex-shrink: 0;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  border: 1.5px solid var(--border-hover);
-  color: var(--text-muted);
-}
-
-.recorrido_actual .recorridoDot {
-  background: var(--color-amarillo-bind);
-  border-color: var(--color-amarillo-bind);
-  color: var(--on-amarillo-bind);
-}
-
-.recorrido_hecho .recorridoDot {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--success-green) 16%, transparent);
-  color: var(--success-green);
-}
-
-.recorridoTexto {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding-top: 0.2rem;
-  min-width: 0;
-}
-
-.recorridoTexto strong {
-  color: var(--white-muted);
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.recorrido_actual .recorridoTexto strong {
-  color: var(--white);
-}
-
-.recorridoTexto span {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-/* ── TABLET: el wizard entra en una tarjeta ──────────────────────────────── */
+/* ── TABLET ──────────────────────────────────────────────────────────────── */
 
 @media (min-width: 48rem) {
   .pageContainer::before {
@@ -256,27 +146,19 @@
   }
 
   .formMainContainer {
-    padding: 2.5rem 2rem 3rem;
+    padding: 3rem 2rem 3.5rem;
   }
 
   .contentWrapper {
-    max-width: 44rem;
+    max-width: 46rem;
   }
 
   .columnaFormulario {
-    padding: 2.5rem;
-    border-radius: 1.5rem;
-    background: var(--bg-elevado);
-    border: 1px solid var(--border);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
-  }
-
-  .columnaPrincipal {
-    gap: 2rem;
+    gap: 2.25rem;
   }
 
   .tituloBienvenida {
-    font-size: 2.375rem;
+    font-size: 2.5rem;
   }
 
   .subtituloBienvenida {
@@ -284,39 +166,25 @@
   }
 }
 
-/* ── ESCRITORIO · RANGO 1: tarjeta en dos columnas ───────────────────────── */
+/* ── ESCRITORIO · RANGO 1 ────────────────────────────────────────────────── */
 
 @media (min-width: 64rem) {
   .formMainContainer {
-    align-items: flex-start;
-    padding: clamp(2rem, 6vh, 4rem) 2.5rem 3rem;
+    padding: clamp(2rem, 7vh, 4.5rem) 2.5rem 3rem;
   }
 
+  /* Más ancho que en el diseño de referencia: con el sidebar y el navbar
+     del layout la columna de 40rem quedaba con demasiado aire a los lados. */
   .contentWrapper {
-    max-width: 72rem;
+    max-width: 56rem;
   }
 
-  .columnaFormulario {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 21rem;
-    gap: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .columnaPrincipal {
-    padding: 3rem 3.5rem;
-  }
-
-  .recorrido {
-    padding: 3rem 2.25rem;
-    border-top: 0;
-    border-left: 1px solid var(--border);
-    background: rgba(var(--overlay-rgb), 0.025);
+  .subtituloBienvenida {
+    max-width: 42rem;
   }
 
   .tituloBienvenida {
-    font-size: 2.75rem;
+    font-size: 2.875rem;
   }
 }
 
@@ -325,28 +193,19 @@
 @media (min-width: 64rem) and (max-width: 1440px),
   (min-width: 64rem) and (max-height: 716px) {
   .formMainContainer {
-    padding: 1.5rem 1.75rem 2rem;
+    padding: 1.75rem 2rem 2.5rem;
   }
 
   .contentWrapper {
-    max-width: 64rem;
+    max-width: 48rem;
   }
 
   .columnaFormulario {
-    grid-template-columns: minmax(0, 1fr) 18rem;
-  }
-
-  .columnaPrincipal {
-    gap: 1.5rem;
-    padding: 2rem 2.25rem;
-  }
-
-  .recorrido {
-    padding: 2rem 1.75rem;
+    gap: 1.75rem;
   }
 
   .tituloBienvenida {
-    font-size: 2.125rem;
+    font-size: 2.25rem;
   }
 }
 

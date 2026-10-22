@@ -25,7 +25,6 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/useChannel";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./AltaDatosEmpresa.module.css";
-import { FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
@@ -79,23 +78,6 @@ const mapearSocioAValoresFormulario = (socio) => {
       socio.tipoactividadsepymeid || socio.TipoActividadSEPYMEID || null,
   };
 };
-
-// Recorrido completo del alta, visible al costado del formulario en los dos
-// pasos (el tercero es el destino: el legajo, fuera de este wizard).
-const PASOS_RECORRIDO = [
-  {
-    titulo: "Validamos tu empresa",
-    texto: "Consultamos AFIP y BCRA. Toma unos segundos.",
-  },
-  {
-    titulo: "Completás tus datos",
-    texto: "Ubicación y un celular para verificar por SMS.",
-  },
-  {
-    titulo: "Entrás a tu legajo",
-    texto: "Precargamos accionistas y documentos de LUFE.",
-  },
-];
 
 export const AltaDatosEmpresa = () => {
   const queryClient = useQueryClient();
@@ -593,7 +575,6 @@ export const AltaDatosEmpresa = () => {
         <div className={styles.contentWrapper}>
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.columnaPrincipal}>
               <BarraProgreso
                 hitos={["CUIT", "DATOS"]}
                 hitoActual={pasoActual}
@@ -656,38 +637,6 @@ export const AltaDatosEmpresa = () => {
                   </form>
                 </FormProvider>
               </div>
-              </div>
-
-              <aside
-                className={styles.recorrido}
-                aria-labelledby="alta-recorrido-titulo"
-              >
-                <h2 id="alta-recorrido-titulo" className={styles.recorridoTitulo}>
-                  Cómo sigue el alta
-                </h2>
-                <ol className={styles.recorridoLista}>
-                  {PASOS_RECORRIDO.map((paso, i) => {
-                    const n = i + 1;
-                    const estado =
-                      n < pasoActual ? "hecho" : n === pasoActual ? "actual" : "pendiente";
-                    return (
-                      <li
-                        key={paso.titulo}
-                        className={`${styles.recorridoItem} ${styles[`recorrido_${estado}`]}`}
-                        aria-current={estado === "actual" ? "step" : undefined}
-                      >
-                        <span className={styles.recorridoDot}>
-                          {estado === "hecho" ? <FiCheck aria-label="Completado" /> : n}
-                        </span>
-                        <span className={styles.recorridoTexto}>
-                          <strong>{paso.titulo}</strong>
-                          <span>{paso.texto}</span>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </aside>
             </div>
           </div>
         </div>
