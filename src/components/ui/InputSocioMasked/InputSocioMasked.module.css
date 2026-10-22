@@ -59,6 +59,18 @@
   color: transparent;
 }
 
+/* Sin flechitas de aumentar/disminuir en los type="number". */
+.input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* ── LABEL FLOTANTE ──────────────────────────────────────────────────────────── */
 .label {
   position: absolute;

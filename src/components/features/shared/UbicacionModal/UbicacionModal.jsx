@@ -237,12 +237,14 @@ export default function UbicacionModal({
   const sinNumero = watch("sinNumero");
   const toggleSinNumero = (e) => {
     setValue("sinNumero", e.target.checked, { shouldValidate: true, shouldDirty: true });
+    // Al marcar o desmarcar no se valida el número: queda vacío sin error
+    // hasta que se intente guardar (handleGuardar corre el trigger). Antes,
+    // desmarcar disparaba trigger("numero") y aparecía "requerido" al
+    // instante, y ese error viejo quedaba aunque después se tipeara.
     if (e.target.checked) {
-      setValue("numero", "", { shouldValidate: true, shouldDirty: true });
-      clearErrors("numero");
-    } else {
-      trigger("numero");
+      setValue("numero", "", { shouldDirty: true });
     }
+    clearErrors("numero");
   };
 
   return (
