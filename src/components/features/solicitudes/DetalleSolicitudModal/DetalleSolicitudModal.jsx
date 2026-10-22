@@ -226,12 +226,12 @@ export const DetalleSolicitudModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="600px">
       <div className={styles.container}>
         {/* ── HERO ─────────────────────────────────────────────────────── */}
-        <div className={styles.hero}>
+        <div className={`${styles.hero} ${esRechazada ? styles.heroRechazada : ""}`}>
           <div className={styles.heroTop}>
             <div className={styles.metaRow}>
               <span className={styles.tagSolicitud}>Solicitud</span>
               <span className={styles.tagId}>
-                {solicitud.id ? `OB-${solicitud.id}` : "N/A"}
+                {solicitud.id ? `N° ${solicitud.id}` : "N/A"}
               </span>
             </div>
             <span className={`${styles.estadoBadge} ${estado.color}`}>

@@ -11,6 +11,7 @@ import {
   FiLock,
   FiChevronRight,
   FiSidebar,
+  FiEdit3,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
@@ -383,7 +384,9 @@ export default function Sidebar({ isOpen, onClose }) {
         onClose={cancelNavigation}
         onConfirm={confirmNavigation}
         titulo="Cambios sin guardar"
-        mensaje="Tienes archivos cargados o información que no has actualizado en el legajo. Si sales de esta pantalla se perderán. ¿Deseas descartar los cambios y salir?"
+        mensaje="Tenés archivos o información que todavía no guardaste en el legajo. Si salís ahora, se pierden."
+        tone="warning"
+        icono={<FiEdit3 />}
         confirmText="Descartar y salir"
         cancelText="Conservar cambios"
         maxWidth="550px"

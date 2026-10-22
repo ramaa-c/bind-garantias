@@ -20,7 +20,9 @@ import {
   FiMapPin,
   FiShare2,
   FiCalendar,
+  FiUserMinus,
 } from "react-icons/fi";
+import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import {
@@ -893,6 +895,13 @@ export function SociosLegajo({
             : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
         }
         tone="danger"
+        variant={adminMode ? "blue" : "default"}
+        icono={<FiUserMinus />}
+        detalle={
+          deleteTarget?.nombre
+            ? { badge: obtenerInicialesEmpresa(deleteTarget.nombre), titulo: deleteTarget.nombre }
+            : undefined
+        }
         confirmText={deleteTarget?.rolId === RELACION_AGENTE_BOLSA_ID ? "Desvincular" : "Eliminar"}
         isLoading={loadingDelete}
       />

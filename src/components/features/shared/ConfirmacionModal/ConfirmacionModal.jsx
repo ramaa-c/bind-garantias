@@ -19,6 +19,11 @@ export function ConfirmacionModal({
   cancelVariant,
   maxWidth = "420px",
   preventClose = false,
+  // Solo en la versión de cliente (ver `esAdmin` más abajo): ícono propio
+  // del tile en lugar del genérico del tono, y una ficha opcional con el
+  // sujeto de la acción (la persona o el archivo que se elimina, etc.).
+  icono,
+  detalle,
 }) {
   const dialogRef = useRef(null);
   const isDanger = tone === "danger";
@@ -87,6 +92,59 @@ export function ConfirmacionModal({
         ? styles.blue
         : styles.yellow;
 
+  const botones = (
+    <>
+      <Button variant={resolvedCancelVariant} onClick={onClose} disabled={bloqueado}>
+        {cancelText}
+      </Button>
+      <Button
+        variant={resolvedConfirmVariant}
+        onClick={handleConfirmClick}
+        disabled={bloqueado}
+        isLoading={bloqueado}
+      >
+        {confirmText}
+      </Button>
+    </>
+  );
+
+  // Admin (variant="blue") conserva el diseño "sello"; el rediseño del
+  // lado cliente solo aplica al resto.
+  const esAdmin = variant === "blue";
+
+  if (!esAdmin) {
+    const iconoTile = icono || (isAlerta ? <FiAlertTriangle /> : <FiCheck />);
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm" preventClose={preventClose || bloqueado}>
+        <div
+          ref={dialogRef}
+          className={`${styles.cliente} ${isDanger ? styles.cDanger : isWarning ? styles.cWarning : styles.cNeutral}`}
+          onKeyDown={handleKeyDown}
+        >
+          <div className={styles.cHead}>
+            <span className={styles.cTile} aria-hidden="true">{iconoTile}</span>
+            <div className={styles.cTexto}>
+              <h2 className={styles.cTitulo}>{titulo}</h2>
+              <div className={styles.mensaje}>{mensaje}</div>
+            </div>
+          </div>
+
+          {detalle && (
+            <div className={styles.cDetalle}>
+              {detalle.badge && <span className={styles.cDetalleBadge}>{detalle.badge}</span>}
+              <span className={styles.cDetalleTexto}>
+                <strong>{detalle.titulo}</strong>
+                {detalle.subtitulo && <span>{detalle.subtitulo}</span>}
+              </span>
+            </div>
+          )}
+
+          <div className={styles.cAcciones}>{botones}</div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm" preventClose={preventClose || bloqueado}>
       <div ref={dialogRef} className={`${styles.dialog} ${toneClass}`} onKeyDown={handleKeyDown}>
@@ -103,19 +161,7 @@ export function ConfirmacionModal({
 
         <div className={styles.perforation} />
 
-        <div className={styles.actions}>
-          <Button variant={resolvedCancelVariant} onClick={onClose} disabled={bloqueado}>
-            {cancelText}
-          </Button>
-          <Button
-            variant={resolvedConfirmVariant}
-            onClick={handleConfirmClick}
-            disabled={bloqueado}
-            isLoading={bloqueado}
-          >
-            {confirmText}
-          </Button>
-        </div>
+        <div className={styles.actions}>{botones}</div>
       </div>
     </Modal>
   );

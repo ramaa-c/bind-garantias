@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
-import { FiPlus, FiSearch, FiClock, FiX } from "react-icons/fi";
+import { FiPlus, FiSearch, FiClock, FiX, FiXCircle } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { toast } from "sonner";
 import {
@@ -563,8 +563,9 @@ export default function Solicitudes() {
         onConfirm={handleConfirmarCancelacion}
         isLoading={actualizarLimiteMutation.isPending}
         tone="danger"
-        titulo="Cancelar solicitud"
-        mensaje={`¿Seguro que querés cancelar la Solicitud N°${solicitudACancelar?.id}? Vas a poder iniciar una nueva operación una vez cancelada.`}
+        titulo={`¿Cancelar la Solicitud N° ${solicitudACancelar?.id ?? ""}?`}
+        mensaje="La solicitud se cierra y no se puede retomar. Una vez cancelada, vas a poder iniciar una nueva operación."
+        icono={<FiXCircle />}
         confirmText="Sí, cancelar"
         cancelText="Volver"
       />
@@ -572,7 +573,7 @@ export default function Solicitudes() {
       <InformativoModal
         isOpen={modalPendienteOpen}
         onClose={() => setModalPendienteOpen(false)}
-        icon={<FiClock style={{ color: "var(--yellow, #f4f500)" }} />}
+        icon={<FiClock />}
         variant="warning"
         title="Solicitud en proceso"
         description="Ya tenés una solicitud de línea en análisis. Debés esperar a que se valide o cancelarla antes de crear una nueva."
@@ -582,7 +583,7 @@ export default function Solicitudes() {
       <InformativoModal
         isOpen={modalNuevaOperacionBloqueada}
         onClose={() => setModalNuevaOperacionBloqueada(false)}
-        icon={<FiClock style={{ color: "var(--yellow, #f4f500)" }} />}
+        icon={<FiClock />}
         variant="warning"
         title="No podés iniciar una operación nueva"
         description={

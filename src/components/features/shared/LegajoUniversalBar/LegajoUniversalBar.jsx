@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw, FiAlertTriangle } from "react-icons/fi";
+import { FiCheck, FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw, FiAlertTriangle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useChannel } from "../../../../context/useChannel";
@@ -719,7 +719,7 @@ export function LegajoUniversalBar({
         onClose={() => setShowEstadoMigracion(false)}
       />
       <div
-        className={`${styles.container} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}
+        className={`${styles.container} ${isValid ? styles.toneSuccess : isContextInvalid ? styles.toneWarning : styles.toneInfo}`}
         role="button"
         tabIndex={0}
         onClick={() => setShowEstadoMigracion(true)}
@@ -730,24 +730,26 @@ export function LegajoUniversalBar({
           }
         }}
       >
-        <div className={`${styles.ring} ${isValid ? styles.ringGlowSuccess : styles.ringGlowWarning}`}>
-          <svg viewBox="0 0 36 36" className={styles.ringChart}>
-            <path
-              className={styles.ringTrack}
-              d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <path
-              className={`${styles.ringFill} ${isValid ? styles.ringFillSuccess : styles.ringFillWarning}`}
-              strokeDasharray={`${porcentaje}, 100`}
-              d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <text x="18" y="21.5" className={styles.ringLabel}>{porcentaje}%</text>
-          </svg>
-        </div>
+        {isValid ? (
+          <span className={styles.checkBadge} aria-hidden="true">
+            <FiCheck />
+          </span>
+        ) : (
+          // Semicírculo de progreso: pathLength=100 deja usar el porcentaje
+          // directo como largo del trazo.
+          <span className={styles.gauge} role="img" aria-label={`${porcentaje} % completo`}>
+            <svg viewBox="0 0 76 44" className={styles.gaugeChart} aria-hidden="true">
+              <path className={styles.gaugeTrack} d="M8 38 A30 30 0 0 1 68 38" pathLength="100" />
+              <path
+                className={styles.gaugeFill}
+                d="M8 38 A30 30 0 0 1 68 38"
+                pathLength="100"
+                strokeDasharray={`${porcentaje} 100`}
+              />
+            </svg>
+            <span className={styles.gaugeLabel}>{porcentaje}%</span>
+          </span>
+        )}
 
         <div className={styles.textGroup}>
           <span className={styles.title}>
@@ -756,14 +758,36 @@ export function LegajoUniversalBar({
           <span className={styles.subtitle}>{getMissingActionMessage()}</span>
         </div>
 
+        {!isValid && totalRequisitos > 0 && (
+          <span className={styles.contador}>
+            {requisitosCompletados} de {totalRequisitos} requisitos
+          </span>
+        )}
+
         <div className={styles.cta}>
           {!isValid ? (
-            !esVistaGenerica ? (
+            !esVistaGenerica && !isContextInvalid ? (
+              // Esta pestaña ya está completa y lo que falta está en la
+              // otra: se lleva directo ahí en vez de abrir el detalle.
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`${basePath}${context === "legajo" ? "/documentacion" : "/legajo"}`);
+                }}
+                className={styles.ctaBtn}
+                iconRight={<FiArrowRight size={14} />}
+              >
+                {context === "legajo" ? "Ir a Documentación" : "Ir a Legajo"}
+              </Button>
+            ) : !esVistaGenerica ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className={styles.ctaBtn}
+                className={`${styles.ctaBtn} ${styles.ctaTono}`}
                 iconRight={<FiChevronRight size={14} />}
               >
                 Ver qué falta
@@ -772,7 +796,7 @@ export function LegajoUniversalBar({
               hayLineaActiva && legajoDesbloqueadoPorLinea ? (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="primary"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -787,7 +811,7 @@ export function LegajoUniversalBar({
             ) : (
               <Button
                 type="button"
-                variant="outline"
+                variant="primary"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -800,7 +824,7 @@ export function LegajoUniversalBar({
                 className={styles.ctaBtn}
                 iconRight={<FiArrowRight size={14} />}
               >
-                Ir
+                {faltanLegajo ? "Ir a Legajo" : "Ir a Documentación"}
               </Button>
             )
           ) : (
