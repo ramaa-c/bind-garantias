@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiPhone, FiUser, FiMapPin, FiMap } from "react-icons/fi";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
 import { Button } from "../../../ui/Button/Button";
@@ -18,6 +18,7 @@ import { decidirReejecucionCdaTercero } from "../../../../hooks/useTerceros";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../hooks/useValidarDomicilioRequerido";
+import { SugerenciasTerceros } from "../DocumentosLegajo/components/TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
 import { parseAddress, armarDireccion } from "../../../../utils/direccionParser";
@@ -54,6 +55,7 @@ export function RepresentanteModal({
   tipoRelacionSocioId,    // TipoRelacionSocioID a usar para la relación (fijo, no editable)
   etiquetaRol,            // Nombre a mostrar (viene de api/TipoRelacionSocio para relaciones dinámicas)
   evitarCoincidenciaCon,  // { cuit, email } a rechazar si coinciden (ver Fiador con accionista único, SGRPLUSPLA-137)
+  sugerencias = [],       // Personas ya cargadas en otras pestañas que se pueden reutilizar (ver SugerenciasTerceros)
   itemsExistentes = [],   // Resto de los items ya cargados para este mismo tipoRelacionSocioId (ver duplicado de email entre Fiadores, SGRPLUSPLA-137)
 }) {
   const { cadenaSlug } = useCadenaActiva();
@@ -258,8 +260,12 @@ export function RepresentanteModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emailValue, clearErrors]);
 
-  const handleAfipLookup = async () => {
-    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+  // `cuitElegido`: CUIT de una persona elegida en SugerenciasTerceros. Desde
+  // el botón "Validar" llega el evento del click, por eso el chequeo de tipo.
+  const handleAfipLookup = async (cuitElegido) => {
+    const cuitLimpio = String(
+      (typeof cuitElegido === "string" ? cuitElegido : cuitValue) || "",
+    ).replace(/\D/g, "");
     
     if (!cuitLimpio || cuitLimpio.length !== 11) {
       setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
@@ -1091,7 +1097,9 @@ export function RepresentanteModal({
         isOpen={isOpen}
         onClose={handleCerrar}
         title={representante || representanteInicial ? `Editar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
-        maxWidth="800px"
+        // El paso de búsqueda es una sola columna: con los 800px del
+        // formulario quedaba mucho aire a los lados.
+        maxWidth={!afipValidado && !representante && !representanteInicial ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={
@@ -1110,13 +1118,16 @@ export function RepresentanteModal({
         <form id={REPRESENTANTE_FORM_ID} onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !representante && !representanteInicial ? (
             <div className={styles.cuitSearchStep}>
-              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
-                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
-                  <FiShield />
-                </div>
-                <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Buscá al {etiquetaRol.toLowerCase()} por CUIT</p>
-                  <p className={styles.cuitSearchBannerSub}>Completamos sus datos automáticamente.</p>
+              {/* Mismo patrón que el paso 1 del alta (Paso1Cuit): el CUIT es
+                  lo protagonista y "Validar" vive dentro del input. Admin
+                  conserva el botón aparte en azul. */}
+              <div className={styles.cuitSearchHead}>
+                <span className={`${styles.cuitSearchIcon} ${isAdmin ? styles.cuitSearchIconAdmin : ""}`} aria-hidden="true">
+                  <FiUser />
+                </span>
+                <div className={styles.cuitSearchHeadText}>
+                  <p className={styles.cuitSearchTitle}>¿Quién va a ser {etiquetaRol.toLowerCase()}?</p>
+                  <p className={styles.cuitSearchSub}>Ingresá su CUIT y completamos sus datos.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1127,10 +1138,21 @@ export function RepresentanteModal({
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText="VALIDAR CUIT"
+                  buttonText={isAdmin ? "VALIDAR CUIT" : "Validar"}
                   isLoading={validando}
+                  inline={!isAdmin}
                 />
+                <p className={styles.cuitSearchAyuda}>Son 11 números, sin guiones.</p>
               </div>
+              <SugerenciasTerceros
+                sugerencias={sugerencias}
+                isAdmin={isAdmin}
+                disabled={validando}
+                onUsar={(persona) => {
+                  setValue("cuit", persona.cuit, { shouldDirty: true });
+                  handleAfipLookup(persona.cuit);
+                }}
+              />
             </div>
           ) : (
             <>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield, FiCreditCard } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -17,7 +17,7 @@ import { mensajeNegocio } from "../../../../../../utils/mensajesError";
 import { decidirReejecucionCdaTercero } from "../../../../../../hooks/useTerceros";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
-import { FORMATOS_ARCHIVO, formatBase64Size, procesarArchivo, validarArchivo } from "../../../../../../utils/fileUtils";
+import { FORMATOS_ARCHIVO, TAMANIO_MAXIMO_ARCHIVO_MB, formatBase64Size, procesarArchivo, validarTamanioArchivo, validarTipoArchivo } from "../../../../../../utils/fileUtils";
 import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { buscarRelacionVigente } from "../../../../../../utils/relacionesTercerosUtils";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
@@ -25,6 +25,7 @@ import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincr
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
 import { parseAddress, armarDireccion } from "../../../../../../utils/direccionParser";
 import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresaPorCuit";
+import { SugerenciasTerceros } from "../TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 
 import styles from "./SocioAccionistaModal.module.css";
@@ -45,15 +46,50 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-// DNI Dorso reusa el mismo ícono de DNI Frente, solo espejado - así se
-// distinguen entre sí sin necesitar un segundo ícono real de "reverso de
-// documento" (no existe uno claro en Feather/react-icons/fi).
-const IconoDniDorso = (props) => (
-  <FiCreditCard {...props} style={{ transform: "scaleX(-1)" }} />
+// Dibujos chicos (32×24) para la fila de DNI: el frente con la foto de la
+// persona, el dorso con las líneas de texto y la banda del código - así se
+// distinguen de un vistazo sin leer el título. Usan currentColor para tomar
+// el color del estado (azul, amarillo al arrastrar, rojo con error).
+const DibujoDniFrente = () => (
+  <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+    <rect x="1" y="1" width="30" height="22" rx="4" />
+    <circle cx="9.5" cy="9.5" r="3" />
+    <path d="M4.5 18.5c.8-2.4 2.8-3.6 5-3.6s4.2 1.2 5 3.6" />
+    <path d="M18 8h9M18 12h7M18 16h5" />
+  </svg>
 );
 
-const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
+const DibujoDniDorso = () => (
+  <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+    <rect x="1" y="1" width="30" height="22" rx="4" />
+    <path d="M5 8h22M5 12h18M5 15h14" />
+    <rect x="5" y="18" width="22" height="3" rx="1" strokeWidth="1.2" />
+  </svg>
+);
+
+const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
   const [isDragging, setIsDragging] = useState(false);
+  // Motivo del último archivo rechazado (formato/tamaño): las validaciones ya
+  // avisan con un toast, pero el toast se va y la fila tiene que seguir
+  // diciendo por qué no se cargó.
+  const [errorArchivo, setErrorArchivo] = useState(null);
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
+
+  const aceptar = (archivo, formato = FORMATOS_ARCHIVO.documento) => {
+    if (!archivo) return;
+    if (!validarTipoArchivo(archivo, formato)) {
+      setErrorArchivo(`Formato no permitido · usá ${formato.etiqueta}`);
+      return;
+    }
+    if (!validarTamanioArchivo(archivo)) {
+      setErrorArchivo(`El archivo supera los ${TAMANIO_MAXIMO_ARCHIVO_MB} MB`);
+      return;
+    }
+    setErrorArchivo(null);
+    onChange(archivo);
+  };
+
   return (
     <div className={styles.dropzoneWrapper}>
       <input
@@ -62,11 +98,12 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         style={{ display: "none" }}
         accept={FORMATOS_ARCHIVO.documento.accept}
         onChange={(e) => {
-          const selected = e.target.files?.[0];
-          if (selected && validarArchivo(selected)) onChange(selected);
+          aceptar(e.target.files?.[0]);
           e.target.value = null;
         }}
       />
+      {/* Cámara trasera directa en mobile ("Sacar foto"): solo imágenes,
+          porque es lo único que puede devolver la cámara. */}
       <input
         type="file"
         id={`camera-input-${fileKey}`}
@@ -74,29 +111,35 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         accept="image/*"
         capture="environment"
         onChange={(e) => {
-          const selected = e.target.files?.[0];
-          if (selected && validarArchivo(selected, FORMATOS_ARCHIVO.imagen)) onChange(selected);
+          aceptar(e.target.files?.[0], FORMATOS_ARCHIVO.imagen);
           e.target.value = null;
         }}
       />
       <CargaArchivos
+        variant="fila"
         title={title}
-        subtitle={subtitle}
-        icon={icon}
+        subtitle="Foto clara, sin reflejos"
+        ilustracion={fileKey === "dorso" ? <DibujoDniDorso /> : <DibujoDniFrente />}
         // El límite de 50MB es un dato de archivos sueltos, no de una foto
         // de DNI - acá no aplica (ver CargaArchivos.jsx).
         showMaxSizeHint={false}
         formatos={FORMATOS_ARCHIVO.documento.etiqueta}
         onCamara={() => document.getElementById(`camera-input-${fileKey}`).click()}
-        compact
+        admin={isAdmin}
         isLoading={isLoading}
-        hasError={hasError}
+        hasError={hasError || Boolean(errorArchivo)}
+        mensajeError={errorArchivo}
         file={
           file
             ? {
                 name: file.name,
-                size: typeof file.size === "number" ? `${(file.size / 1024).toFixed(1)} KB` : file.size || "Disponible",
+                size: file.size || "Disponible",
                 vialufe: file.vialufe || "0",
+                // File recién elegido (o en memoria): da la miniatura real.
+                // Los del backend llegan sin contenido acá y quedan con la
+                // tarjeta genérica.
+                fuente: file instanceof Blob ? file : null,
+                contenido: file.contenido,
               }
             : null
         }
@@ -114,10 +157,7 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         onDrop={(e) => {
           e.preventDefault();
           setIsDragging(false);
-          const droppedFile = e.dataTransfer.files?.[0];
-          if (droppedFile && validarArchivo(droppedFile)) {
-            onChange(droppedFile);
-          }
+          aceptar(e.dataTransfer.files?.[0]);
         }}
       />
     </div>
@@ -127,7 +167,9 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
 const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
-export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
+const DEFAULT_SUGERENCIAS = [];
+
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS, sugerencias = DEFAULT_SUGERENCIAS }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
@@ -428,8 +470,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setFilesChanged(false);
   }
 
-  const handleAfipLookup = async () => {
-    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+  // `cuitElegido`: CUIT de una persona elegida en SugerenciasTerceros. Desde
+  // el botón "Validar" llega el evento del click, por eso el chequeo de tipo.
+  const handleAfipLookup = async (cuitElegido) => {
+    const cuitLimpio = String(
+      (typeof cuitElegido === "string" ? cuitElegido : cuitValue) || "",
+    ).replace(/\D/g, "");
     if (!cuitLimpio || cuitLimpio.length !== 11) {
       setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
       return;
@@ -1235,7 +1281,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         isOpen={isOpen}
         onClose={handleCerrar}
         title={socio ? "Editar Accionista" : "Agregar Accionista"}
-        maxWidth="800px"
+        // El paso de búsqueda es una sola columna: con los 800px del
+        // formulario quedaba mucho aire a los lados.
+        maxWidth={!afipValidado && !socio ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={
@@ -1254,13 +1302,16 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         <form id={ACCIONISTA_FORM_ID} onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !socio ? (
             <div className={styles.cuitSearchStep}>
-              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
-                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
-                  <FiShield />
-                </div>
-                <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Buscá al accionista por CUIT</p>
-                  <p className={styles.cuitSearchBannerSub}>Completamos sus datos automáticamente.</p>
+              {/* Mismo patrón que el paso 1 del alta (Paso1Cuit): el CUIT es
+                  lo protagonista y "Validar" vive dentro del input. Admin
+                  conserva el botón aparte en azul. */}
+              <div className={styles.cuitSearchHead}>
+                <span className={`${styles.cuitSearchIcon} ${isAdmin ? styles.cuitSearchIconAdmin : ""}`} aria-hidden="true">
+                  <FiUser />
+                </span>
+                <div className={styles.cuitSearchHeadText}>
+                  <p className={styles.cuitSearchTitle}>¿Quién va a ser accionista?</p>
+                  <p className={styles.cuitSearchSub}>Ingresá su CUIT y completamos sus datos.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1271,10 +1322,21 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText="VALIDAR CUIT"
+                  buttonText={isAdmin ? "VALIDAR CUIT" : "Validar"}
                   isLoading={validando}
+                  inline={!isAdmin}
                 />
+                <p className={styles.cuitSearchAyuda}>Son 11 números, sin guiones.</p>
               </div>
+              <SugerenciasTerceros
+                sugerencias={sugerencias}
+                isAdmin={isAdmin}
+                disabled={validando}
+                onUsar={(persona) => {
+                  setValue("cuit", persona.cuit, { shouldDirty: true });
+                  handleAfipLookup(persona.cuit);
+                }}
+              />
             </div>
           ) : (
             <>
@@ -1553,8 +1615,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 <DropzoneField
                   file={dniFrenteFile}
                   title="DNI Frente"
-                  subtitle="Imagen clara y legible (Obligatorio)"
-                  icon={FiCreditCard}
                   fileKey="frente"
                   isLoading={cargandoArchivos && !dniFrenteFile}
                   hasError={errorDniFrente}
@@ -1571,8 +1631,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 <DropzoneField
                   file={dniDorsoFile}
                   title="DNI Dorso"
-                  subtitle="Imagen clara y legible (Obligatorio)"
-                  icon={IconoDniDorso}
                   fileKey="dorso"
                   isLoading={cargandoArchivos && !dniDorsoFile}
                   hasError={errorDniDorso}

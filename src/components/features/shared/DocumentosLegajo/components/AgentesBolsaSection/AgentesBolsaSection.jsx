@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { FiUsers, FiBriefcase, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiBriefcase, FiPlus } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
+import s from "../TerceroCard/TerceroCard.module.css";
+import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
 import { BolsaModal } from "../BolsaModal/BolsaModal";
-import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 export function AgentesBolsaSection({
@@ -22,12 +23,7 @@ export function AgentesBolsaSection({
   return (
     <div className={styles.sociosContainer}>
       {loadingSocios ? (
-        <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
-          <Spinner size={36} />
-          <p className={styles.emptyTitle} style={{ margin: 0 }}>
-            Cargando agentes de bolsa...
-          </p>
-        </div>
+        <TerceroSkeleton />
       ) : (
         <div className={styles.sectionBlock}>
           {portalTarget && createPortal(
@@ -45,71 +41,37 @@ export function AgentesBolsaSection({
           )}
 
           {agentesBolsa.length === 0 ? (
-            <div
-              className={styles.emptySlot}
-              style={{ minHeight: "6rem", padding: "1.5rem" }}
-            >
-              <p className={styles.emptyTitle}>
-                Sin agentes de bolsa vinculados
-              </p>
-              <span className={styles.emptyText}>
-                Haga click en "Vincular Agente" para asociar su cuenta.
-              </span>
-            </div>
+            <TerceroEmpty
+              icon={<FiBriefcase size={20} />}
+              titulo="Todavía no vinculaste agentes de bolsa"
+              hint="Usá «Vincular Agente de Bolsa» para asociar tu cuenta comitente."
+            />
           ) : (
-            <div className={styles.sociosList}>
+            <div className={s.lista}>
+              {/* Sin validación de datos propia: tarjeta neutra, sin chip de
+                  estado ni detalle desplegable (como antes). */}
               {agentesBolsa.map((bolsa) => (
-                <div
+                <TerceroCard
                   key={bolsa.id}
-                  className={styles.socioCard}
-                  style={{ padding: "0.875rem 1rem" }}
-                >
-                  <div className={styles.socioCardHeaderRow}>
-                    <div
-                      className={styles.socioCardBtn}
-                      style={{ cursor: "default" }}
-                    >
-                      <div className={styles.socioAvatar}>
-                        <FiBriefcase size={16} />
-                      </div>
-                      <div className={styles.socioMainInfo}>
-                        <span className={styles.socioName}>
-                          {bolsa.nombre}
-                        </span>
-                        <span className={styles.socioCuit} style={{ marginTop: "0.15rem" }}>
-                          Comitente:{" "}
-                          <strong style={{ color: "var(--white)" }}>
-                            {bolsa.nrosubcuentacaja || "—"}
-                          </strong>
-                        </span>
-                      </div>
-                    </div>
-                    <div
-                      className={styles.socioHeaderActions}
-                      style={{ paddingRight: "1rem" }}
-                    >
-                      <button
-                        type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
-                        onClick={() => {
-                          setEditBolsa(bolsa);
-                          setModalBolsaOpen(true);
-                        }}
-                        title="Editar Cuenta Comitente"
-                      >
-                        <FiEdit2 size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
-                        onClick={() => handleEliminarRelacion(bolsa)}
-                        title="Desvincular Agente"
-                      >
-                        <FiTrash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  nombre={bolsa.nombre}
+                  detalle={
+                    <>
+                      Comitente:{" "}
+                      <strong style={{ color: "var(--white)" }}>
+                        {bolsa.nrosubcuentacaja || "—"}
+                      </strong>
+                    </>
+                  }
+                  validado={false}
+                  isAdmin={isAdmin}
+                  onEdit={() => {
+                    setEditBolsa(bolsa);
+                    setModalBolsaOpen(true);
+                  }}
+                  onDelete={() => handleEliminarRelacion(bolsa)}
+                  editTitle="Editar Cuenta Comitente"
+                  deleteTitle="Desvincular Agente"
+                />
               ))}
             </div>
           )}

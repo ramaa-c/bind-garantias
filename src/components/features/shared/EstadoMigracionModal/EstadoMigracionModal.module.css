@@ -170,7 +170,7 @@
 .sectionTally {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--warning);
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -219,8 +219,10 @@
   stroke-width: 3.4;
 }
 
+/* Pendiente en neutro: el amarillo queda para los botones y la barra de
+   progreso, si no la lista entera se veía "en alerta". */
 .pendBadge {
-  border: 1.5px solid var(--warning);
+  border: 1.5px solid rgba(var(--overlay-rgb), 0.35);
 }
 
 .lockBadge {
@@ -253,7 +255,7 @@
   font: inherit;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-amarillo-bind);
+  color: var(--color-azul-bind-300);
   cursor: pointer;
 }
 
@@ -305,4 +307,8 @@
   font-size: 0.8125rem;
   line-height: 1.45;
   color: var(--text-muted);
+}
+
+[data-theme="light"] .itemAccion {
+  color: var(--color-azul-bind-600);
 }

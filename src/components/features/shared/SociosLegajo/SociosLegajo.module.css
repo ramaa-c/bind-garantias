@@ -405,101 +405,55 @@
   }
 }
 /* ── PERFIL: FICHA DE LA EMPRESA ─────────────────────────────────────────────── */
-/* Trasladado acá desde DocumentosLegajo.module.css junto con la pestaña
-   (ver SociosLegajo.jsx): antes vivía en la pantalla de Documentación,
-   ahora es la primera pestaña de Legajo. */
+/* Rediseño 2026-10 (opción C aprobada): columna de identidad + detalle.
+   Mobile first - en el celular todo va apilado (identidad arriba, después
+   las tarjetas de datos); desde 64rem la identidad pasa a una columna fija
+   a la izquierda y los datos quedan en una columna a la derecha. */
 
 .perfilPanel {
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 1.25rem;
+  gap: 0.85rem;
 }
 
-/* "Vincular usuarios", colgando de Mi Perfil (ver el comentario en
-   SociosLegajo.jsx): tarjeta propia, al mismo nivel que .perfilCard, no
-   anidada adentro - VincularUsuarioSection ya trae su propio fondo/borde/
-   radio (.vincularForm en DocumentosLegajo.module.css), así que meterla
-   dentro de .perfilCard hubiera sido tarjeta-dentro-de-tarjeta. La
-   etiqueta de acá arriba es la misma categoría ("Accesos") que esta
-   sección tenía como pestaña propia antes del rediseño - mismo nombre,
-   mismo concepto, ahora como eyebrow de esta tarjeta en vez de header de
-   navegación. */
-.perfilExtraSection {
+/* Fila identidad + datos; "Accesos" queda debajo, a todo el ancho. */
+.perfilFila {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.85rem;
 }
 
-.perfilExtraSectionLabel {
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--color-amarillo-bind);
-}
-
-/* Tarjeta única (rediseño 2026-09-14): título+acción, identidad, datos
-   clave y lista de contacto/ubicación, todo en UNA pieza - antes era un
-   header genérico flotando arriba (título+descripción, repetido de página
-   en página) + una tarjeta abajo con hero separado y 3 tonos de color de
-   etiqueta por grupo, que se leía "plano y sobrecargado de colores". Sin
-   blur/glassmorphism a propósito: es un panel de datos estático, no algo
-   flotando sobre contenido en movimiento - el blur no cumplía ninguna
-   función acá, solo era decorativo. Sin hover-lift: la tarjeta entera ya
-   no es una unidad clickeable, solo el chip de Editar lo es. */
+/* Tarjeta base de todo el panel (identidad y cada bloque de datos). */
+.perfilIdentidad,
 .perfilCard {
-  background: rgba(var(--overlay-rgb), 0.03);
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
-  border-radius: 0.85rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
-  padding: 0.9rem 1.1rem 1.1rem;
+  background: var(--bg-elevado);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
+  border-radius: 1rem;
+}
+
+.perfilIdentidad {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-}
-
-/* Título + botón de Editar, fusionados como cabecera de la tarjeta (antes
-   vivían en el header genérico compartido con el resto de las pestañas,
-   separados de la tarjeta - ver SociosLegajo.jsx). */
-.perfilTopBar {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.perfilCardTitle {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--white);
-  letter-spacing: -0.01em;
-}
-
-/* Identidad: avatar con inicial + nombre + CUIT/tipo como subtítulo simple
-   (ya no un chip con borde propio - un tono de texto menos) + badge de
-   estado. El acento amarillo de marca queda acá (avatar) y en el chip de
-   Editar más abajo - nada más en la tarjeta lleva color de marca, así no
-   compite por atención con esos dos puntos. */
-.perfilIdentity {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  padding: 1.15rem 0.9rem;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(76, 101, 230, 0.16), var(--bg-elevado) 45%);
 }
 
 .perfilAvatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3.5rem;
+  height: 3.5rem;
   flex-shrink: 0;
-  border-radius: 0.7rem;
+  border-radius: 1.1rem;
   background: linear-gradient(135deg, rgba(244, 245, 0, 0.2), rgba(244, 245, 0, 0.04));
   border: 1px solid rgba(244, 245, 0, 0.3);
   color: var(--color-amarillo-bind);
-  font-size: 1rem;
+  font-size: 1.3rem;
   font-weight: 800;
 }
 
@@ -514,170 +468,209 @@
   color: var(--on-amarillo-bind);
 }
 
-.perfilIdentityInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.perfilHeroName {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--white);
-  letter-spacing: -0.01em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.perfilHeroMeta {
-  font-size: 0.78rem;
-  color: var(--white-muted);
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.perfilEstadoBadge {
-  flex-shrink: 0;
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.28rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(76, 175, 80, 0.12);
-  color: var(--success-bright);
-  border: 1px solid rgba(76, 175, 80, 0.25);
-}
-
-/* Bloque de estadísticas: los 2 datos comerciales "de un vistazo" (el
-   resto - canal, fechas - baja a la lista simple) en tiles con valor
-   grande. Le da a la tarjeta una jerarquía de tamaños real en vez de que
-   todo el contenido se lea al mismo peso visual - mismo recurso que
-   cualquier resumen de cliente en un dashboard fintech (ej. "Ongoing /
-   Completed" de un panel de proyectos). Fondo apenas distinto al de la
-   tarjeta (un tono de gris más, no un color) para que se lea como un
-   panel inset sin sumar más color a la mezcla. */
-.perfilStatGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.perfilStatGroupLabel {
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--color-amarillo-bind);
-}
-
-/* position:relative + padding-top de sobra: hace de contenedor para el
-   chip de Editar, que cuelga en la esquina superior derecha como una
-   acción del BLOQUE entero (ver .perfilEditarChip) en vez de ir pegado al
-   valor de un tile en particular. */
-.perfilStatTiles {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  background: rgba(var(--overlay-rgb), 0.03);
-  border: 1px solid rgba(var(--overlay-rgb), 0.06);
-  border-radius: 0.65rem;
-  padding: 1.9rem 0.9rem 0.7rem;
-}
-
-.perfilStatTile {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-.perfilStatTileDivider {
-  width: 1px;
-  align-self: stretch;
-  background: rgba(var(--overlay-rgb), 0.08);
-  margin: 0 1rem;
-}
-
-.perfilStatLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.7rem;
-  color: var(--white-muted);
-  font-weight: 600;
-}
-
-.perfilStatValue {
+.perfilNombre {
+  margin: 0.15rem 0 0;
+  max-width: 100%;
   font-size: 1rem;
   font-weight: 700;
   color: var(--white);
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.perfilMeta {
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--white-muted) 82%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.perfilEstadoBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(61, 220, 132, 0.12);
+  color: var(--success-green);
+}
+
+.perfilEditarBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 2.5rem;
+  margin-top: auto;
+  padding: 0 0.9rem;
+  border: none;
+  border-radius: 0.7rem;
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.perfilEditarBtn:hover {
+  filter: brightness(0.92);
+}
+
+.perfilEditarBtn:focus-visible,
+.perfilEditarLink:focus-visible {
+  outline: 2px solid var(--color-azul-bind-300);
+  outline-offset: 2px;
+}
+
+/* Contacto rápido (email/teléfono) debajo de un divisor: es lo que más se
+   busca de un vistazo, por eso vive pegado a la identidad y no en una
+   tarjeta más de la columna de datos. */
+.perfilContacto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  margin: 0.35rem 0 0.9rem;
+  padding: 0.8rem 0 0;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
+  list-style: none;
+  text-align: left;
+}
+
+.perfilContactoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--white);
+}
+
+.perfilContactoItem svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.perfilContactoItem span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.perfilDetalle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
   min-width: 0;
 }
 
-/* Lista de filas simples: etiqueta a la izquierda, valor a la derecha, una
-   sola línea cada una - reemplaza la vieja grilla de celdas label-arriba/
-   valor-abajo (más alta, y con un color de etiqueta distinto por grupo).
-   Una sola tonalidad de gris para todas las etiquetas es deliberado: sin
-   eso cada dato competía por atención con su propio color, que es
-   justamente lo que se leía "sobrecargado". */
-.perfilRowsList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.05rem;
+.perfilCard {
+  padding: 0.8rem 0.95rem 0.35rem;
 }
 
-.perfilRowsGroupLabel {
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--color-amarillo-bind);
-  margin-top: 0.5rem;
-}
-
-.perfilRowsGroupLabel:first-child {
-  margin-top: 0;
-}
-
-.perfilRow {
+.perfilCardHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.32rem 0;
-  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
-  font-size: 0.83rem;
+  margin-bottom: 0.35rem;
+}
+
+/* Títulos de bloque en el azul de marca (mismo tono que las categorías
+   EMPRESA/LEGAJO del menú) con su ícono en un recuadro: el gris anterior
+   se perdía sobre el fondo oscuro. */
+.perfilCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-azul-bind-300);
+}
+
+.perfilCardIcono {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  border-radius: 0.45rem;
+  background: rgba(76, 101, 230, 0.16);
+  color: var(--color-azul-bind-300);
+}
+
+[data-theme="light"] .perfilCardTitle,
+[data-theme="light"] .perfilCardIcono {
+  color: var(--color-azul-bind-600);
+}
+
+/* Acción chica de texto (no un botón lleno): la acción principal del
+   panel es "Editar perfil", ésta solo cubre el email de facturación. */
+/* Botón con borde e ícono (antes era solo texto chico): editar el email
+   de facturación es una acción que el cliente tiene que encontrar. */
+.perfilEditarLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(245, 244, 0, 0.4);
+  border-radius: 0.6rem;
+  background: rgba(245, 244, 0, 0.08);
+  color: var(--color-amarillo-bind);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.perfilEditarLink:hover {
+  background: rgba(245, 244, 0, 0.16);
+  border-color: rgba(245, 244, 0, 0.6);
+}
+
+[data-theme="light"] .perfilEditarLink {
+  color: var(--badge-amarillo-text);
+  background: var(--badge-amarillo-bg);
+  border-color: var(--badge-amarillo-border);
+}
+
+.perfilRows {
+  margin: 0;
+}
+
+.perfilRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.07);
+  font-size: 0.875rem;
 }
 
 .perfilRow:last-child {
   border-bottom: none;
 }
 
+/* Etiquetas más claras que --text-muted (pedido de clientes: el gris
+   chico sobre negro costaba leer), sin competir con el valor en negrita. */
 .perfilRowLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex-shrink: 0;
-  color: var(--white-muted);
-}
-
-.perfilRowLabel svg {
-  flex-shrink: 0;
-  opacity: 0.7;
+  margin: 0;
+  flex: 0 1 auto;
+  color: color-mix(in srgb, var(--white-muted) 82%, transparent);
 }
 
 .perfilRowValue {
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
   color: var(--white);
   font-weight: 600;
   text-align: right;
@@ -689,70 +682,60 @@
   font-weight: 500 !important;
 }
 
-/* Antes un ícono suelto de 1.5rem sin texto, casi invisible junto al
-   valor: es un chip con label, mismo lenguaje visual que .addButton
-   ("Editar mi perfil" en la cabecera) - se lee de entrada como una
-   acción, no como un detalle decorativo, siempre visible (no solo al
-   pasar el mouse). Posicionado en la esquina superior derecha de
-   .perfilStatTiles (su padre relative) en vez de pegado al valor: es una
-   acción del bloque de contacto entero, no solo del tile de facturación. */
-.perfilEditarChip {
-  position: absolute;
-  top: 0.55rem;
-  right: 0.6rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  flex-shrink: 0;
-  background: rgba(245, 244, 0, 0.1);
-  border: 1px solid rgba(245, 244, 0, 0.3);
-  color: var(--color-amarillo-bind);
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.22rem 0.5rem;
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
+/* "Vincular usuarios", colgando de Mi Perfil (ver el comentario en
+   SociosLegajo.jsx): sección propia, no anidada en una .perfilCard -
+   VincularUsuarioSection ya trae su propio fondo/borde/radio, así que
+   meterla adentro hubiera sido tarjeta-dentro-de-tarjeta. La etiqueta usa
+   el mismo estilo que los títulos de las tarjetas de arriba. */
+/* Escritorio: identidad a la izquierda con ancho fijo y estirada al mismo
+   alto que la columna de datos (align-items: stretch), con "Editar perfil"
+   al pie. */
+@media (min-width: 64rem) {
+  .perfilPanel,
+  .perfilFila {
+    gap: 1rem;
+  }
 
-.perfilEditarChip:hover {
-  background: var(--color-amarillo-bind, #f5f400);
-  color: #000;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245, 244, 0, 0.2);
-}
+  .perfilFila {
+    flex-direction: row;
+    align-items: stretch;
+  }
 
-@media (max-width: 48rem) {
+  .perfilIdentidad {
+    flex: 0 0 15.5rem;
+    width: 15.5rem;
+    padding: 1.15rem 1rem;
+  }
+
+  .perfilDetalle {
+    flex: 1;
+  }
+
   .perfilCard {
-    padding: 0.75rem 0.85rem 0.9rem;
+    padding: 0.9rem 1.15rem 0.4rem;
+  }
+}
+
+@media (min-width: 64rem) and (max-width: 1440px),
+  (min-width: 64rem) and (max-height: 716px) {
+  .perfilPanel,
+  .perfilFila,
+  .perfilDetalle {
     gap: 0.75rem;
   }
-  .perfilHeroName {
-    font-size: 0.95rem;
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+
+  .perfilIdentidad {
+    flex-basis: 13.5rem;
+    width: 13.5rem;
+    padding: 1rem 0.85rem;
   }
-  .perfilStatTiles {
-    flex-direction: column;
-    gap: 0.6rem;
-    padding: 1.9rem 0.75rem 0.6rem;
+
+  .perfilCard {
+    padding: 0.75rem 0.95rem 0.3rem;
   }
-  .perfilStatTileDivider {
-    width: auto;
-    height: 1px;
-    align-self: stretch;
-    margin: 0;
-  }
+
   .perfilRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-  }
-  .perfilRowValue {
-    text-align: left;
+    padding: 0.45rem 0;
   }
 }
 
@@ -1192,37 +1175,6 @@
   font-weight: 700;
   color: var(--white);
   margin: 0;
-}
-
-.addButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  background: rgba(245, 244, 0, 0.08);
-  border: 1px solid rgba(245, 244, 0, 0.25);
-  color: var(--color-amarillo-bind);
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.35rem 0.75rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.addButton:hover {
-  background: var(--color-amarillo-bind, #f5f400);
-  color: #000;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245, 244, 0, 0.2);
-}
-
-.addButton:disabled {
-  background: rgba(var(--overlay-rgb), 0.02) !important;
-  border-color: rgba(var(--overlay-rgb), 0.08) !important;
-  color: var(--text-dim) !important;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
 }
 
 /* BARRA DE PROGRESO DE PARTICIPACIÓN */
