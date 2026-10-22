@@ -162,26 +162,18 @@ export default function Sidebar({ isOpen, onClose }) {
     },
   ].filter(Boolean);
 
-  // Mientras el alta de empresa no terminó, la navegación se muestra igual
-  // (para que se vea a dónde lleva el recorrido) pero toda bloqueada: no se
-  // puede entrar a secciones de una empresa que todavía no es operable.
+  // Hasta que se complete el Paso 2 del alta (ver AltaDatosEmpresa) y se
+  // confirme el PUT, el socio ya tiene denominación pero no es una empresa
+  // operable todavía — no se muestra navegación ni progreso (ni siquiera
+  // bloqueados): a pedido, durante el alta no se adelanta información.
   const empresaOperable = isVinculado && onboardingCompleto;
-  const itemsVisibles = empresaOperable
-    ? itemsNavegacion
-    : itemsNavegacion.map((item) => ({
-        ...item,
-        bloqueado: true,
-        motivoBloqueo: "Se habilita al terminar el alta",
-        novedad: false,
-      }));
 
   // "Tu alta": recorrido de 4 pasos (empresa → solicitud → legajo →
   // documentación). Se deja de mostrar cuando el legajo está completo (ahí
   // ya solo queda Documentación, que tiene su propio estado en la nav).
-  const pasosHechos = empresaOperable
-    ? 1 + (legajoDesbloqueado ? 1 : 0) + (documentacionDesbloqueada ? 1 : 0)
-    : 0;
-  const mostrarProgreso = !documentacionDesbloqueada || !empresaOperable;
+  const pasosHechos =
+    1 + (legajoDesbloqueado ? 1 : 0) + (documentacionDesbloqueada ? 1 : 0);
+  const mostrarProgreso = empresaOperable && !documentacionDesbloqueada;
   const CIRCUNFERENCIA_ANILLO = 2 * Math.PI * 15;
 
   const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio vinculado" : "Sin empresa vinculada";
@@ -269,43 +261,45 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         )}
 
-        <nav className={styles.nav}>
-          <ul className={styles.navLista}>
-            {itemsVisibles.map(({ path, label, icono, bloqueado, motivoBloqueo, ayuda, novedad, textoNovedad }) => {
-              const activo = isActive(path);
-              return (
-                <li key={path}>
-                  <button
-                    type="button"
-                    className={`${styles.navItem} ${activo ? styles.navItemActivo : ""} ${bloqueado ? styles.navItemBloqueado : ""}`}
-                    onClick={() => !bloqueado && handleNavigate(path)}
-                    disabled={bloqueado}
-                    aria-current={activo ? "page" : undefined}
-                    title={bloqueado ? `${label} · ${motivoBloqueo}` : label}
-                  >
-                    <span className={styles.navIcono} aria-hidden="true">
-                      {icono}
-                    </span>
-                    <span className={styles.navTexto}>
-                      <span className={styles.navLabel}>{label}</span>
-                      {bloqueado ? (
-                        <span className={styles.navAyuda}>{motivoBloqueo}</span>
-                      ) : novedad ? (
-                        <span className={`${styles.navAyuda} ${styles.navAyudaNovedad}`}>{textoNovedad}</span>
-                      ) : (
-                        <span className={styles.navAyuda}>{ayuda}</span>
+        {empresaOperable && (
+          <nav className={styles.nav}>
+            <ul className={styles.navLista}>
+              {itemsNavegacion.map(({ path, label, icono, bloqueado, motivoBloqueo, ayuda, novedad, textoNovedad }) => {
+                const activo = isActive(path);
+                return (
+                  <li key={path}>
+                    <button
+                      type="button"
+                      className={`${styles.navItem} ${activo ? styles.navItemActivo : ""} ${bloqueado ? styles.navItemBloqueado : ""}`}
+                      onClick={() => !bloqueado && handleNavigate(path)}
+                      disabled={bloqueado}
+                      aria-current={activo ? "page" : undefined}
+                      title={bloqueado ? `${label} · ${motivoBloqueo}` : label}
+                    >
+                      <span className={styles.navIcono} aria-hidden="true">
+                        {icono}
+                      </span>
+                      <span className={styles.navTexto}>
+                        <span className={styles.navLabel}>{label}</span>
+                        {bloqueado ? (
+                          <span className={styles.navAyuda}>{motivoBloqueo}</span>
+                        ) : novedad ? (
+                          <span className={`${styles.navAyuda} ${styles.navAyudaNovedad}`}>{textoNovedad}</span>
+                        ) : (
+                          <span className={styles.navAyuda}>{ayuda}</span>
+                        )}
+                      </span>
+                      {bloqueado && <FiLock className={styles.navEstado} aria-label="Bloqueado" />}
+                      {!bloqueado && novedad && (
+                        <span className={styles.novedadDot} aria-label="Recién habilitado" />
                       )}
-                    </span>
-                    {bloqueado && <FiLock className={styles.navEstado} aria-label="Bloqueado" />}
-                    {!bloqueado && novedad && (
-                      <span className={styles.novedadDot} aria-label="Recién habilitado" />
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        )}
       </div>
 
       <div className={styles.pie}>
