@@ -16,7 +16,7 @@ import {
   FiChevronRight,
   FiAlertCircle,
 } from "react-icons/fi";
-import { Modal, Button, InputSimple, InputPasswordSeguro, RequisitosPassword, Skeleton } from "../../../ui";
+import { Modal, Button, InputSimple, InputPasswordSeguro, Skeleton } from "../../../ui";
 import UbicacionModal from "../UbicacionModal/UbicacionModal";
 import ContactoModal from "../ContactoModal/ContactoModal";
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
@@ -112,8 +112,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
 
   const [tab, setTab] = useState("empresa");
-  // "Cambiar contraseña" se abre en el lugar (fila de ajustes), cerrada por defecto.
-  const [editandoPassword, setEditandoPassword] = useState(false);
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
   const [modalContactoOpen, setContactoModalOpen] = useState(false);
 
@@ -327,7 +325,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen) {
       resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
-      setEditandoPassword(false);
     }
   }, [isOpen, resetPasswordForm]);
 
@@ -436,7 +433,16 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       key: "cuenta",
       label: "Mi cuenta",
       icon: FiUser,
-      hint: "Tu nombre dentro de la plataforma y tu contraseña.",
+      hint: "Este nombre se muestra dentro de la plataforma.",
+    },
+    // Pestaña propia: así el formulario de contraseña conserva su armado
+    // original (la lista de requisitos pegada debajo de "Nueva contraseña")
+    // en vez de repartirse en columnas.
+    {
+      key: "seguridad",
+      label: "Seguridad",
+      icon: FiLock,
+      hint: "Usá una contraseña que no uses en otros sitios.",
     },
   ];
   const seccionActiva = secciones.find((s) => s.key === tab) || secciones[0];
@@ -477,11 +483,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     ) : null;
 
   const nombreVisible = denominacionActual || emailUsuario.split("@")[0];
-
-  const cerrarPassword = () => {
-    resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
-    setEditandoPassword(false);
-  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="50rem">
@@ -649,137 +650,100 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                 ))}
 
         {seccionActiva.key === "cuenta" &&
-          (renderEstadoUsuario(["5.5rem", "5rem"]) || (
-            <>
-              <form
-                className={styles.formCard}
-                onSubmit={handleUsernameSubmit(onSubmitUsername)}
-                noValidate
-              >
-                <h4 className={styles.formTitulo}>
-                  <FiUser aria-hidden="true" /> Nombre de usuario
-                </h4>
-                <div className={styles.filaInline}>
-                  <div className={styles.filaInlineCampo}>
-                    <InputSimple
-                      name="denominacion"
-                      control={usernameControl}
-                      label="Nombre de usuario"
-                      variant="client"
-                      error={usernameErrors.denominacion}
-                      disabled={actualizarUsuarioMutation.isPending}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    isLoading={actualizarUsuarioMutation.isPending}
-                    disabled={!usernameIsDirty}
-                  >
-                    Guardar
-                  </Button>
+          (renderEstadoUsuario(["5.5rem"]) || (
+            <form
+              className={styles.formCard}
+              onSubmit={handleUsernameSubmit(onSubmitUsername)}
+              noValidate
+            >
+              <h4 className={styles.formTitulo}>
+                <FiUser aria-hidden="true" /> Nombre de usuario
+              </h4>
+              <div className={styles.filaInline}>
+                <div className={styles.filaInlineCampo}>
+                  <InputSimple
+                    name="denominacion"
+                    control={usernameControl}
+                    label="Nombre de usuario"
+                    variant="client"
+                    error={usernameErrors.denominacion}
+                    disabled={actualizarUsuarioMutation.isPending}
+                  />
                 </div>
-              </form>
-
-              {/* Opción B: fila de ajuste con el valor oculto; "Cambiar
-                  contraseña" abre los campos en el lugar, con los
-                  requisitos al costado para aprovechar el ancho. */}
-              <div className={styles.formCard}>
-                <div className={styles.ajusteFila}>
-                  <span className={styles.ajusteIcono} aria-hidden="true">
-                    <FiLock />
-                  </span>
-                  <div className={styles.ajusteTextos}>
-                    <strong>Contraseña</strong>
-                    <span>
-                      {editandoPassword
-                        ? "Usá una contraseña que no uses en otros sitios."
-                        : "••••••••"}
-                    </span>
-                  </div>
-                  {!editandoPassword && (
-                    <Button variant="outline" size="sm" onClick={() => setEditandoPassword(true)}>
-                      Cambiar contraseña
-                    </Button>
-                  )}
-                </div>
-
-                {editandoPassword && (
-                  <form
-                    className={styles.passwordGrid}
-                    onSubmit={handlePasswordSubmit(onSubmitPassword)}
-                    noValidate
-                  >
-                    <div className={styles.passwordCampos}>
-                        <InputSimple
-                          name="oldPassword"
-                          control={passwordControl}
-                          label="Contraseña actual"
-                          type="password"
-                          variant="client"
-                          error={passwordErrors.oldPassword}
-                          disabled={cambiarPasswordMutation.isPending}
-                        />
-
-                        <Controller
-                          name="newPassword"
-                          control={passwordControl}
-                          render={({ field }) => (
-                            <InputPasswordSeguro
-                              {...field}
-                              label="Nueva contraseña"
-                              currentValue={newPasswordValue}
-                              email={emailUsuario}
-                          ocultarRequisitos
-                              esValido={!passwordErrors.newPassword && !!newPasswordValue}
-                              disabled={cambiarPasswordMutation.isPending}
-                            />
-                          )}
-                        />
-
-                        <InputSimple
-                          name="confirmPassword"
-                          control={passwordControl}
-                          label="Confirmar nueva contraseña"
-                          type="password"
-                          variant="client"
-                          esValido={
-                            !!confirmPasswordValue &&
-                            newPasswordValue === confirmPasswordValue &&
-                            !passwordErrors.confirmPassword
-                          }
-                          error={passwordErrors.confirmPassword}
-                          disabled={cambiarPasswordMutation.isPending}
-                        />
-                    </div>
-
-                    <aside className={styles.requisitos}>
-                      <span className={styles.requisitosTitulo}>Tu contraseña necesita</span>
-                      <RequisitosPassword valor={newPasswordValue} />
-                    </aside>
-
-                    <div className={styles.passwordAcciones}>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={cerrarPassword}
-                        disabled={cambiarPasswordMutation.isPending}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        isLoading={cambiarPasswordMutation.isPending}
-                        disabled={!isPasswordValid}
-                      >
-                        Actualizar contraseña
-                      </Button>
-                    </div>
-                  </form>
-                )}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={actualizarUsuarioMutation.isPending}
+                  disabled={!usernameIsDirty}
+                >
+                  Guardar
+                </Button>
               </div>
-            </>
+            </form>
+          ))}
+
+        {seccionActiva.key === "seguridad" &&
+          (renderEstadoUsuario(["16rem"]) || (
+            <form
+              className={styles.formCard}
+              onSubmit={handlePasswordSubmit(onSubmitPassword)}
+              noValidate
+            >
+              <h4 className={styles.formTitulo}>
+                <FiLock aria-hidden="true" /> Cambiar contraseña
+              </h4>
+              <div className={styles.passwordCampos}>
+                <InputSimple
+                  name="oldPassword"
+                  control={passwordControl}
+                  label="Contraseña actual"
+                  type="password"
+                  variant="client"
+                  error={passwordErrors.oldPassword}
+                  disabled={cambiarPasswordMutation.isPending}
+                />
+
+                <Controller
+                  name="newPassword"
+                  control={passwordControl}
+                  render={({ field }) => (
+                    <InputPasswordSeguro
+                      {...field}
+                      label="Nueva contraseña"
+                      currentValue={newPasswordValue}
+                      email={emailUsuario}
+                      esValido={!passwordErrors.newPassword && !!newPasswordValue}
+                      disabled={cambiarPasswordMutation.isPending}
+                    />
+                  )}
+                />
+
+                <InputSimple
+                  name="confirmPassword"
+                  control={passwordControl}
+                  label="Confirmar nueva contraseña"
+                  type="password"
+                  variant="client"
+                  esValido={
+                    !!confirmPasswordValue &&
+                    newPasswordValue === confirmPasswordValue &&
+                    !passwordErrors.confirmPassword
+                  }
+                  error={passwordErrors.confirmPassword}
+                  disabled={cambiarPasswordMutation.isPending}
+                />
+              </div>
+              <div className={styles.passwordAcciones}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={cambiarPasswordMutation.isPending}
+                  disabled={!isPasswordValid}
+                >
+                  Actualizar contraseña
+                </Button>
+              </div>
+            </form>
           ))}
       </section>
 
