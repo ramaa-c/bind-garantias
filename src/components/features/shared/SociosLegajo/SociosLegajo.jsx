@@ -648,123 +648,129 @@ export function SociosLegajo({
                         tarjetas cortas por tema (facturación, ubicación,
                         datos comerciales) en vez de una sola tarjeta larga.
                         En mobile se apilan; desde 64rem la identidad queda
-                        fija a la izquierda (ver .perfilIdentidad). El
+                        a la izquierda, del mismo alto que la columna de datos (ver .perfilIdentidad). El
                         título de la pestaña no se repite acá: ya está
                         resaltado en el botón activo del sidebar. */}
-                    <aside className={styles.perfilIdentidad}>
-                      <div className={styles.perfilAvatar} aria-hidden="true">
-                        {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
-                      </div>
-                      <h4 className={styles.perfilNombre}>{nombreEmpresa || "—"}</h4>
-                      <span className={styles.perfilMeta}>
-                        {formatCuit(cuitActivo) || "CUIT no disponible"}
-                        {tipoPersonaLabel && <> · {tipoPersonaLabel}</>}
-                      </span>
-                      {estadoSocioLabel && (
-                        <span className={styles.perfilEstadoBadge}>{estadoSocioLabel}</span>
-                      )}
-                      <button
-                        type="button"
-                        className={styles.perfilEditarBtn}
-                        onClick={() => setPerfilModalOpen(true)}
-                      >
-                        <FiEdit2 size={14} /> Editar perfil
-                      </button>
-                      <ul className={styles.perfilContacto}>
-                        <li className={styles.perfilContactoItem}>
-                          <FiMail size={13} role="img" aria-label="Email" />
-                          <span
-                            className={email ? "" : styles.perfilVacio}
-                            title={email || undefined}
-                          >
-                            {email || "—"}
-                          </span>
-                        </li>
-                        <li className={styles.perfilContactoItem}>
-                          <FiPhone size={13} role="img" aria-label="Teléfono" />
-                          <span
-                            className={[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}
-                          >
-                            {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
-                          </span>
-                        </li>
-                      </ul>
-                    </aside>
-
-                    <div className={styles.perfilDetalle}>
-                      <section className={styles.perfilCard}>
-                        <header className={styles.perfilCardHeader}>
-                          <h5 className={styles.perfilCardTitle}>Facturación</h5>
-                          <button
-                            type="button"
-                            className={styles.perfilEditarLink}
-                            onClick={() => setFacturacionModalOpen(true)}
-                            aria-label="Editar email de facturación"
-                          >
-                            Editar
-                          </button>
-                        </header>
-                        <dl className={styles.perfilRows}>
-                          <div className={styles.perfilRow}>
-                            <dt className={styles.perfilRowLabel}>Email de facturación</dt>
-                            <dd
-                              className={`${styles.perfilRowValue} ${emailFacturacion ? "" : styles.perfilVacio}`}
+                    <div className={styles.perfilFila}>
+                      <aside className={styles.perfilIdentidad}>
+                        <div className={styles.perfilAvatar} aria-hidden="true">
+                          {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
+                        </div>
+                        <h4 className={styles.perfilNombre}>{nombreEmpresa || "—"}</h4>
+                        <span className={styles.perfilMeta}>
+                          {formatCuit(cuitActivo) || "CUIT no disponible"}
+                          {tipoPersonaLabel && <> · {tipoPersonaLabel}</>}
+                        </span>
+                        {estadoSocioLabel && (
+                          <span className={styles.perfilEstadoBadge}>{estadoSocioLabel}</span>
+                        )}
+                        <ul className={styles.perfilContacto}>
+                          <li className={styles.perfilContactoItem}>
+                            <FiMail size={13} role="img" aria-label="Email" />
+                            <span
+                              className={email ? "" : styles.perfilVacio}
+                              title={email || undefined}
                             >
-                              {emailFacturacion || "—"}
-                            </dd>
-                          </div>
-                        </dl>
-                      </section>
+                              {email || "—"}
+                            </span>
+                          </li>
+                          <li className={styles.perfilContactoItem}>
+                            <FiPhone size={13} role="img" aria-label="Teléfono" />
+                            <span
+                              className={[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}
+                            >
+                              {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
+                            </span>
+                          </li>
+                        </ul>
+                        {/* Al pie de la tarjeta (margin-top:auto): la tarjeta
+                            mide lo mismo que la columna de datos, así el botón
+                            queda alineado con el final de "Datos comerciales". */}
+                        <button
+                          type="button"
+                          className={styles.perfilEditarBtn}
+                          onClick={() => setPerfilModalOpen(true)}
+                        >
+                          <FiEdit2 size={14} /> Editar perfil
+                        </button>
+                      </aside>
 
-                      <section className={styles.perfilCard}>
-                        <header className={styles.perfilCardHeader}>
-                          <h5 className={styles.perfilCardTitle}>Ubicación</h5>
-                        </header>
-                        <dl className={styles.perfilRows}>
-                          <div className={styles.perfilRow}>
-                            <dt className={styles.perfilRowLabel}>Dirección</dt>
-                            <dd className={`${styles.perfilRowValue} ${domicilioCompleto ? "" : styles.perfilVacio}`}>
-                              {domicilioCompleto || "—"}
-                            </dd>
-                          </div>
-                        </dl>
-                      </section>
-
-                      <section className={styles.perfilCard}>
-                        <header className={styles.perfilCardHeader}>
-                          <h5 className={styles.perfilCardTitle}>Datos comerciales</h5>
-                        </header>
-                        <dl className={styles.perfilRows}>
-                          {[
-                            ["Tamaño de empresa", tamanioEmpresaLabel],
-                            ["Situación BCRA", situacionBcraLabel],
-                            ["Canal de comercialización", canalComercializacionLabel],
-                            ["Inicio de actividades", formatFecha(fechaInicioActividades)],
-                            ["Cierre de ejercicio", formatFecha(fechaCierreEjercicio)],
-                          ].map(([label, valor]) => (
-                            <div key={label} className={styles.perfilRow}>
-                              <dt className={styles.perfilRowLabel}>{label}</dt>
-                              <dd className={`${styles.perfilRowValue} ${valor ? "" : styles.perfilVacio}`}>
-                                {valor || "—"}
+                      <div className={styles.perfilDetalle}>
+                        <section className={styles.perfilCard}>
+                          <header className={styles.perfilCardHeader}>
+                            <h5 className={styles.perfilCardTitle}>Facturación</h5>
+                            <button
+                              type="button"
+                              className={styles.perfilEditarLink}
+                              onClick={() => setFacturacionModalOpen(true)}
+                              aria-label="Editar email de facturación"
+                            >
+                              Editar
+                            </button>
+                          </header>
+                          <dl className={styles.perfilRows}>
+                            <div className={styles.perfilRow}>
+                              <dt className={styles.perfilRowLabel}>Email de facturación</dt>
+                              <dd
+                                className={`${styles.perfilRowValue} ${emailFacturacion ? "" : styles.perfilVacio}`}
+                              >
+                                {emailFacturacion || "—"}
                               </dd>
                             </div>
-                          ))}
-                        </dl>
-                      </section>
+                          </dl>
+                        </section>
 
-                      {/* "Vincular usuarios" vivía como pestaña propia
-                          (categoría "Accesos"); ahora cuelga de Mi Perfil
-                          como una sección aparte, mismo criterio que
-                          cualquier settings page: la gestión de accesos de
-                          la cuenta vive junto al resto del perfil, no como
-                          un ítem de navegación de primer nivel. Solo en
-                          modo cliente: en adminMode esta sección entera no
-                          se renderiza (ver el filtro de "perfil" en
-                          tabsDisponibles). */}
-                      <div className={styles.perfilExtraSection}>
-                        <span className={styles.perfilExtraSectionLabel}>Accesos</span>
-                        <VincularUsuarioSection socioIdActivo={socioIdActivo} />
+                        <section className={styles.perfilCard}>
+                          <header className={styles.perfilCardHeader}>
+                            <h5 className={styles.perfilCardTitle}>Ubicación</h5>
+                          </header>
+                          <dl className={styles.perfilRows}>
+                            <div className={styles.perfilRow}>
+                              <dt className={styles.perfilRowLabel}>Dirección</dt>
+                              <dd className={`${styles.perfilRowValue} ${domicilioCompleto ? "" : styles.perfilVacio}`}>
+                                {domicilioCompleto || "—"}
+                              </dd>
+                            </div>
+                          </dl>
+                        </section>
+
+                        <section className={styles.perfilCard}>
+                          <header className={styles.perfilCardHeader}>
+                            <h5 className={styles.perfilCardTitle}>Datos comerciales</h5>
+                          </header>
+                          <dl className={styles.perfilRows}>
+                            {[
+                              ["Tamaño de empresa", tamanioEmpresaLabel],
+                              ["Situación BCRA", situacionBcraLabel],
+                              ["Canal de comercialización", canalComercializacionLabel],
+                              ["Inicio de actividades", formatFecha(fechaInicioActividades)],
+                              ["Cierre de ejercicio", formatFecha(fechaCierreEjercicio)],
+                            ].map(([label, valor]) => (
+                              <div key={label} className={styles.perfilRow}>
+                                <dt className={styles.perfilRowLabel}>{label}</dt>
+                                <dd className={`${styles.perfilRowValue} ${valor ? "" : styles.perfilVacio}`}>
+                                  {valor || "—"}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </section>
+
                       </div>
+                    </div>
+
+                    {/* "Vincular usuarios" vivía como pestaña propia
+                        (categoría "Accesos"); ahora cuelga de Mi Perfil
+                        como una sección aparte, mismo criterio que
+                        cualquier settings page: la gestión de accesos de
+                        la cuenta vive junto al resto del perfil, no como
+                        un ítem de navegación de primer nivel. Solo en
+                        modo cliente: en adminMode esta sección entera no
+                        se renderiza (ver el filtro de "perfil" en
+                        tabsDisponibles). */}
+                    <div className={styles.perfilExtraSection}>
+                      <span className={styles.perfilExtraSectionLabel}>Accesos</span>
+                      <VincularUsuarioSection socioIdActivo={socioIdActivo} />
                     </div>
                   </div>
                 ) : isUsuarios ? (

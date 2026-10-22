@@ -417,6 +417,13 @@
   gap: 0.85rem;
 }
 
+/* Fila identidad + datos; "Accesos" queda debajo, a todo el ancho. */
+.perfilFila {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
 /* Tarjeta base de todo el panel (identidad y cada bloque de datos). */
 .perfilIdentidad,
 .perfilCard {
@@ -493,7 +500,7 @@
   gap: 0.4rem;
   width: 100%;
   min-height: 2.5rem;
-  margin-top: 0.3rem;
+  margin-top: auto;
   padding: 0 0.9rem;
   border: none;
   border-radius: 0.7rem;
@@ -524,7 +531,7 @@
   flex-direction: column;
   gap: 0.6rem;
   width: 100%;
-  margin: 0.35rem 0 0;
+  margin: 0.35rem 0 0.9rem;
   padding: 0.8rem 0 0;
   border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
   list-style: none;
@@ -665,22 +672,23 @@
   color: var(--text-muted);
 }
 
-/* Escritorio: identidad a la izquierda con ancho fijo. align-self +
-   sticky a propósito: la columna toma su alto natural (nunca se estira al
-   alto de la derecha ni la supera) y queda a la vista al scrollear. */
+/* Escritorio: identidad a la izquierda con ancho fijo y estirada al mismo
+   alto que la columna de datos (align-items: stretch), con "Editar perfil"
+   al pie. */
 @media (min-width: 64rem) {
-  .perfilPanel {
-    flex-direction: row;
-    align-items: flex-start;
+  .perfilPanel,
+  .perfilFila {
     gap: 1rem;
+  }
+
+  .perfilFila {
+    flex-direction: row;
+    align-items: stretch;
   }
 
   .perfilIdentidad {
     flex: 0 0 15.5rem;
     width: 15.5rem;
-    align-self: flex-start;
-    position: sticky;
-    top: 1rem;
     padding: 1.15rem 1rem;
   }
 
@@ -696,6 +704,7 @@
 @media (min-width: 64rem) and (max-width: 1440px),
   (min-width: 64rem) and (max-height: 716px) {
   .perfilPanel,
+  .perfilFila,
   .perfilDetalle {
     gap: 0.75rem;
   }
