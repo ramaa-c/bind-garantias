@@ -51,7 +51,9 @@ export default function Sidebar({ isOpen, onClose }) {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cambiarEmpresaStore = useAuthStore((state) => state.cambiarEmpresa);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
-  const { legajoDesbloqueado, documentacionDesbloqueada } = useAccesoDashboardCliente();
+  const { legajoDesbloqueado, documentacionDesbloqueada, solicitudEnOtraPlataforma } =
+    useAccesoDashboardCliente();
+  const motivoBloqueoOtraPlataforma = "Solicitud en curso en otra plataforma";
   const emailUsuario = typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
   const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
@@ -147,7 +149,9 @@ export default function Sidebar({ isOpen, onClose }) {
       label: "Legajo",
       icono: <FiClipboard />,
       bloqueado: !legajoDesbloqueado,
-      motivoBloqueo: "Requiere una solicitud en curso",
+      motivoBloqueo: solicitudEnOtraPlataforma
+        ? motivoBloqueoOtraPlataforma
+        : "Requiere una solicitud en curso",
       ayuda: "Datos de la empresa y personas",
       novedad: legajoRecienDesbloqueado,
       textoNovedad: "Recién habilitado: completá los datos de tu empresa",
@@ -157,7 +161,9 @@ export default function Sidebar({ isOpen, onClose }) {
       label: "Documentación",
       icono: <FiFolder />,
       bloqueado: !documentacionDesbloqueada,
-      motivoBloqueo: "Requiere el legajo al 100 %",
+      motivoBloqueo: solicitudEnOtraPlataforma
+        ? motivoBloqueoOtraPlataforma
+        : "Requiere el legajo al 100 %",
       ayuda: "Subí la documentación requerida",
       novedad: documentacionRecienDesbloqueada,
       textoNovedad: "Recién habilitada: ya podés subir tu documentación",

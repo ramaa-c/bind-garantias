@@ -20,12 +20,14 @@ import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCui
 import {
   leerSocioPendiente,
   limpiarSocioPendiente,
+  guardarAltaBloqueada,
+  leerAltaBloqueada,
 } from "../../../../utils/altaEmpresaPendiente";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/useChannel";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./AltaDatosEmpresa.module.css";
-import { FiAlertCircle, FiMail } from "react-icons/fi";
+import { FiAlertCircle, FiMail, FiLock, FiLogOut } from "react-icons/fi";
 import { toast } from "sonner";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
@@ -90,6 +92,10 @@ export const AltaDatosEmpresa = () => {
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
   const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
   const user = useAuthStore((state) => state.user);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const [altaBloqueada, setAltaBloqueada] = useState(() =>
+    leerAltaBloqueada(cadenaSlug, user?.email),
+  );
 
   // location.state.socioParaCompletar es lo que manda OnboardingGuard
   // cuando resuelve desde el servidor que el socio ya cruzó el umbral. Si
@@ -515,9 +521,14 @@ export const AltaDatosEmpresa = () => {
           isVendor={isVendor}
           vendorCuit={vendorCuit}
           onValidar={handleValidarCuitSuccess}
-          onSocioExistente={(socioData, reason) =>
-            setSocioExistenteModal({ isOpen: true, socioData, reason })
-          }
+          onSocioExistente={(socioData, reason) => {
+            if (reason === "email_mismatch" && !isVendor) {
+              guardarAltaBloqueada(cadenaSlug, user?.email);
+              setAltaBloqueada(true);
+              return;
+            }
+            setSocioExistenteModal({ isOpen: true, socioData, reason });
+          }}
           onSocioCreado={(id) => setSocioId(Number(id))}
         />
       );
@@ -579,6 +590,62 @@ export const AltaDatosEmpresa = () => {
     cerrarSocioExistente();
     reset();
   };
+
+  const cerrarSesionAltaBloqueada = () => {
+    clearAuth();
+    navigate(`${basePath}/login`);
+  };
+
+  if (altaBloqueada) {
+    return (
+      <div className={styles.pageContainer}>
+        <div className={styles.formMainContainer}>
+          <div className={styles.contentWrapper}>
+            <div className={styles.contenedorPrincipal}>
+              <div className={styles.columnaFormulario}>
+                <section className={styles.bloqueo} aria-labelledby="alta-bloqueada-titulo">
+                  <div className={styles.modalCabecera}>
+                    <span className={`${styles.modalIcono} ${styles.bloqueoIcono}`} aria-hidden="true">
+                      <FiLock />
+                    </span>
+                    <div className={styles.modalCabeceraTexto}>
+                      <span className={`${styles.modalBadge} ${styles.bloqueoBadge}`}>Alta bloqueada</span>
+                      <h1 id="alta-bloqueada-titulo" className={styles.modalTitle}>
+                        No podemos continuar con el alta
+                      </h1>
+                    </div>
+                  </div>
+
+                  <p className={styles.modalText}>
+                    La empresa que ingresaste ya está registrada con otro correo electrónico. Por seguridad, no podemos asociarla a tu cuenta ni seguir con el alta desde acá.
+                  </p>
+
+                  <p className={styles.modalSoporte}>
+                    Si formás parte de esta empresa o creés que se trata de un error, escribinos a{" "}
+                    <a href="mailto:soporte@bind.com.ar" className={styles.linkText}>
+                      soporte@bind.com.ar
+                    </a>{" "}
+                    y te ayudamos a resolverlo.
+                  </p>
+
+                  <div className={styles.modalActions}>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={cerrarSesionAltaBloqueada}
+                      className={styles.modalBoton}
+                    >
+                      <FiLogOut aria-hidden="true" /> Cerrar sesión
+                    </Button>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.pageContainer}>

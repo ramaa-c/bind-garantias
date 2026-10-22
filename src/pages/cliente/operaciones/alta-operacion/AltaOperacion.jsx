@@ -26,6 +26,7 @@ import { cadenaValorService } from "../../../../services/cadenaValorService";
 import { posicionConsolidadaService } from "../../../../services/posicionConsolidadaService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/useChannel";
+import { familiaDeLinea } from "../../../../utils/familiaLinea";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto, useMonedas } from "../../../../hooks/useCatalogos";
@@ -39,7 +40,7 @@ import { PANTALLA_LINEAS } from "../../../../utils/pantallasCda";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 import {
-  TERCERO_VIA_PLATAFORMA_PROPIA,
+  esProcesoDeOtraPlataforma,
   ESTADO_PENDIENTE,
   ESTADO_RECHAZADA,
   ESTADO_CANCELADA,
@@ -111,15 +112,6 @@ export const AltaOperacion = () => {
   // submit corre.
   const { data: tiposLimiteGlobal } = useTiposProducto();
   const { data: monedasCatalogo } = useMonedas();
-  const familiaDeLinea = (tipoLimiteId) => {
-    const item = tiposLimiteGlobal?.raw?.find(
-      (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
-    );
-    const desc = (item?.descripcion || "").toUpperCase();
-    if (desc.includes("CHEQUE")) return "cheque";
-    if (desc.includes("PAGARE")) return "pagare";
-    return "prestamo";
-  };
 
   // Posición consolidada del socio (todas sus líneas, todas las cadenas):
   // fuente del "utilizado" para las reglas de monto por línea (ver más abajo,
@@ -206,9 +198,7 @@ export const AltaOperacion = () => {
         // fila de SolicitudEnProceso apenas deja de estar en Inicial o
         // EnProceso (confirmado el 2026-08-18) — que la fila exista ya
         // implica que sigue activa, sin importar el valor del campo.
-        const tieneSolicitudEnProceso = solicitudesArray.some(
-          (s) => Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA,
-        );
+        const tieneSolicitudEnProceso = solicitudesArray.some(esProcesoDeOtraPlataforma);
 
         if (tieneSolicitudEnProceso) {
           if (isMounted) {
@@ -355,12 +345,9 @@ export const AltaOperacion = () => {
 
   useEffect(() => {
     const familia = lineaSeleccionada
-      ? familiaDeLinea(lineaSeleccionada.tipolimiteid)
+      ? familiaDeLinea(tiposLimiteGlobal, lineaSeleccionada.tipolimiteid)
       : "";
     setValue("familiaProducto", familia);
-    // familiaDeLinea se recalcula cada render a partir de tiposLimiteGlobal,
-    // que sí está en las deps - no hace falta agregar la función en sí.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineaSeleccionada, tiposLimiteGlobal, setValue]);
 
   // Utilizado del socio para esta línea puntual (mismo TipoLimiteID, misma
