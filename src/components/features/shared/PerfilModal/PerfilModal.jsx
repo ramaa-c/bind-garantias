@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useForm, FormProvider, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -125,7 +126,14 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     cuitActivo,
     isLoading: isLoadingEmpresa,
   } = useEmpresaActiva(!isOpen);
-  const hayEmpresa = !!socioIdActivo;
+  // Durante el alta de empresa (paso 1 y paso 2) la empresa todavía no
+  // terminó de darse de alta: mismo criterio que Sidebar/Navbar
+  // (enAltaDatosEmpresa), no se ofrece editar sus datos desde el perfil.
+  // Antes en paso 2 el socio ya existía (socioIdActivo seteado) y aparecía
+  // la pestaña "Datos de la empresa".
+  const location = useLocation();
+  const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
+  const hayEmpresa = !!socioIdActivo && !enAltaDatosEmpresa;
 
   // Un vendor sin empresa activa (ej. abrió "Mi perfil" desde Seleccionar
   // Empresa antes de elegir una) no necesariamente "no tiene empresa
