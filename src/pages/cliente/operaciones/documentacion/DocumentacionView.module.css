@@ -182,3 +182,45 @@
     flex: initial;
   }
 }
+/* ── ESCRITORIO · RANGOS (mismo umbral único que admin y las altas) ──────────
+   Rango 1: la pantalla entra entera en el alto visible (alto fijo debajo del
+   navbar de 4.5rem). El área de trabajo (.formLayout → workspace del
+   legajo) toma todo el alto que queda y scrollea por dentro (su columna de
+   secciones y su visor ya tienen overflow propio), en vez de quedar con
+   un alto mínimo fijo y aire vacío abajo.
+   Rango 2 = (max-width: 1440px) o (max-height: 716px): alto natural, la
+   página scrollea, con un piso razonable para el área de trabajo.
+   En los dos, más ancho que antes (64rem) para aprovechar la pantalla. */
+@media (min-width: 64rem) {
+  .pageContainer {
+    max-width: 92rem;
+    height: calc(100dvh - 4.5rem);
+    margin: 0 auto;
+    padding: 1.25rem 2rem 1.5rem;
+    gap: 0.75rem;
+    box-sizing: border-box;
+  }
+
+  .pageHeader {
+    margin-top: 0;
+  }
+
+  .formLayout {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 64rem) and (max-width: 1440px),
+  (min-width: 64rem) and (max-height: 716px) {
+  .pageContainer {
+    max-width: 80rem;
+    height: auto;
+    padding: 1rem 1.5rem 1.5rem;
+  }
+
+  .formLayout {
+    flex: none;
+    min-height: 34rem;
+  }
+}

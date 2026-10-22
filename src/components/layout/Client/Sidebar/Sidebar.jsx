@@ -21,6 +21,7 @@ import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { useThemeStore } from "../../../../store/useThemeStore";
 import { useSidebarStore } from "../../../../store/useSidebarStore";
 import { useVersionApi } from "../../../../hooks/useSistema";
+import { useSocioWebPorId } from "../../../../hooks/useSocios";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/useChannel";
@@ -168,12 +169,16 @@ export default function Sidebar({ isOpen, onClose }) {
   // bloqueados): a pedido, durante el alta no se adelanta información.
   const empresaOperable = isVinculado && onboardingCompleto;
 
-  // "Tu alta": recorrido de 4 pasos (empresa → solicitud → legajo →
-  // documentación). Se deja de mostrar cuando el legajo está completo (ahí
-  // ya solo queda Documentación, que tiene su propio estado en la nav).
+  // "Tu alta": recorrido de 4 pasos hacia la migración del legajo
+  // (empresa → solicitud → legajo completo → documentación y migración).
+  // Se muestra mientras la empresa no esté migrada: es lo que el socio
+  // tiene que cumplir para llegar ahí. El último paso se da por hecho
+  // con la migración (marcavinculacion, mismo dato que LegajoUniversalBar).
+  const { data: socioWeb } = useSocioWebPorId(empresaOperable ? socioIdActivo : undefined);
+  const migrado = String(socioWeb?.marcavinculacion ?? "") === "1";
   const pasosHechos =
-    1 + (legajoDesbloqueado ? 1 : 0) + (documentacionDesbloqueada ? 1 : 0);
-  const mostrarProgreso = empresaOperable && !documentacionDesbloqueada;
+    1 + (legajoDesbloqueado ? 1 : 0) + (documentacionDesbloqueada ? 1 : 0) + (migrado ? 1 : 0);
+  const mostrarProgreso = empresaOperable && !migrado;
   const CIRCUNFERENCIA_ANILLO = 2 * Math.PI * 15;
 
   const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio vinculado" : "Sin empresa vinculada";
