@@ -743,7 +743,7 @@ export function DocumentosLegajo({
             );
 
             const bloqueDropzone = (
-              <div className={styles.dropzoneContainer}>
+              <div className={`${styles.dropzoneContainer} ${activeFile ? styles.dropzoneContainerCargado : ""}`}>
                 <CargaArchivos
                   title={currentSubTab === "nuevo" ? `Otro archivo de ${doc.title}` : doc.title}
                   formatos={FORMATOS_ARCHIVO.pdf.etiqueta}

@@ -552,6 +552,13 @@
   flex: 1;
 }
 
+/* Con un archivo cargado la tarjeta del archivo es una fila de alto fijo:
+   si el contenedor siguiera estirándose (flex: 1, pensado para la zona
+   vacía) dejaba un hueco grande antes de las fechas/metadatos. */
+.dropzoneContainerCargado {
+  flex: 0 0 auto;
+}
+
 /* ── SOCIOS LIST  ─────────────────────────────────────────── */
 
 .sociosContainer {

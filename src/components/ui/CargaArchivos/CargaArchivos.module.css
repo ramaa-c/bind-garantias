@@ -497,6 +497,7 @@
 }
 
 .zona.cargado {
+  flex: 0 0 auto;
   padding: 0.75rem 0.875rem;
 }
 
