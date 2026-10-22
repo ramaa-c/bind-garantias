@@ -46,10 +46,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.875rem;
-  padding: 0.75rem 0.875rem;
+  padding: 0.625rem 0.75rem;
   border-radius: 0.875rem;
-  background: rgba(var(--overlay-rgb), 0.025);
-  border: 1px solid rgba(var(--overlay-rgb), 0.07);
+  /* Tinte verde de "validado": se nota sin competir con los campos. */
+  background: linear-gradient(90deg, rgba(61, 220, 132, 0.1), rgba(61, 220, 132, 0.02) 60%);
+  border: 1px solid rgba(61, 220, 132, 0.25);
+  box-shadow: inset 3px 0 0 rgba(61, 220, 132, 0.45);
 }
 
 .identidadAvatar {
@@ -61,8 +63,8 @@
   place-items: center;
   font-size: 0.8125rem;
   font-weight: 700;
-  color: var(--color-azul-bind-300);
-  background: rgba(76, 101, 230, 0.18);
+  color: var(--success-green);
+  background: rgba(61, 220, 132, 0.14);
 }
 
 .identidadTexto {
@@ -141,8 +143,8 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  margin: 0.5rem 0 0.125rem;
-  padding-top: 0.875rem;
+  margin: 0;
+  padding-top: 0.5rem;
   border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
   font-size: 0.8125rem;
   font-weight: 700;
