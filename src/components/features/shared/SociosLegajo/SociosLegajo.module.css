@@ -479,8 +479,8 @@
 }
 
 .perfilMeta {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--white-muted) 82%, transparent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -543,7 +543,7 @@
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: var(--white);
 }
 
@@ -575,16 +575,38 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.35rem;
 }
 
+/* Títulos de bloque en el azul de marca (mismo tono que las categorías
+   EMPRESA/LEGAJO del menú) con su ícono en un recuadro: el gris anterior
+   se perdía sobre el fondo oscuro. */
 .perfilCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  color: var(--color-azul-bind-300);
+}
+
+.perfilCardIcono {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  border-radius: 0.45rem;
+  background: rgba(76, 101, 230, 0.16);
+  color: var(--color-azul-bind-300);
+}
+
+[data-theme="light"] .perfilCardTitle,
+[data-theme="light"] .perfilCardIcono {
+  color: var(--color-azul-bind-600);
 }
 
 /* Acción chica de texto (no un botón lleno): la acción principal del
@@ -623,19 +645,21 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.06);
-  font-size: 0.8125rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.07);
+  font-size: 0.875rem;
 }
 
 .perfilRow:last-child {
   border-bottom: none;
 }
 
+/* Etiquetas más claras que --text-muted (pedido de clientes: el gris
+   chico sobre negro costaba leer), sin competir con el valor en negrita. */
 .perfilRowLabel {
   margin: 0;
   flex: 0 1 auto;
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--white-muted) 82%, transparent);
 }
 
 .perfilRowValue {
@@ -658,20 +682,6 @@
    VincularUsuarioSection ya trae su propio fondo/borde/radio, así que
    meterla adentro hubiera sido tarjeta-dentro-de-tarjeta. La etiqueta usa
    el mismo estilo que los títulos de las tarjetas de arriba. */
-.perfilExtraSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.perfilExtraSectionLabel {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-}
-
 /* Escritorio: identidad a la izquierda con ancho fijo y estirada al mismo
    alto que la columna de datos (align-items: stretch), con "Editar perfil"
    al pie. */

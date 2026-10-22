@@ -15,6 +15,10 @@ import {
   FiMail,
   FiPhone,
   FiUserMinus,
+  FiFileText,
+  FiMapPin,
+  FiBriefcase,
+  FiUsers,
 } from "react-icons/fi";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
@@ -698,7 +702,10 @@ export function SociosLegajo({
                       <div className={styles.perfilDetalle}>
                         <section className={styles.perfilCard}>
                           <header className={styles.perfilCardHeader}>
-                            <h5 className={styles.perfilCardTitle}>Facturación</h5>
+                            <h5 className={styles.perfilCardTitle}>
+                              <span className={styles.perfilCardIcono} aria-hidden="true"><FiFileText size={13} /></span>
+                              Facturación
+                            </h5>
                             <button
                               type="button"
                               className={styles.perfilEditarLink}
@@ -722,7 +729,10 @@ export function SociosLegajo({
 
                         <section className={styles.perfilCard}>
                           <header className={styles.perfilCardHeader}>
-                            <h5 className={styles.perfilCardTitle}>Ubicación</h5>
+                            <h5 className={styles.perfilCardTitle}>
+                              <span className={styles.perfilCardIcono} aria-hidden="true"><FiMapPin size={13} /></span>
+                              Ubicación
+                            </h5>
                           </header>
                           <dl className={styles.perfilRows}>
                             <div className={styles.perfilRow}>
@@ -736,7 +746,10 @@ export function SociosLegajo({
 
                         <section className={styles.perfilCard}>
                           <header className={styles.perfilCardHeader}>
-                            <h5 className={styles.perfilCardTitle}>Datos comerciales</h5>
+                            <h5 className={styles.perfilCardTitle}>
+                              <span className={styles.perfilCardIcono} aria-hidden="true"><FiBriefcase size={13} /></span>
+                              Datos comerciales
+                            </h5>
                           </header>
                           <dl className={styles.perfilRows}>
                             {[
@@ -768,10 +781,15 @@ export function SociosLegajo({
                         modo cliente: en adminMode esta sección entera no
                         se renderiza (ver el filtro de "perfil" en
                         tabsDisponibles). */}
-                    <div className={styles.perfilExtraSection}>
-                      <span className={styles.perfilExtraSectionLabel}>Accesos</span>
-                      <VincularUsuarioSection socioIdActivo={socioIdActivo} />
-                    </div>
+                    <section className={styles.perfilCard}>
+                      <header className={styles.perfilCardHeader}>
+                        <h5 className={styles.perfilCardTitle}>
+                          <span className={styles.perfilCardIcono} aria-hidden="true"><FiUsers size={13} /></span>
+                          Accesos
+                        </h5>
+                      </header>
+                      <VincularUsuarioSection socioIdActivo={socioIdActivo} compacto />
+                    </section>
                   </div>
                 ) : isUsuarios ? (
                   <VincularUsuarioSection socioIdActivo={socioIdActivo} />

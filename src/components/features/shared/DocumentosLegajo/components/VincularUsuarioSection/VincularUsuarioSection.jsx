@@ -6,7 +6,10 @@ import { Button } from "../../../../../ui/Button/Button";
 import { sociosService } from "../../../../../../services/sociosService";
 import styles from "../../DocumentosLegajo.module.css";
 
-export function VincularUsuarioSection({ socioIdActivo }) {
+// `compacto`: sin tarjeta ni encabezado propios, para cuando el contenedor
+// ya los pone (tarjeta "Accesos" de Perfil corporativo). El panel admin
+// sigue usando la versión completa como pestaña.
+export function VincularUsuarioSection({ socioIdActivo, compacto = false }) {
   const queryClient = useQueryClient();
   const [emailVincular, setEmailVincular] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -64,6 +67,61 @@ export function VincularUsuarioSection({ socioIdActivo }) {
     }
   };
 
+  const formulario = (
+    <div className={styles.vincularInputWrapper}>
+      <div className={styles.vincularInputGroup}>
+        <div className={styles.vincularInputField}>
+          <FiMail className={styles.vincularInputFieldIcon} size={14} />
+          <input
+            type="email"
+            className={`${styles.vincularInput} ${isAdmin ? styles.vincularInputAdmin : ""} ${emailError ? styles.vincularInputError : ""}`}
+            placeholder="ejemplo@correo.com"
+            value={emailVincular}
+            onChange={(e) => {
+              setEmailVincular(e.target.value);
+              if (emailError) setEmailError("");
+            }}
+            disabled={loadingVinculacion}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleVincularUsuario();
+              }
+            }}
+          />
+        </div>
+        <Button
+          type="button"
+          variant={isAdmin ? "blue" : "primary"}
+          size="sm"
+          onClick={handleVincularUsuario}
+          disabled={loadingVinculacion}
+        >
+          {loadingVinculacion ? "Vinculando..." : "Vincular usuario"}
+        </Button>
+      </div>
+      <div className={styles.errorContainer}>
+        {emailError && (
+          <span className={styles.errorMessage}>
+            <FiAlertCircle size={12} /> {emailError}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
+  if (compacto) {
+    return (
+      <div className={styles.vincularCompacto}>
+        <p className={styles.vincularCompactoTexto}>
+          Sumá a otra persona a esta empresa. Tiene que estar registrada en
+          Bind Garantías.
+        </p>
+        {formulario}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.usuariosContainer}>
       <div className={styles.vincularForm}>
@@ -81,46 +139,7 @@ export function VincularUsuarioSection({ socioIdActivo }) {
           </div>
         </div>
 
-        <div className={styles.vincularInputWrapper}>
-          <div className={styles.vincularInputGroup}>
-            <div className={styles.vincularInputField}>
-              <FiMail className={styles.vincularInputFieldIcon} size={14} />
-              <input
-                type="email"
-                className={`${styles.vincularInput} ${isAdmin ? styles.vincularInputAdmin : ""} ${emailError ? styles.vincularInputError : ""}`}
-                placeholder="ejemplo@correo.com"
-                value={emailVincular}
-                onChange={(e) => {
-                  setEmailVincular(e.target.value);
-                  if (emailError) setEmailError("");
-                }}
-                disabled={loadingVinculacion}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleVincularUsuario();
-                  }
-                }}
-              />
-            </div>
-            <Button
-              type="button"
-              variant={isAdmin ? "blue" : "primary"}
-              size="sm"
-              onClick={handleVincularUsuario}
-              disabled={loadingVinculacion}
-            >
-              {loadingVinculacion ? "Vinculando..." : "Vincular usuario"}
-            </Button>
-          </div>
-          <div className={styles.errorContainer}>
-            {emailError && (
-              <span className={styles.errorMessage}>
-                <FiAlertCircle size={12} /> {emailError}
-              </span>
-            )}
-          </div>
-        </div>
+        {formulario}
       </div>
     </div>
   );

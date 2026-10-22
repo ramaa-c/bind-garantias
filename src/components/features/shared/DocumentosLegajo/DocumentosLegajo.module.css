@@ -2449,3 +2449,34 @@
     flex: 0 0 auto;
   }
 }
+
+/* VincularUsuarioSection `compacto` (tarjeta "Accesos" de Perfil
+   corporativo): sin tarjeta propia, una línea de ayuda y el formulario. El
+   espacio reservado al error solo aparece cuando hay error. */
+.vincularCompacto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.15rem 0 0.75rem;
+}
+
+.vincularCompactoTexto {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--white-muted) 85%, transparent);
+}
+
+.vincularCompacto .vincularInput {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.vincularCompacto .errorContainer {
+  min-height: 0;
+  padding-top: 0;
+}
+
+.vincularCompacto .errorContainer:has(.errorMessage) {
+  padding-top: 0.4rem;
+}
