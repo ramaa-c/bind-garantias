@@ -78,11 +78,13 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
       <div className={styles.empresaCard}>
         <div className={styles.empresaAvatar}>{inicialEmpresa}</div>
         <div className={styles.empresaInfo}>
-          <span className={styles.empresaBadge}>
-            <FiCheckCircle size={11} /> Socio validado
-          </span>
           <h2 className={styles.empresaName}>{razonSocial}</h2>
-          <p className={styles.empresaCuit}>CUIT {cuit || "20-12345678-9"}</p>
+          <p className={styles.empresaCuit}>
+            CUIT {cuit || "20-12345678-9"}
+            <span className={styles.empresaBadge}>
+              <FiCheckCircle size={12} aria-hidden="true" /> Validada
+            </span>
+          </p>
         </div>
         <span
           className={styles.lockedBadge}

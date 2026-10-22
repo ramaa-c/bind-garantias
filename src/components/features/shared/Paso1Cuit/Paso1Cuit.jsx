@@ -716,21 +716,21 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
             <span className={styles.siguienteNum}>01</span>
             <span className={styles.siguienteTexto}>
               <strong>Validamos tu empresa</strong>
-              <span>Consultamos AFIP y BCRA. Toma unos segundos.</span>
+              <span>Verificamos la información de tu empresa.</span>
             </span>
           </li>
           <li className={styles.siguienteItem}>
             <span className={styles.siguienteNum}>02</span>
             <span className={styles.siguienteTexto}>
               <strong>Completás tus datos</strong>
-              <span>Ubicación y un celular para verificar por SMS.</span>
+              <span>Sumás algunos datos de contacto.</span>
             </span>
           </li>
           <li className={styles.siguienteItem}>
             <span className={styles.siguienteNum}>03</span>
             <span className={styles.siguienteTexto}>
               <strong>Entrás a tu legajo</strong>
-              <span>Precargamos accionistas y documentos de LUFE.</span>
+              <span>Seguís el alta desde tu legajo.</span>
             </span>
           </li>
         </ol>

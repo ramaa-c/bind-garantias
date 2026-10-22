@@ -108,6 +108,26 @@
   max-width: 34rem;
 }
 
+/* Paso 2: la cabecera baja de jerarquía para que lo prioritario sea lo que
+   falta completar (las tareas de Paso2Datos), no el título. */
+.headerCompacto {
+  gap: 0.5rem;
+}
+
+.headerCompacto .tituloBienvenida {
+  font-size: 1.5rem;
+}
+
+.headerCompacto .subtituloBienvenida {
+  font-size: 0.9375rem;
+}
+
+@media (min-width: 48rem) {
+  .headerCompacto .tituloBienvenida {
+    font-size: 1.875rem;
+  }
+}
+
 /* ── CONTENIDO DEL PASO ──────────────────────────────────────────────────── */
 
 .seccionFormulario {

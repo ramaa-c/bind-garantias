@@ -493,7 +493,7 @@ export const AltaDatosEmpresa = () => {
         return {
           badge: "Alta de empresa",
           t: "Completá los datos de la empresa",
-          s: "Verificá y completá la información faltante.",
+          s: "Solo faltan estos datos para crear tu legajo.",
         };
       default:
         return { badge: "Alta de empresa", t: "Datos de la empresa", s: "" };
@@ -606,7 +606,9 @@ export const AltaDatosEmpresa = () => {
                 onReiniciar={null}
               />
 
-              <div className={styles.bienvenidaHeader}>
+              <div
+                className={`${styles.bienvenidaHeader} ${pasoActual === 2 ? styles.headerCompacto : ""}`}
+              >
                 {/* La identidad de vendor (usuario/correo/plataforma) se
                     muestra en el Sidebar (ver Sidebar.jsx) — visible ahí
                     durante todo el wizard sin duplicarla acá. */}
