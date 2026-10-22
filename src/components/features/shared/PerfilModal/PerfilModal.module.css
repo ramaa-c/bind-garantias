@@ -1,144 +1,118 @@
-/* ── LAYOUT ───────────────────────────────────────────────────────────────
-   Mobile first (< 48rem): identidad, segmentos y contenido en una sola
-   columna. .content es display:contents acá para que el menú (.nav) se
-   ordene ENTRE la identidad y el panel sin duplicar markup; desde 48rem
-   recupera su caja y pasa a ser la columna derecha del layout. */
+/* ── CABECERA (opción C) ──────────────────────────────────────────────────
+   Sangra hasta los bordes del Modal (padding del body: 1.5rem). El botón
+   de cerrar flotante del Modal queda arriba a la derecha, por eso el
+   padding-right extra. */
 
-.layout {
+.hero {
+  margin: -1.5rem -1.5rem 1.25rem;
+  padding: 1.5rem 3.75rem 0 1.5rem;
+  background: linear-gradient(160deg, rgba(76, 101, 230, 0.18), transparent 70%);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.08);
+}
+
+.heroIdentidad {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.heroAvatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  flex-shrink: 0;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
+}
+
+.heroTextos {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-}
-
-.content {
-  display: contents;
-}
-
-.identityCard {
-  order: 0;
-}
-
-.nav {
-  order: 1;
-}
-
-.panel {
-  order: 2;
-}
-
-.identityCard {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: radial-gradient(circle at 0% 0%, rgba(245, 244, 0, 0.07), var(--bg-elevado) 55%);
-  border: 1px solid rgba(var(--overlay-rgb), 0.07);
-  border-radius: 1rem;
-}
-
-.identityAvatarSize {
-  width: 2.6rem;
-  height: 2.6rem;
-  font-size: 0.875rem;
-  border-radius: 0.8rem;
-}
-
-.identityAvatarUser {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.6rem;
-  height: 2.6rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--badge-amarillo-bg);
-  color: var(--badge-amarillo-text);
-  border: 1px solid var(--badge-amarillo-border);
-  font-size: 1.1rem;
-}
-
-.identityInfo {
-  flex: 1;
+  gap: 0.2rem;
   min-width: 0;
 }
 
-.identityName {
+.heroNombre {
   margin: 0;
-  color: var(--white);
-  font-size: 0.9375rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--white);
+  overflow-wrap: anywhere;
 }
 
-.identityMeta {
-  margin: 0.15rem 0 0 0;
+.heroEmail {
+  margin: 0;
+  font-size: 0.8125rem;
   color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.heroEmpresa {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
   font-size: 0.75rem;
-  white-space: nowrap;
+  font-weight: 600;
+  background: rgba(138, 159, 255, 0.13);
+  color: var(--color-azul-bind-300);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ── MENÚ DE SECCIONES ────────────────────────────────────────────────────
-   Mobile: control segmentado (las secciones como pastillas iguales). */
-
-.nav {
-  display: flex;
-  gap: 0.25rem;
-  padding: 0.25rem;
-  background: var(--bg-elevado);
-  border-radius: 0.75rem;
+[data-theme="light"] .heroEmpresa {
+  color: var(--color-azul-bind-600);
 }
 
-.navItem {
-  flex: 1;
-  min-width: 0;
+/* ── PESTAÑAS SUBRAYADAS ── */
+
+.tabs {
   display: flex;
+  gap: 1.5rem;
+  margin-top: 1.1rem;
+}
+
+.tab {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  min-height: 2.25rem;
-  padding: 0 0.4rem;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 0.6rem;
+  gap: 0.45rem;
+  padding: 0.7rem 0.15rem;
+  border: none;
+  background: none;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: inset 0 -2px 0 transparent;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.navItem:hover {
+.tab:hover {
   color: var(--white);
 }
 
-.navItem:focus-visible {
+.tab:focus-visible {
   outline: 2px solid var(--color-azul-bind-300);
   outline-offset: 2px;
+  border-radius: 0.35rem;
 }
 
-.navItemActive,
-.navItemActive:hover {
-  background: rgba(var(--overlay-rgb), 0.1);
+.tabActiva,
+.tabActiva:hover {
   color: var(--white);
-}
-
-/* En pantallas muy angostas alcanza con el texto; el ícono aparece desde
-   36rem (ver abajo). */
-.navIcon {
-  display: none;
-  flex-shrink: 0;
-  font-size: 0.95rem;
-}
-
-.navLabel {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  box-shadow: inset 0 -2px 0 var(--color-amarillo-bind);
 }
 
 /* ── PANEL ─────────────────────────────────────────────────────────────── */
@@ -150,16 +124,10 @@
   min-width: 0;
 }
 
-.panelHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
 .panelHint {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 
@@ -173,16 +141,131 @@
   border-radius: 1rem;
 }
 
-.formBody {
+.formTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.formTitulo svg {
+  color: var(--color-azul-bind-300);
+}
+
+[data-theme="light"] .formTitulo svg {
+  color: var(--color-azul-bind-600);
+}
+
+/* Nombre de usuario: campo y "Guardar" en la misma fila desde 36rem. */
+.filaInline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.filaInlineCampo {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── CONTRASEÑA (fila de ajuste, opción B) ── */
+
+.ajusteFila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ajusteIcono {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 0.7rem;
+  display: grid;
+  place-items: center;
+  background: rgba(76, 101, 230, 0.16);
+  color: var(--color-azul-bind-300);
+}
+
+.ajusteTextos {
+  flex: 1 1 10rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.ajusteTextos strong {
+  font-size: 0.875rem;
+  color: var(--white);
+}
+
+.passwordGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  padding-top: 0.25rem;
+  animation: abrir 0.2s ease-out;
+}
+
+.passwordCampos {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+  min-width: 0;
 }
 
-.formActions {
+.requisitos {
+  align-self: start;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
 }
+
+.requisitosTitulo {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.passwordAcciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+@keyframes abrir {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .passwordGrid {
+    animation: none;
+  }
+}
+
+/* ── ESTADOS DE CARGA / ERROR ── */
 
 .skeletonStack {
   display: flex;
@@ -221,36 +304,29 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* Opción A: las pestañas segmentadas y la columna única se usan en todos
-   los anchos (el menú lateral se descartó por verse apretado). */
-
-.formTitulo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--white);
-}
-
-.formTitulo svg {
-  color: var(--color-azul-bind-300);
-}
-
-[data-theme="light"] .formTitulo svg {
-  color: var(--color-azul-bind-600);
+/* Mobile first: botones del pie de la contraseña a todo el ancho. */
+.passwordAcciones > * {
+  flex: 1 1 auto;
 }
 
 @media (min-width: 36rem) {
-  .navIcon {
-    display: block;
+  .filaInline {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .passwordAcciones > * {
+    flex: 0 0 auto;
   }
 }
 
+/* Desde 48rem los requisitos van al costado de los campos. */
 @media (min-width: 48rem) {
-  .navItem {
-    min-height: 2.5rem;
-    font-size: 0.875rem;
+  .passwordGrid {
+    grid-template-columns: minmax(0, 1fr) 14rem;
+  }
+
+  .passwordAcciones {
+    grid-column: 1 / -1;
   }
 }

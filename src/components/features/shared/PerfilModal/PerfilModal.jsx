@@ -16,8 +16,7 @@ import {
   FiChevronRight,
   FiAlertCircle,
 } from "react-icons/fi";
-import { FaRegUserCircle } from "react-icons/fa";
-import { Modal, Button, InputSimple, InputPasswordSeguro, Skeleton } from "../../../ui";
+import { Modal, Button, InputSimple, InputPasswordSeguro, RequisitosPassword, Skeleton } from "../../../ui";
 import UbicacionModal from "../UbicacionModal/UbicacionModal";
 import ContactoModal from "../ContactoModal/ContactoModal";
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
@@ -39,11 +38,7 @@ import {
   useActualizarUsuario,
   useCambiarPassword,
 } from "../../../../hooks/useUsuario";
-import {
-  obtenerInicialesEmpresa,
-  obtenerVarianteAvatarEmpresa,
-} from "../../../../utils/empresaAvatar";
-import sidebarStyles from "../../../layout/Client/Sidebar/Sidebar.module.css";
+import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import paso2Styles from "../Paso2Datos/Paso2Datos.module.css";
 import styles from "./PerfilModal.module.css";
 
@@ -117,6 +112,8 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
 
   const [tab, setTab] = useState("empresa");
+  // "Cambiar contraseña" se abre en el lugar (fila de ajustes), cerrada por defecto.
+  const [editandoPassword, setEditandoPassword] = useState(false);
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
   const [modalContactoOpen, setContactoModalOpen] = useState(false);
 
@@ -330,6 +327,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen) {
       resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      setEditandoPassword(false);
     }
   }, [isOpen, resetPasswordForm]);
 
@@ -478,29 +476,40 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       </div>
     ) : null;
 
+  const nombreVisible = denominacionActual || emailUsuario.split("@")[0];
+
+  const cerrarPassword = () => {
+    resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    setEditandoPassword(false);
+  };
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Mi perfil"
-      subtitle={
-        ocultarIdentityCard
-          ? "Gestioná el acceso a tu cuenta."
-          : "Gestioná los datos de tu empresa y el acceso a tu cuenta."
-      }
-      maxWidth="40rem"
-    >
-      {/* Mobile first: identidad, segmentos y contenido apilados. Desde
-          48rem pasa a dos columnas con menú lateral (ver .layout en el
-          CSS) - .content usa display:contents en mobile para que el
-          menú pueda quedar ENTRE la identidad y el contenido sin
-          duplicar el markup. */}
-      <div className={styles.layout}>
-        <div
-          className={styles.nav}
-          role="tablist"
-          aria-label="Secciones de mi perfil"
-        >
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="50rem">
+      {/* Opción C: cabecera con el usuario y la empresa como chip, pestañas
+          subrayadas debajo. Sin título del Modal: la cabecera hace de
+          título y el botón de cerrar flota arriba a la derecha. */}
+      <div className={styles.hero}>
+        <div className={styles.heroIdentidad}>
+          <span className={styles.heroAvatar} aria-hidden="true">
+            {obtenerInicialesEmpresa(nombreVisible)}
+          </span>
+          <div className={styles.heroTextos}>
+            <h2 className={styles.heroNombre}>{nombreVisible}</h2>
+            <p className={styles.heroEmail}>{emailUsuario}</p>
+            {hayEmpresa ? (
+              <span className={styles.heroEmpresa}>
+                <FiBriefcase aria-hidden="true" /> {nombreEmpresa}
+                {cuitActivo ? ` · CUIT ${cuitActivo}` : ""}
+              </span>
+            ) : (
+              !ocultarIdentityCard && (
+                <span className={styles.heroEmpresa}>Sin empresa vinculada</span>
+              )
+            )}
+          </div>
+        </div>
+
+        <div className={styles.tabs} role="tablist" aria-label="Secciones de mi perfil">
           {secciones.map((seccion, index) => {
             const Icono = seccion.icon;
             const activa = seccion.key === seccionActiva.key;
@@ -516,168 +525,142 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                 aria-selected={activa}
                 aria-controls="perfil-panel"
                 tabIndex={activa ? 0 : -1}
-                title={seccion.label}
-                className={`${styles.navItem} ${activa ? styles.navItemActive : ""}`}
+                className={`${styles.tab} ${activa ? styles.tabActiva : ""}`}
                 onClick={() => setTab(seccion.key)}
                 onKeyDown={(e) => handleTabKeyDown(e, index)}
               >
-                <Icono className={styles.navIcon} aria-hidden="true" />
-                <span className={styles.navLabel}>{seccion.label}</span>
+                <Icono aria-hidden="true" />
+                {seccion.label}
               </button>
             );
           })}
         </div>
+      </div>
 
-        <div className={styles.content}>
-          {!ocultarIdentityCard && (
-            <div className={styles.identityCard}>
-              {hayEmpresa ? (
-                <div
-                  className={`${sidebarStyles.companyAvatar} ${sidebarStyles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa || "")}`]} ${styles.identityAvatarSize}`}
-                >
-                  {obtenerInicialesEmpresa(nombreEmpresa || "")}
-                </div>
-              ) : (
-                <div className={styles.identityAvatarUser}>
-                  <FaRegUserCircle />
-                </div>
-              )}
-              <div className={styles.identityInfo}>
-                <p className={styles.identityName}>
-                  {hayEmpresa ? nombreEmpresa : emailUsuario}
-                </p>
-                <p className={styles.identityMeta}>
-                  {hayEmpresa ? `CUIT ${cuitActivo} · ${emailUsuario}` : "Sin empresa vinculada"}
-                </p>
-              </div>
-            </div>
-          )}
+      <section
+        id="perfil-panel"
+        role="tabpanel"
+        aria-labelledby={`perfil-tab-${seccionActiva.key}`}
+        className={styles.panel}
+      >
+        <p className={styles.panelHint}>{seccionActiva.hint}</p>
 
-          <section
-            id="perfil-panel"
-            role="tabpanel"
-            aria-labelledby={`perfil-tab-${seccionActiva.key}`}
-            className={styles.panel}
-          >
-            <header className={styles.panelHeader}>
-              <p className={styles.panelHint}>{seccionActiva.hint}</p>
-            </header>
-
-            {seccionActiva.key === "empresa" &&
-              (isLoadingEmpresa || isPendingSocioWeb ? (
-                <div className={styles.skeletonStack}>
-                  {Array.from({ length: 2 }).map((_, i) => (
-                    <Skeleton key={i} width="100%" height="4.25rem" radius="0.9rem" />
-                  ))}
-                </div>
-              ) : (
-                <FormProvider {...metodosEmpresa}>
-                  <div className={paso2Styles.taskList}>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setUbicacionModalOpen(true);
-                        }
-                      }}
-                      className={`${paso2Styles.taskRow} ${ubicacionOk ? paso2Styles.rowSuccess : ""}`}
-                      onClick={() => setUbicacionModalOpen(true)}
-                    >
-                      <span
-                        className={`${paso2Styles.taskIcon} ${ubicacionOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
-                      >
-                        {ubicacionOk ? <FiCheckCircle size={17} /> : <FiMapPin size={17} />}
-                      </span>
-                      <div className={paso2Styles.taskInfo}>
-                        <strong className={paso2Styles.taskTitle}>Datos de ubicación</strong>
-                        <span className={paso2Styles.taskSub}>
-                          {ubicacionOk && direccion
-                            ? `${direccion}${localidadTexto ? `, ${localidadTexto}` : ""}`
-                            : "Dirección, provincia y localidad"}
-                        </span>
-                      </div>
-                      <span
-                        className={`${paso2Styles.taskAction} ${ubicacionOk ? paso2Styles.taskActionEdit : ""}`}
-                      >
-                        {ubicacionOk ? (
-                          <>
-                            <FiEdit2 size={12} /> Modificar
-                          </>
-                        ) : (
-                          <>
-                            Completar <FiChevronRight size={13} />
-                          </>
-                        )}
-                      </span>
-                    </div>
-
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setContactoModalOpen(true);
-                        }
-                      }}
-                      className={`${paso2Styles.taskRow} ${contactoOk ? paso2Styles.rowSuccess : ""}`}
-                      onClick={() => setContactoModalOpen(true)}
-                    >
-                      <span
-                        className={`${paso2Styles.taskIcon} ${contactoOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
-                      >
-                        {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
-                      </span>
-                      <div className={paso2Styles.taskInfo}>
-                        <strong className={paso2Styles.taskTitle}>Verificación de contacto</strong>
-                        <span className={paso2Styles.taskSub}>
-                          {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
-                        </span>
-                      </div>
-                      <span
-                        className={`${paso2Styles.taskAction} ${contactoOk ? paso2Styles.taskActionEdit : ""}`}
-                      >
-                        {contactoOk ? (
-                          <>
-                            <FiEdit2 size={12} /> Modificar
-                          </>
-                        ) : (
-                          <>
-                            Verificar <FiChevronRight size={13} />
-                          </>
-                        )}
-                      </span>
-                    </div>
+              {seccionActiva.key === "empresa" &&
+                (isLoadingEmpresa || isPendingSocioWeb ? (
+                  <div className={styles.skeletonStack}>
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <Skeleton key={i} width="100%" height="4.25rem" radius="0.9rem" />
+                    ))}
                   </div>
+                ) : (
+                  <FormProvider {...metodosEmpresa}>
+                    <div className={paso2Styles.taskList}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setUbicacionModalOpen(true);
+                          }
+                        }}
+                        className={`${paso2Styles.taskRow} ${ubicacionOk ? paso2Styles.rowSuccess : ""}`}
+                        onClick={() => setUbicacionModalOpen(true)}
+                      >
+                        <span
+                          className={`${paso2Styles.taskIcon} ${ubicacionOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
+                        >
+                          {ubicacionOk ? <FiCheckCircle size={17} /> : <FiMapPin size={17} />}
+                        </span>
+                        <div className={paso2Styles.taskInfo}>
+                          <strong className={paso2Styles.taskTitle}>Datos de ubicación</strong>
+                          <span className={paso2Styles.taskSub}>
+                            {ubicacionOk && direccion
+                              ? `${direccion}${localidadTexto ? `, ${localidadTexto}` : ""}`
+                              : "Dirección, provincia y localidad"}
+                          </span>
+                        </div>
+                        <span
+                          className={`${paso2Styles.taskAction} ${ubicacionOk ? paso2Styles.taskActionEdit : ""}`}
+                        >
+                          {ubicacionOk ? (
+                            <>
+                              <FiEdit2 size={12} /> Modificar
+                            </>
+                          ) : (
+                            <>
+                              Completar <FiChevronRight size={13} />
+                            </>
+                          )}
+                        </span>
+                      </div>
 
-                  <UbicacionModal
-                    isOpen={modalUbicacionOpen}
-                    onClose={() => setUbicacionModalOpen(false)}
-                    onGuardar={handleGuardarUbicacion}
-                    bloquearSinCambios
-                  />
-                  <ContactoModal
-                    isOpen={modalContactoOpen}
-                    onClose={() => setContactoModalOpen(false)}
-                    onGuardar={handleGuardarContacto}
-                  />
-                </FormProvider>
-              ))}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setContactoModalOpen(true);
+                          }
+                        }}
+                        className={`${paso2Styles.taskRow} ${contactoOk ? paso2Styles.rowSuccess : ""}`}
+                        onClick={() => setContactoModalOpen(true)}
+                      >
+                        <span
+                          className={`${paso2Styles.taskIcon} ${contactoOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
+                        >
+                          {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
+                        </span>
+                        <div className={paso2Styles.taskInfo}>
+                          <strong className={paso2Styles.taskTitle}>Verificación de contacto</strong>
+                          <span className={paso2Styles.taskSub}>
+                            {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
+                          </span>
+                        </div>
+                        <span
+                          className={`${paso2Styles.taskAction} ${contactoOk ? paso2Styles.taskActionEdit : ""}`}
+                        >
+                          {contactoOk ? (
+                            <>
+                              <FiEdit2 size={12} /> Modificar
+                            </>
+                          ) : (
+                            <>
+                              Verificar <FiChevronRight size={13} />
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </div>
 
-            {seccionActiva.key === "cuenta" &&
-              (renderEstadoUsuario(["6rem", "14rem"]) || (
-                <>
-                <form
-                  className={styles.formCard}
-                  onSubmit={handleUsernameSubmit(onSubmitUsername)}
-                  noValidate
-                >
-                  <h4 className={styles.formTitulo}>
-                    <FiUser aria-hidden="true" /> Nombre de usuario
-                  </h4>
-                  <div className={styles.formBody}>
+                    <UbicacionModal
+                      isOpen={modalUbicacionOpen}
+                      onClose={() => setUbicacionModalOpen(false)}
+                      onGuardar={handleGuardarUbicacion}
+                      bloquearSinCambios
+                    />
+                    <ContactoModal
+                      isOpen={modalContactoOpen}
+                      onClose={() => setContactoModalOpen(false)}
+                      onGuardar={handleGuardarContacto}
+                    />
+                  </FormProvider>
+                ))}
+
+        {seccionActiva.key === "cuenta" &&
+          (renderEstadoUsuario(["5.5rem", "5rem"]) || (
+            <>
+              <form
+                className={styles.formCard}
+                onSubmit={handleUsernameSubmit(onSubmitUsername)}
+                noValidate
+              >
+                <h4 className={styles.formTitulo}>
+                  <FiUser aria-hidden="true" /> Nombre de usuario
+                </h4>
+                <div className={styles.filaInline}>
+                  <div className={styles.filaInlineCampo}>
                     <InputSimple
                       name="denominacion"
                       control={usernameControl}
@@ -687,84 +670,118 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                       disabled={actualizarUsuarioMutation.isPending}
                     />
                   </div>
-                  <div className={styles.formActions}>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      isLoading={actualizarUsuarioMutation.isPending}
-                      disabled={!usernameIsDirty}
-                    >
-                      Guardar nombre
-                    </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    isLoading={actualizarUsuarioMutation.isPending}
+                    disabled={!usernameIsDirty}
+                  >
+                    Guardar
+                  </Button>
+                </div>
+              </form>
+
+              {/* Opción B: fila de ajuste con el valor oculto; "Cambiar
+                  contraseña" abre los campos en el lugar, con los
+                  requisitos al costado para aprovechar el ancho. */}
+              <div className={styles.formCard}>
+                <div className={styles.ajusteFila}>
+                  <span className={styles.ajusteIcono} aria-hidden="true">
+                    <FiLock />
+                  </span>
+                  <div className={styles.ajusteTextos}>
+                    <strong>Contraseña</strong>
+                    <span>
+                      {editandoPassword
+                        ? "Usá una contraseña que no uses en otros sitios."
+                        : "••••••••"}
+                    </span>
                   </div>
-                </form>
+                  {!editandoPassword && (
+                    <Button variant="outline" size="sm" onClick={() => setEditandoPassword(true)}>
+                      Cambiar contraseña
+                    </Button>
+                  )}
+                </div>
 
-                <form
-                  className={styles.formCard}
-                  onSubmit={handlePasswordSubmit(onSubmitPassword)}
-                  noValidate
-                >
-                  <h4 className={styles.formTitulo}>
-                    <FiLock aria-hidden="true" /> Contraseña
-                  </h4>
-                  <div className={styles.formBody}>
-                    <InputSimple
-                      name="oldPassword"
-                      control={passwordControl}
-                      label="Contraseña actual"
-                      type="password"
-                      variant="client"
-                      error={passwordErrors.oldPassword}
-                      disabled={cambiarPasswordMutation.isPending}
-                    />
-
-                    <Controller
-                      name="newPassword"
-                      control={passwordControl}
-                      render={({ field }) => (
-                        <InputPasswordSeguro
-                          {...field}
-                          label="Nueva contraseña"
-                          currentValue={newPasswordValue}
-                          email={emailUsuario}
-                          esValido={!passwordErrors.newPassword && !!newPasswordValue}
+                {editandoPassword && (
+                  <form
+                    className={styles.passwordGrid}
+                    onSubmit={handlePasswordSubmit(onSubmitPassword)}
+                    noValidate
+                  >
+                    <div className={styles.passwordCampos}>
+                        <InputSimple
+                          name="oldPassword"
+                          control={passwordControl}
+                          label="Contraseña actual"
+                          type="password"
+                          variant="client"
+                          error={passwordErrors.oldPassword}
                           disabled={cambiarPasswordMutation.isPending}
                         />
-                      )}
-                    />
 
-                    <InputSimple
-                      name="confirmPassword"
-                      control={passwordControl}
-                      label="Confirmar nueva contraseña"
-                      type="password"
-                      variant="client"
-                      esValido={
-                        !!confirmPasswordValue &&
-                        newPasswordValue === confirmPasswordValue &&
-                        !passwordErrors.confirmPassword
-                      }
-                      error={passwordErrors.confirmPassword}
-                      disabled={cambiarPasswordMutation.isPending}
-                    />
-                  </div>
+                        <Controller
+                          name="newPassword"
+                          control={passwordControl}
+                          render={({ field }) => (
+                            <InputPasswordSeguro
+                              {...field}
+                              label="Nueva contraseña"
+                              currentValue={newPasswordValue}
+                              email={emailUsuario}
+                          ocultarRequisitos
+                              esValido={!passwordErrors.newPassword && !!newPasswordValue}
+                              disabled={cambiarPasswordMutation.isPending}
+                            />
+                          )}
+                        />
 
-                  <div className={styles.formActions}>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      isLoading={cambiarPasswordMutation.isPending}
-                      disabled={!isPasswordValid}
-                    >
-                      Actualizar contraseña
-                    </Button>
-                  </div>
-                </form>
-                </>
-              ))}
-          </section>
-        </div>
-      </div>
+                        <InputSimple
+                          name="confirmPassword"
+                          control={passwordControl}
+                          label="Confirmar nueva contraseña"
+                          type="password"
+                          variant="client"
+                          esValido={
+                            !!confirmPasswordValue &&
+                            newPasswordValue === confirmPasswordValue &&
+                            !passwordErrors.confirmPassword
+                          }
+                          error={passwordErrors.confirmPassword}
+                          disabled={cambiarPasswordMutation.isPending}
+                        />
+                    </div>
+
+                    <aside className={styles.requisitos}>
+                      <span className={styles.requisitosTitulo}>Tu contraseña necesita</span>
+                      <RequisitosPassword valor={newPasswordValue} />
+                    </aside>
+
+                    <div className={styles.passwordAcciones}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={cerrarPassword}
+                        disabled={cambiarPasswordMutation.isPending}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        isLoading={cambiarPasswordMutation.isPending}
+                        disabled={!isPasswordValid}
+                      >
+                        Actualizar contraseña
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </>
+          ))}
+      </section>
 
       <div className={styles.modalFoot}>
         <Button variant="outline" onClick={onClose}>

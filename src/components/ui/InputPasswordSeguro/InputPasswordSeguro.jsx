@@ -7,7 +7,7 @@ import {
 } from "../../../utils/PasswordSeguro";
 import styles from "./InputPasswordSeguro.module.css";
 
-const REQUIREMENTS = [
+const REQUISITOS_PASSWORD = [
   { id: "length", label: "12 caracteres mínimo", test: (v) => v.length >= 12 },
   { id: "upper", label: "Una letra mayúscula", test: (v) => /[A-Z]/.test(v) },
   { id: "lower", label: "Una letra minúscula", test: (v) => /[a-z]/.test(v) },
@@ -18,6 +18,36 @@ const REQUIREMENTS = [
     test: (v) => /[!_.*@#$%^&()\-+]/.test(v),
   },
 ];
+
+// Lista de requisitos con su tilde en vivo. La usa InputPasswordSeguro debajo
+// del campo, y se puede mostrar sola cuando el diseño la pone en otro lado.
+export function RequisitosPassword({ valor = "", className = "" }) {
+  return (
+    <div
+      className={`${styles.requirements} ${className}`}
+      aria-live="polite"
+      aria-label="Requisitos de contraseña"
+    >
+      {REQUISITOS_PASSWORD.map((req) => {
+        const met = req.test(valor);
+        const active = !met && valor.length > 0;
+        return (
+          <div
+            key={req.id}
+            className={`${styles.reqItem} ${met ? styles.reqMet : ""} ${
+              active ? styles.reqActive : ""
+            }`}
+          >
+            <span className={styles.reqIcon} aria-hidden="true">
+              <FaCheck size={8} />
+            </span>
+            <span className={styles.reqText}>{req.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export const InputPasswordSeguro = React.forwardRef(
   (
@@ -30,6 +60,9 @@ export const InputPasswordSeguro = React.forwardRef(
       theme = "yellow",
       id,
       value,
+      // Para pantallas que muestran los requisitos aparte (ver
+      // RequisitosPassword), p. ej. al costado del formulario en Mi perfil.
+      ocultarRequisitos = false,
       ...props
     },
     ref,
@@ -47,8 +80,8 @@ export const InputPasswordSeguro = React.forwardRef(
       if (!pass) return { width: "0%", color: "transparent" };
 
       const scoreZxcvbn = getPasswordScore(pass, email);
-      const metCount = REQUIREMENTS.filter((r) => r.test(pass)).length;
-      const allMet = metCount === REQUIREMENTS.length;
+      const metCount = REQUISITOS_PASSWORD.filter((r) => r.test(pass)).length;
+      const allMet = metCount === REQUISITOS_PASSWORD.length;
 
       if (allMet) {
         if (scoreZxcvbn < 3) {
@@ -57,7 +90,7 @@ export const InputPasswordSeguro = React.forwardRef(
         return { width: "100%", color: "var(--success-green, #3ddc84)" };
       }
 
-      const pct = (metCount / REQUIREMENTS.length) * 100;
+      const pct = (metCount / REQUISITOS_PASSWORD.length) * 100;
       if (metCount <= 1)
         return { width: `${Math.max(pct, 20)}%`, color: "var(--danger-bright)" };
       if (metCount <= 2) return { width: `${pct}%`, color: "#ffb142" };
@@ -75,7 +108,7 @@ export const InputPasswordSeguro = React.forwardRef(
       >
         <div
           className={`${styles.inputWrapper} ${
-            currentValue && REQUIREMENTS.every((r) => r.test(currentValue))
+            currentValue && REQUISITOS_PASSWORD.every((r) => r.test(currentValue))
               ? styles.isValid
               : ""
           }`}
@@ -120,30 +153,7 @@ export const InputPasswordSeguro = React.forwardRef(
           </div>
         </div>
 
-        {/* ── REQUIREMENTS LIST ── */}
-        <div
-          className={styles.requirements}
-          aria-live="polite"
-          aria-label="Requisitos de contraseña"
-        >
-          {REQUIREMENTS.map((req) => {
-            const met = req.test(currentValue);
-            const active = !met && currentValue.length > 0;
-            return (
-              <div
-                key={req.id}
-                className={`${styles.reqItem} ${met ? styles.reqMet : ""} ${
-                  active ? styles.reqActive : ""
-                }`}
-              >
-                <span className={styles.reqIcon} aria-hidden="true">
-                  <FaCheck size={8} />
-                </span>
-                <span className={styles.reqText}>{req.label}</span>
-              </div>
-            );
-          })}
-        </div>
+        {!ocultarRequisitos && <RequisitosPassword valor={currentValue} />}
       </div>
     );
   },
