@@ -1,0 +1,102 @@
+/* Ancla sticky de alto 0 al pie del área visible del contenedor. */
+.ancla {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  height: 0;
+  flex-shrink: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.visible {
+  opacity: 1;
+}
+
+/* Degradé que sugiere que el contenido sigue: se funde con el fondo del
+   contenedor (--indicador-fondo, por defecto el de la página). */
+.degrade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3.5rem;
+  background: linear-gradient(transparent, var(--indicador-fondo, var(--bg-primario)));
+}
+
+.pildora {
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 244, 0, 0.45);
+  background: rgba(22, 22, 22, 0.92);
+  color: var(--color-amarillo-bind);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.visible .pildora {
+  pointer-events: auto;
+}
+
+.pildora:hover {
+  background: rgba(40, 40, 30, 0.95);
+}
+
+.pildora:focus-visible {
+  outline: 2px solid var(--color-amarillo-bind);
+  outline-offset: 2px;
+}
+
+.pildoraCompacta {
+  width: 2.25rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.flecha {
+  animation: rebote 1.6s ease-in-out infinite;
+}
+
+@keyframes rebote {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flecha {
+    animation: none;
+  }
+}
+
+[data-theme="light"] .pildora {
+  background: var(--white);
+  color: var(--badge-amarillo-text);
+  border-color: var(--badge-amarillo-border);
+}
+
+@media (max-width: 63.99rem) {
+  .soloEscritorio {
+    display: none;
+  }
+}

@@ -39,6 +39,7 @@ import {
   Spinner,
 } from "../../../ui";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
+import { IndicadorScroll } from "../../../ui/IndicadorScroll/IndicadorScroll";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOperativo";
@@ -118,6 +119,9 @@ export function DocumentosLegajo({
   adminMode = false,
   cadenaIdOverride,
 } = {}) {
+  // Contenedores con scroll propio en escritorio (Rango 1): ver IndicadorScroll.
+  const sidebarScrollRef = useRef(null);
+  const viewerScrollRef = useRef(null);
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
   const { intentoAvanzar } = formValues;
@@ -1108,7 +1112,7 @@ export function DocumentosLegajo({
       {confirmarEliminarArchivoModal}
       {legajoToolbar}
       <div className={`${styles.workspace} ${adminMode ? "" : styles.workspaceCliente}`}>
-        <div className={styles.sidebar}>
+        <div className={`${styles.sidebar} scroll-visible`} ref={sidebarScrollRef}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =
               index === 0 ||
@@ -1177,8 +1181,12 @@ export function DocumentosLegajo({
               </React.Fragment>
             );
           })}
+          <IndicadorScroll contenedorRef={sidebarScrollRef} compacto />
         </div>
-        <div className={styles.viewerContainer}>{renderViewer(activeDoc)}</div>
+        <div className={`${styles.viewerContainer} scroll-visible`} ref={viewerScrollRef}>
+          {renderViewer(activeDoc)}
+          <IndicadorScroll contenedorRef={viewerScrollRef} />
+        </div>
       </div>
       </>
     );

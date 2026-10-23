@@ -318,3 +318,24 @@ input[type="password"]::-ms-clear {
 *:hover::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
+
+/* Contenedores donde el scroll tiene que notarse siempre (pedido de
+   clientes: en Rango 2 no se daban cuenta de que había más contenido): la
+   barra se ve sin necesidad de pasar el mouse y un poco más ancha. Va junto
+   con IndicadorScroll. */
+.scroll-visible {
+  scrollbar-color: var(--scrollbar-thumb) rgba(var(--overlay-rgb), 0.04);
+}
+
+.scroll-visible::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-visible::-webkit-scrollbar-track {
+  background: rgba(var(--overlay-rgb), 0.04);
+  border-radius: 10px;
+}
+
+.scroll-visible::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}

@@ -126,10 +126,15 @@ export function AccionistasSection({
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(accionistas.map((a) => a.id), cadenaValorId);
 
-  // El color se fija con el índice original (antes de ordenar) para que
-  // coincida con el segmento de la barra.
+  // De mayor a menor participación: la barra, la leyenda y la lista siguen
+  // el mismo orden, y el color se fija por esta posición para que cada
+  // tarjeta coincida con su segmento. ordenarPendientesPrimero es estable,
+  // así que dentro de "pendientes" y de "completos" se mantiene este orden.
+  const accionistasPorParticipacion = [...accionistas].sort(
+    (a, b) => (Number(b.participacion) || 0) - (Number(a.participacion) || 0),
+  );
   const entradas = ordenarPendientesPrimero(
-    accionistas.map((socio, i) => ({
+    accionistasPorParticipacion.map((socio, i) => ({
       socio,
       faltantes: calcularFaltantes(socio, archivosBackend),
       cdaRechazado: estadoCdaMap?.get(Number(socio.id)) === "rechazado",
@@ -160,7 +165,7 @@ export function AccionistasSection({
 
           <ParticipacionResumen
             totalParticipacion={totalParticipacion}
-            accionistas={accionistas}
+            accionistas={accionistasPorParticipacion}
           />
 
           {accionistas.length === 0 ? (

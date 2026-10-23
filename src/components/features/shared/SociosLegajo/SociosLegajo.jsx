@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
@@ -33,6 +33,7 @@ import { tercerosService } from "../../../../services/tercerosService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import styles from "./SociosLegajo.module.css";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
+import { IndicadorScroll } from "../../../ui/IndicadorScroll/IndicadorScroll";
 import { PerfilModal } from "../PerfilModal/PerfilModal";
 import FacturacionModal from "../FacturacionModal/FacturacionModal";
 import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSection/AccionistasSection";
@@ -70,6 +71,9 @@ export function SociosLegajo({
   adminMode = false,
   cadenaIdOverride,
 } = {}) {
+  // Contenedores con scroll propio en escritorio (Rango 1): ver IndicadorScroll.
+  const navScrollRef = useRef(null);
+  const viewerScrollRef = useRef(null);
   const empresaActiva = useEmpresaActiva(adminMode);
 
   const { socioIdActivo, tipoPersonaId, nombreEmpresa } = adminMode
@@ -614,8 +618,9 @@ export function SociosLegajo({
           de espacio terminaba comprimiendo toda la columna en vez de
           scrollear (reportado el 2026-09-30). Oculta en mobile (ver el
           mismo comentario del lado del CSS). */}
-      <div className={styles.sidebarNav}>
+      <div className={`${styles.sidebarNav} scroll-visible`} ref={navScrollRef}>
         {tabsDisponibles.map((doc, index) => renderCategoriaYBoton(doc, index))}
+        <IndicadorScroll contenedorRef={navScrollRef} compacto />
       </div>
       {tabsDisponibles.map((doc, index) => {
         const isActive = activeTab === doc.key;
@@ -639,7 +644,7 @@ export function SociosLegajo({
             {renderCategoriaYBoton(doc, index, { inlineOnly: true })}
 
             {isActive && (
-              <section className={styles.viewer}>
+              <section className={`${styles.viewer} scroll-visible`} ref={viewerScrollRef}>
                 {/* La categoría ("Legajo") y el nombre de la pestaña ya se ven
                     resaltados en el botón activo del sidebar, a centímetros de
                     acá: repetirlos como badge + título aparte era puro relleno
@@ -893,6 +898,7 @@ export function SociosLegajo({
                     }
                   />
                 ) : null}
+                <IndicadorScroll contenedorRef={viewerScrollRef} />
               </section>
             )}
           </React.Fragment>
