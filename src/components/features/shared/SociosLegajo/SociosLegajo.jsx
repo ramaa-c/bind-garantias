@@ -620,7 +620,7 @@ export function SociosLegajo({
           mismo comentario del lado del CSS). */}
       <div className={`${styles.sidebarNav} scroll-visible`} ref={navScrollRef}>
         {tabsDisponibles.map((doc, index) => renderCategoriaYBoton(doc, index))}
-        <IndicadorScroll contenedorRef={navScrollRef} compacto />
+        <IndicadorScroll contenedorRef={navScrollRef} />
       </div>
       {tabsDisponibles.map((doc, index) => {
         const isActive = activeTab === doc.key;

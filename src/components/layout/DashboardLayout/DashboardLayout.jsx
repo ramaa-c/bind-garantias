@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FiChevronDown } from "react-icons/fi";
 import Navbar from "../Client/Navbar/Navbar";
 import Sidebar from "../Client/Sidebar/Sidebar";
 import styles from "./DashboardLayout.module.css";
@@ -48,16 +47,6 @@ export default function DashboardLayout({ children, hideHelpButton = false }) {
     };
   }, []);
 
-  const bajar = () => {
-    const columna = columnaRef.current;
-    if (!columna) return;
-    const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    columna.scrollBy({
-      top: columna.clientHeight * 0.75,
-      behavior: reducirMovimiento ? "auto" : "smooth",
-    });
-  };
-
   return (
     <div className={styles.root}>
       <div
@@ -82,20 +71,13 @@ export default function DashboardLayout({ children, hideHelpButton = false }) {
         </div>
 
         <div
+          aria-hidden="true"
           className={`${styles.indicadorScroll} ${hayMasAbajo ? styles.indicadorScrollVisible : ""}`}
         >
+          {/* Solo el degradé: el botón "Más abajo" tapaba contenido; la
+              señal de que hay más es la barra de scroll siempre visible
+              (scroll-visible) más este corte suave del borde inferior. */}
           <span className={styles.indicadorDegrade} aria-hidden="true" />
-          <button
-            type="button"
-            className={styles.indicadorBoton}
-            onClick={bajar}
-            tabIndex={hayMasAbajo ? 0 : -1}
-            aria-hidden={!hayMasAbajo}
-            aria-label="Ver más contenido abajo"
-          >
-            Más abajo
-            <FiChevronDown className={styles.indicadorIcono} aria-hidden="true" />
-          </button>
         </div>
       </div>
     </div>

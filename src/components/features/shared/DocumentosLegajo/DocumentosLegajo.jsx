@@ -1181,7 +1181,7 @@ export function DocumentosLegajo({
               </React.Fragment>
             );
           })}
-          <IndicadorScroll contenedorRef={sidebarScrollRef} compacto />
+          <IndicadorScroll contenedorRef={sidebarScrollRef} />
         </div>
         <div className={`${styles.viewerContainer} scroll-visible`} ref={viewerScrollRef}>
           {renderViewer(activeDoc)}
