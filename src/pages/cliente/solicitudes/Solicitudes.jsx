@@ -6,6 +6,7 @@ import { FiPlus, FiSearch, FiClock, FiX, FiXCircle } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { toast } from "sonner";
 import {
+  Alert,
   BotonVolver,
   Button,
   SelectSimple,
@@ -29,6 +30,9 @@ import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/useChannel";
 import { mensajeNegocio } from "../../../utils/mensajesError";
+import { useTiposProducto } from "../../../hooks/useCatalogos";
+import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
+import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
@@ -36,6 +40,7 @@ import {
   estadoTextoDesde,
   esEstadoEnCurso,
   MOTIVO_CANCELACION_SOCIO,
+  MENSAJE_SOLICITUD_OTRA_PLATAFORMA,
   procesosVigentes,
   procesosHuerfanosPorRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
@@ -163,8 +168,39 @@ export default function Solicitudes() {
     useObtenerLimitesSocio(socioIdFinal);
   const { data: solicitudesEnProceso, isLoading: cargandoProceso } =
     useObtenerSolicitudesEnProceso(cuitActivo);
+  const { data: tiposLimiteGlobal, isLoading: cargandoTiposLimite } = useTiposProducto();
 
-  const isLoadingData = cargandoSolicitudes || cargandoProceso;
+  const isLoadingData = cargandoSolicitudes || cargandoProceso || cargandoTiposLimite;
+
+  const { solicitudEnOtraPlataforma } = useAccesoDashboardCliente();
+  const [modalOtraPlataformaOpen, setModalOtraPlataformaOpen] = useState(false);
+  const [avisoOtraPlataformaCerrado, setAvisoOtraPlataformaCerrado] = useState(false);
+  const claveAvisoOtraPlataforma = `bind_aviso_otra_plataforma_${cuitActivo || ""}`;
+
+  const avisoOtraPlataformaYaVisto = (() => {
+    try {
+      return sessionStorage.getItem(claveAvisoOtraPlataforma) === "1";
+    } catch {
+      return false;
+    }
+  })();
+
+  const mostrarModalOtraPlataforma =
+    modalOtraPlataformaOpen ||
+    (solicitudEnOtraPlataforma &&
+      !!cuitActivo &&
+      !avisoOtraPlataformaCerrado &&
+      !avisoOtraPlataformaYaVisto);
+
+  const cerrarModalOtraPlataforma = () => {
+    try {
+      sessionStorage.setItem(claveAvisoOtraPlataforma, "1");
+    } catch {
+      // no-op
+    }
+    setAvisoOtraPlataformaCerrado(true);
+    setModalOtraPlataformaOpen(false);
+  };
 
   const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
 
@@ -237,7 +273,7 @@ export default function Solicitudes() {
       const tipoLimiteEstadoId = Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE);
       return {
         id: s.tipolimitesocioid?.toString() || "",
-        tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
+        tipo: etiquetaFamiliaDeLinea(tiposLimiteGlobal, s.tipolimiteid),
         monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
         moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
         estado: estadoTextoDesde(tipoLimiteEstadoId),
@@ -249,7 +285,7 @@ export default function Solicitudes() {
         raw: s,
       };
     });
-  }, [solicitudesReal, socioIdFinal, cuitActivo]);
+  }, [solicitudesReal, socioIdFinal, cuitActivo, tiposLimiteGlobal]);
 
   const listaFiltrada = useMemo(() => {
     const texto = (filtros.busqueda || "").trim().toLowerCase();
@@ -352,6 +388,11 @@ export default function Solicitudes() {
     // una solicitud no depende de tener legajo/documentación completos: es
     // justamente el primer paso del flujo, antes de pedirle al cliente más
     // datos que capaz no hacían falta si el CDA de la línea rechaza.
+    if (solicitudEnOtraPlataforma) {
+      setModalOtraPlataformaOpen(true);
+      return;
+    }
+
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
       return;
@@ -433,7 +474,17 @@ export default function Solicitudes() {
 
       {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
-        <LegajoUniversalBar context="solicitudes" />
+        {solicitudEnOtraPlataforma ? (
+          <Alert variant="warning" icon={FiClock} className={styles.avisoOtraPlataforma}>
+            {MENSAJE_SOLICITUD_OTRA_PLATAFORMA} Si necesitás ayuda, escribinos a{" "}
+            <a href="mailto:soporte@bind.com.ar" className={styles.avisoLink}>
+              soporte@bind.com.ar
+            </a>
+            .
+          </Alert>
+        ) : (
+          <LegajoUniversalBar context="solicitudes" />
+        )}
         
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
@@ -578,6 +629,17 @@ export default function Solicitudes() {
         title="Solicitud en proceso"
         description="Ya tenés una solicitud de línea en análisis. Debés esperar a que se valide o cancelarla antes de crear una nueva."
         buttonText="Entendido"
+      />
+
+      <InformativoModal
+        isOpen={mostrarModalOtraPlataforma}
+        onClose={cerrarModalOtraPlataforma}
+        icon={<FiClock />}
+        variant="warning"
+        title="Tenés una solicitud en curso"
+        description={`${MENSAJE_SOLICITUD_OTRA_PLATAFORMA} Si necesitás ayuda, escribinos a soporte@bind.com.ar.`}
+        buttonText="Entendido"
+        maxWidth="30rem"
       />
 
       <InformativoModal

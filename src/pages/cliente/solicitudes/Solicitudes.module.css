@@ -437,3 +437,14 @@
     overflow: visible;
   }
 }
+
+.avisoOtraPlataforma {
+  border-radius: 1rem;
+}
+
+.avisoLink {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

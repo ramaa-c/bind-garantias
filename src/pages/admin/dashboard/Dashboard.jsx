@@ -18,6 +18,7 @@ import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
 import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
+import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
@@ -190,15 +191,8 @@ export default function Dashboard() {
   // global, igual que del lado cliente.
   const { data: tiposLimiteGlobal } = useTiposProducto();
   const familiaDeLinea = useCallback(
-    (tipoLimiteId) => {
-      const item = tiposLimiteGlobal?.raw?.find(
-        (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
-      );
-      const desc = (item?.descripcion || "").toUpperCase();
-      if (desc.includes("CHEQUE")) return "Alta de línea (Cheque)";
-      if (desc.includes("PAGARE")) return "Alta de línea (Pagaré)";
-      return "Alta de línea (Préstamo)";
-    },
+    (tipoLimiteId) =>
+      `Alta de línea (${etiquetaFamiliaDeLinea(tiposLimiteGlobal, tipoLimiteId)})`,
     [tiposLimiteGlobal],
   );
 

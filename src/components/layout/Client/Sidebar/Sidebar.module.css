@@ -337,6 +337,35 @@
   cursor: not-allowed;
 }
 
+.navItemNovedad,
+.navItemNovedad:hover:not(:disabled) {
+  background: rgba(245, 244, 0, 0.06);
+  border-color: rgba(245, 244, 0, 0.28);
+  color: var(--white);
+  animation: novedadRenglon 2.2s ease-in-out infinite;
+}
+
+.navItemNovedad .navIcono,
+.navItemNovedad:hover:not(:disabled) .navIcono {
+  background: var(--badge-amarillo-bg);
+  border-color: var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
+}
+
+@keyframes novedadRenglon {
+  0%,
+  100% {
+    background-color: rgba(245, 244, 0, 0.04);
+    border-color: rgba(245, 244, 0, 0.2);
+    box-shadow: 0 0 0 0 rgba(245, 244, 0, 0);
+  }
+  50% {
+    background-color: rgba(245, 244, 0, 0.12);
+    border-color: rgba(245, 244, 0, 0.5);
+    box-shadow: 0 0 14px 0 rgba(245, 244, 0, 0.18);
+  }
+}
+
 .navItemBloqueado .navLabel,
 .navItemBloqueado .navIcono {
   opacity: 0.55;
@@ -819,5 +848,12 @@
   .novedadDot::before {
     animation: none;
     opacity: 0;
+  }
+
+  .navItemNovedad,
+  .navItemNovedad:hover:not(:disabled) {
+    animation: none;
+    background: rgba(245, 244, 0, 0.1);
+    border-color: rgba(245, 244, 0, 0.45);
   }
 }

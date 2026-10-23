@@ -1,8 +1,8 @@
 /* Tarjeta del estado del legajo: el color de estado (--tone-rgb) tiñe el
    borde, un degradé desde la izquierda y el semicírculo de progreso. */
 .container {
-  --tone-rgb: 255, 193, 7;
-  --tone-color: var(--warning);
+  --tone-rgb: 245, 244, 0;
+  --tone-color: var(--color-amarillo-bind);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -27,8 +27,8 @@
 }
 
 .toneWarning {
-  --tone-rgb: 255, 193, 7;
-  --tone-color: var(--warning);
+  --tone-rgb: 245, 244, 0;
+  --tone-color: var(--color-amarillo-bind);
 }
 
 .toneInfo {

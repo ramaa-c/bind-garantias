@@ -392,6 +392,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   border: 1px solid var(--border-hover);
   color: var(--white-muted);
   font-size: 0.875rem;
@@ -406,7 +407,44 @@
   color: var(--white);
 }
 
+.bloqueo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 36rem;
+  margin: 2rem auto 0;
+  padding: 1.75rem;
+  background: rgba(var(--glass-rgb), 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 1.2rem;
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(var(--overlay-rgb), 0.04);
+}
+
+.bloqueoIcono {
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.28);
+  color: #ff7b72;
+}
+
+.bloqueoBadge {
+  color: #ff7b72;
+}
+
+.bloqueo .modalActions {
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 47.99rem) {
+  .bloqueo {
+    margin-top: 1rem;
+    padding: 1.25rem;
+  }
+
   .modalActions {
     flex-direction: column-reverse;
   }

@@ -34,6 +34,25 @@ export const leerSocioPendiente = (cadenaSlug, email) => {
   }
 };
 
+const claveBloqueo = (cadenaSlug, email) =>
+  `bind:altaEmpresaBloqueada:${cadenaSlug || ""}:${email || ""}`;
+
+export const guardarAltaBloqueada = (cadenaSlug, email) => {
+  try {
+    sessionStorage.setItem(claveBloqueo(cadenaSlug, email), "1");
+  } catch {
+    // no-op
+  }
+};
+
+export const leerAltaBloqueada = (cadenaSlug, email) => {
+  try {
+    return sessionStorage.getItem(claveBloqueo(cadenaSlug, email)) === "1";
+  } catch {
+    return false;
+  }
+};
+
 export const limpiarSocioPendiente = (cadenaSlug, email) => {
   try {
     sessionStorage.removeItem(clave(cadenaSlug, email));

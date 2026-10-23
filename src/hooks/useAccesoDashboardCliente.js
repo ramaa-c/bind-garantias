@@ -8,6 +8,7 @@ import {
   ESTADO_APROBADA,
   esRechazoAutomatico,
   procesosVigentes,
+  procesosDeOtraPlataforma,
 } from "../utils/estadoLimiteSocio";
 
 // Gate central del nuevo flujo "con línea activa": si la cadena tiene
@@ -54,11 +55,16 @@ export const useAccesoDashboardCliente = () => {
     return huboSolicitudLegitima || hayProcesoActivo;
   }, [limitesSocio, solicitudesEnProceso]);
 
-  const legajoDesbloqueado = !hayLineaActiva || tieneSolicitudActiva;
+  const solicitudEnOtraPlataforma =
+    hayLineaActiva && procesosDeOtraPlataforma(solicitudesEnProceso).length > 0;
+
+  const legajoDesbloqueado =
+    !solicitudEnOtraPlataforma && (!hayLineaActiva || tieneSolicitudActiva);
   const documentacionDesbloqueada = legajoDesbloqueado && !faltanLegajo;
 
   return {
     hayLineaActiva,
+    solicitudEnOtraPlataforma,
     legajoDesbloqueado,
     documentacionDesbloqueada,
     cargando:
