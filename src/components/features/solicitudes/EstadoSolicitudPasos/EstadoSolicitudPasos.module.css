@@ -1,0 +1,212 @@
+.pasos {
+  --c-hecho: var(--success-green, #3ddc84);
+  --c-actual: var(--color-amarillo-bind, #f5f400);
+  --c-error: var(--error-red, #ef4444);
+  --c-neutro: var(--text-muted, #8a8f99);
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paso {
+  --c: rgba(var(--overlay-rgb), 0.28);
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.tono_hecho {
+  --c: var(--c-hecho);
+}
+
+.tono_actual {
+  --c: var(--c-actual);
+}
+
+.tono_error {
+  --c: var(--c-error);
+}
+
+.tono_neutro {
+  --c: var(--c-neutro);
+}
+
+.tono_cancelado {
+  --c: color-mix(in srgb, var(--c-error) 80%, transparent);
+}
+
+.tono_cancelado .label {
+  color: #ff8a8a;
+}
+
+.horizontal.cerrada .paso:not(:last-child)::after,
+.vertical.cerrada .paso:not(:last-child)::after {
+  background: color-mix(in srgb, var(--c-error) 55%, transparent);
+}
+
+.marcador {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--c);
+  background: var(--bg-elevado, #1f1f1f);
+  color: var(--c);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.tono_hecho .marcador,
+.tono_error .marcador {
+  background: color-mix(in srgb, var(--c) 16%, var(--bg-elevado, #1f1f1f));
+}
+
+.tono_actual .marcador {
+  background: var(--c);
+  color: #1a1a1a;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent);
+}
+
+.texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.label {
+  color: var(--white, #fffefe);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.tono_pendiente .label {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.tono_actual .label {
+  color: var(--c-actual);
+}
+
+.tono_error .label {
+  color: #ff8a8a;
+}
+
+.ayuda {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+/* Horizontal: pasos en fila unidos por una línea. */
+.horizontal {
+  gap: 0.5rem;
+}
+
+.horizontal .paso {
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.horizontal .paso:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  left: 2rem;
+  right: 0.25rem;
+  height: 1.5px;
+  border-radius: 2px;
+  background: rgba(var(--overlay-rgb), 0.12);
+}
+
+.horizontal .tono_hecho:not(:last-child)::after {
+  background: color-mix(in srgb, var(--c-hecho) 55%, transparent);
+}
+
+.horizontal .ayuda {
+  display: none;
+}
+
+/* Vertical: pasos apilados con la línea a la izquierda. */
+.vertical {
+  flex-direction: column;
+}
+
+.vertical .paso {
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+}
+
+.vertical .paso:last-child {
+  padding-bottom: 0;
+}
+
+.vertical .paso:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 1.75rem;
+  bottom: 0.25rem;
+  left: 0.72rem;
+  width: 1.5px;
+  border-radius: 2px;
+  background: rgba(var(--overlay-rgb), 0.12);
+}
+
+.vertical .tono_hecho:not(:last-child)::after {
+  background: color-mix(in srgb, var(--c-hecho) 55%, transparent);
+}
+
+.vertical .texto {
+  padding-top: 0.15rem;
+}
+
+.vertical .label {
+  font-size: 0.85rem;
+}
+
+.vertical .ayuda {
+  font-size: 0.75rem;
+}
+
+/* En pantallas chicas, en horizontal solo se lee el paso actual. */
+@media (max-width: 47.99rem) {
+  .horizontal .label {
+    display: none;
+  }
+
+  .horizontal:has(> .paso:last-child:is([aria-current="step"], .tono_error, .tono_neutro, .tono_cancelado)) {
+    padding-bottom: 1.35rem;
+  }
+
+  .horizontal .paso:last-child {
+    flex: 0 0 1.5rem;
+    align-items: flex-end;
+  }
+
+  .horizontal .paso:last-child .texto {
+    position: absolute;
+    top: 1.95rem;
+    right: 0;
+    align-items: flex-end;
+  }
+
+  .horizontal .paso:last-child .label {
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .horizontal [aria-current="step"] .label,
+  .horizontal .tono_error .label,
+  .horizontal .tono_neutro .label,
+  .horizontal .tono_cancelado .label {
+    display: block;
+  }
+}

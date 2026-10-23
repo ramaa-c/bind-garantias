@@ -56,6 +56,7 @@ import {
   useEstadoExecuteCda,
 } from "../../../hooks/useCatalogos";
 import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../hooks/useCda";
+import { useObtenerLimitesPorSocio } from "../../../hooks/useLinea";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
@@ -635,6 +636,87 @@ function TercerosTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
 // arregló el bug del INSERT que lo dejaba en 0 — se detecta desde ahí (ver
 // detectarCadenaValorId, arriba en EmpresaDetalle).
 const PANTALLA_EMPRESA = "PANTALLA_INGRESO_CUIT";
+
+const ejecutarGrupoAlta = async (socioId, cadenaValorId) => {
+  try {
+    await cdaService.ejecutarCda(PANTALLA_EMPRESA, { socioId }, cadenaValorId);
+    toast.success("CDAs aprobados", {
+      description: "El grupo completo se evaluó y pasó correctamente.",
+    });
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 406) {
+      const data = error.response?.data;
+      const listTest = data?.listtest ?? data?.ListTest ?? [];
+      const rechazo = listTest.find((t) => (t.result ?? t.Result) === false);
+      const mensaje =
+        (rechazo && (rechazo.mensaje || rechazo.Mensaje)) ||
+        "El grupo de criterios no se cumple.";
+      toast.error("CDAs rechazados", { description: mensaje });
+    } else if (status === 409) {
+      toast.error("Falta un dato requerido para evaluar el grupo.");
+    } else if (status === 400) {
+      toast.error("La cadena no tiene criterios de alta vigentes para evaluar.");
+    } else {
+      toast.error("No se pudo ejecutar el grupo de CDAs.");
+    }
+  }
+};
+
+function EjecutarCriteriosAlta({ socio }) {
+  const queryClient = useQueryClient();
+  const { data: cadenasWeb } = useObtenerTodasWebConEstado();
+  const { data: limitesSocio } = useObtenerLimitesPorSocio(socio?.socioid);
+  const [cadenaElegida, setCadenaElegida] = useState("");
+  const [ejecutando, setEjecutando] = useState(false);
+
+  const opcionesCadena = useMemo(
+    () =>
+      (cadenasWeb || [])
+        .filter((c) => c.activaOperativa)
+        .map((c) => ({
+          value: String(c.cadenavalorid ?? c.CadenaValorID),
+          label: (c.referencia || "").trim() || c.denominacion || `Cadena #${c.cadenavalorid}`,
+        })),
+    [cadenasWeb],
+  );
+
+  const cadenaSugerida = useMemo(() => {
+    const lista = Array.isArray(limitesSocio) ? limitesSocio : [];
+    const id = lista.map((l) => l.cadenavalorid ?? l.CadenaValorID).find(Boolean);
+    return id ? String(id) : "";
+  }, [limitesSocio]);
+
+  const cadena = cadenaElegida || cadenaSugerida;
+
+  const ejecutar = async () => {
+    if (!cadena) return;
+    setEjecutando(true);
+    await ejecutarGrupoAlta(socio.socioid, Number(cadena));
+    setEjecutando(false);
+    queryClient.invalidateQueries({ queryKey: ["socios", "executeCda", socio.socioid] });
+  };
+
+  return (
+    <div className={styles.ejecutarAlta}>
+      <SelectSimple
+        label="Cadena de valor"
+        value={cadena}
+        onChange={setCadenaElegida}
+        options={opcionesCadena}
+        placeholder="Elegí la cadena"
+        hideErrorSpace
+        compact
+        variant="admin"
+        className={styles.ejecutarAltaSelect}
+      />
+      <Button type="button" variant="blue" size="md" onClick={ejecutar} disabled={!cadena || ejecutando}>
+        <FiRefreshCw className={ejecutando ? styles.spinning : ""} />
+        {ejecutando ? "Ejecutando…" : "Ejecutar criterios de alta"}
+      </Button>
+    </div>
+  );
+}
 
 // Mismo patrón que ModoOffline.jsx: UsuarioWebID viaja en cada fila del
 // historial (WSSocioExecuteCda.UsuarioWebID), pero solo trae el ID — hace
@@ -1473,29 +1555,7 @@ function CdasEmpresaPanel({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
 
     setIsReejecutandoGrupo(true);
     try {
-      await cdaService.ejecutarCda(
-        PANTALLA_EMPRESA,
-        { socioId: socio.socioid },
-        cadenaValorId,
-      );
-      toast.success("CDAs aprobados", {
-        description: "El grupo completo se volvió a evaluar y pasó correctamente.",
-      });
-    } catch (error) {
-      const status = error.response?.status;
-      if (status === 406) {
-        const data = error.response?.data;
-        const listTest = data?.listtest ?? data?.ListTest ?? [];
-        const rechazo = listTest.find((t) => (t.result ?? t.Result) === false);
-        const mensaje =
-          (rechazo && (rechazo.mensaje || rechazo.Mensaje)) ||
-          "El grupo de criterios no se cumple.";
-        toast.error("CDAs rechazados", { description: mensaje });
-      } else if (status === 409) {
-        toast.error("Falta un dato requerido para evaluar el grupo.");
-      } else {
-        toast.error("No se pudo re-ejecutar el grupo de CDAs.");
-      }
+      await ejecutarGrupoAlta(socio.socioid, cadenaValorId);
     } finally {
       setIsReejecutandoGrupo(false);
       setConfirmReejecutarGrupoOpen(false);
@@ -1599,7 +1659,11 @@ function CdasEmpresaPanel({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
         <div className={styles.cdasPlaceholder}>
           <FiShield className={styles.cdasPlaceholderIcon} />
           <h3>Sin evaluaciones de alta</h3>
-          <p>Todavía no se ejecutaron los CDAs de alta para esta empresa.</p>
+          <p>
+            Todavía no se ejecutaron los CDAs de alta para esta empresa. Elegí la cadena y ejecutalos
+            para ver el resultado.
+          </p>
+          <EjecutarCriteriosAlta socio={socio} />
         </div>
       </div>
     );

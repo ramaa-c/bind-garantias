@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
-import { FiPlus, FiSearch, FiClock, FiX, FiXCircle } from "react-icons/fi";
+import { FiPlus, FiSearch, FiClock, FiX, FiXCircle, FiSliders, FiChevronDown } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { toast } from "sonner";
 import {
@@ -19,6 +19,7 @@ import {
   DetalleSolicitudModal,
   LegajoUniversalBar,
 } from "../../../components/features";
+import { FilaSolicitudHistorial } from "../../../components/features/solicitudes/FilaSolicitudHistorial/FilaSolicitudHistorial";
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -33,6 +34,7 @@ import { mensajeNegocio } from "../../../utils/mensajesError";
 import { useTiposProducto } from "../../../hooks/useCatalogos";
 import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
 import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
+import { importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
@@ -51,7 +53,6 @@ import styles from "./Solicitudes.module.css";
 
 const opcionesEstado = [
   { value: "todos", label: "Todos los estados" },
-  { value: "pendiente", label: "Pendiente" },
   { value: "aprobada", label: "Aprobada" },
   { value: "rechazada", label: "Rechazada" },
   { value: "cancelada", label: "Cancelada" },
@@ -148,6 +149,14 @@ export default function Solicitudes() {
     !!filtros.fechaHasta;
 
   const handleLimpiarFiltros = () => reset(FILTROS_POR_DEFECTO);
+
+  const [filtrosMovilAbiertos, setFiltrosMovilAbiertos] = useState(false);
+  const cantidadFiltrosActivos = [
+    filtros.estado && filtros.estado !== "todos",
+    filtros.orden && filtros.orden !== "desc",
+    !!filtros.fechaDesde,
+    !!filtros.fechaHasta,
+  ].filter(Boolean).length;
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
@@ -274,8 +283,11 @@ export default function Solicitudes() {
       return {
         id: s.tipolimitesocioid?.toString() || "",
         tipo: etiquetaFamiliaDeLinea(tiposLimiteGlobal, s.tipolimiteid),
-        monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
-        moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
+        lineaNombre:
+          tiposLimiteGlobal?.raw?.find((t) => Number(t.tipolimiteid) === Number(s.tipolimiteid))
+            ?.descripcion || "",
+        monto: new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(s)),
+        moneda: simboloMoneda(s.monedaid),
         estado: estadoTextoDesde(tipoLimiteEstadoId),
         tipoLimiteEstadoId,
         fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
@@ -324,6 +336,36 @@ export default function Solicitudes() {
       return filtros.orden === "asc" ? -diff : diff;
     });
   }, [listaSolicitudes, filtros.busqueda, filtros.estado, filtros.fechaDesde, filtros.fechaHasta, filtros.orden]);
+
+  const solicitudesEnCurso = useMemo(
+    () =>
+      listaSolicitudes
+        .filter((s) => esEstadoEnCurso(s.tipoLimiteEstadoId))
+        .sort((a, b) => idNumerico(b) - idNumerico(a)),
+    [listaSolicitudes],
+  );
+
+  const gruposHistorial = useMemo(() => {
+    const grupos = [];
+    const porClave = new Map();
+    listaFiltrada
+      .filter((s) => !esEstadoEnCurso(s.tipoLimiteEstadoId))
+      .forEach((s) => {
+        const fecha = s.fechaISO ? new Date(s.fechaISO) : null;
+        const valida = fecha && !Number.isNaN(fecha.getTime());
+        const clave = valida ? `${fecha.getFullYear()}-${fecha.getMonth()}` : "sin-fecha";
+        if (!porClave.has(clave)) {
+          const mes = valida
+            ? new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(fecha)
+            : "Sin fecha";
+          const grupo = { clave, titulo: mes.charAt(0).toUpperCase() + mes.slice(1).replace(" de ", " "), items: [] };
+          porClave.set(clave, grupo);
+          grupos.push(grupo);
+        }
+        porClave.get(clave).items.push(s);
+      });
+    return grupos;
+  }, [listaFiltrada]);
 
   const [solicitudACancelar, setSolicitudACancelar] = useState(null);
   const actualizarLimiteMutation = useActualizarLimiteSocio();
@@ -486,113 +528,174 @@ export default function Solicitudes() {
           <LegajoUniversalBar context="solicitudes" />
         )}
         
-        <div className={styles.filterBar}>
-          <div className={styles.searchBox}>
-            <FiSearch className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Buscar por N° de solicitud o CUIT..."
-              className={styles.searchInput}
-              {...register("busqueda")}
-            />
-          </div>
-
-          <div className={styles.filterFieldsRow}>
-            <SelectFechaSimple
-              label="Desde"
-              value={filtros.fechaDesde}
-              onChange={(val) => setValue("fechaDesde", val, { shouldDirty: true })}
-              disableFuture
-              maxDate={fechaHastaDate}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-            <SelectFechaSimple
-              label="Hasta"
-              value={filtros.fechaHasta}
-              onChange={(val) => setValue("fechaHasta", val, { shouldDirty: true })}
-              disableFuture
-              minDate={fechaDesdeDate}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-            <SelectSimple
-              name="estado"
-              control={control}
-              label="Estado"
-              options={opcionesEstado}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-            <SelectSimple
-              name="orden"
-              control={control}
-              label="Orden"
-              options={opcionesOrden}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-          </div>
-
-          <button
-            type="button"
-            className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
-            onClick={handleLimpiarFiltros}
-            disabled={!hayFiltrosActivos}
-            tabIndex={hayFiltrosActivos ? 0 : -1}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros"
-          >
-            <FiX />
-          </button>
-        </div>
         <div className={styles.listContainer}>
           {isLoadingData ? (
             <SkeletonTable rows={3} />
-          ) : listaFiltrada.length > 0 ? (
-            listaFiltrada.map((item) => {
-              // Solo se puede cancelar una solicitud real (ya tiene
-              // TipoLimiteSocio, no un simple borrador en proceso) que
-              // todavía esté pendiente de validación.
-              const puedeCancelar = !!item.raw && esEstadoEnCurso(item.tipoLimiteEstadoId);
-              return (
-                <TarjetaSolicitud
-                  key={item.id}
-                  solicitud={item}
-                  onVerDetalle={setSolicitudSeleccionada}
-                  acciones={
-                    puedeCancelar
-                      ? [
-                          {
-                            label: "Cancelar",
-                            variant: "danger",
-                            onClick: () => setSolicitudACancelar(item),
-                          },
-                        ]
-                      : undefined
-                  }
-                />
-              );
-            })
-          ) : (
+          ) : listaSolicitudes.length === 0 ? (
             <div className={styles.emptyState}>
-              <p>
-                {listaSolicitudes.length > 0
-                  ? "No encontramos solicitudes con esos filtros."
-                  : "No tenés solicitudes activas en este momento."}
-              </p>
+              <p>Todavía no tenés solicitudes. Cargá la primera con "Nueva operación".</p>
             </div>
+          ) : (
+            <>
+              {solicitudesEnCurso.length > 0 && (
+                <section className={styles.seccion} aria-labelledby="solicitudes-en-curso">
+                  <h2 id="solicitudes-en-curso" className={`${styles.seccionTitulo} ${styles.seccionTituloEnCurso}`}>
+                    En curso
+                  </h2>
+                  {solicitudesEnCurso.map((item) => (
+                    <TarjetaSolicitud
+                      key={item.id}
+                      solicitud={item}
+                      onVerDetalle={setSolicitudSeleccionada}
+                      acciones={
+                        item.raw
+                          ? [
+                              {
+                                label: "Cancelar",
+                                variant: "danger",
+                                onClick: () => setSolicitudACancelar(item),
+                              },
+                            ]
+                          : undefined
+                      }
+                    />
+                  ))}
+                </section>
+              )}
+
+              <section className={styles.seccion} aria-labelledby="solicitudes-historial">
+                <div className={styles.historialCabecera}>
+                  <h2 id="solicitudes-historial" className={styles.seccionTitulo}>
+                    Historial
+                  </h2>
+                  <div className={styles.filterBar}>
+                    <div className={styles.searchBox}>
+                      <FiSearch className={styles.searchIcon} />
+                      <input
+                        type="text"
+                        placeholder="Buscar por N° de solicitud o CUIT..."
+                        className={styles.searchInput}
+                        {...register("busqueda")}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      className={`${styles.filtrosToggle} ${filtrosMovilAbiertos ? styles.filtrosToggleActivo : ""}`}
+                      onClick={() => setFiltrosMovilAbiertos((abiertos) => !abiertos)}
+                      aria-expanded={filtrosMovilAbiertos}
+                      aria-controls="solicitudes-filtros"
+                    >
+                      <FiSliders aria-hidden="true" />
+                      Filtros
+                      {cantidadFiltrosActivos > 0 && (
+                        <span className={styles.filtrosBadge}>{cantidadFiltrosActivos}</span>
+                      )}
+                      <FiChevronDown
+                        className={`${styles.filtrosChevron} ${filtrosMovilAbiertos ? styles.filtrosChevronAbierto : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+                      onClick={handleLimpiarFiltros}
+                      disabled={!hayFiltrosActivos}
+                      tabIndex={hayFiltrosActivos ? 0 : -1}
+                      title="Limpiar filtros"
+                      aria-label="Limpiar filtros"
+                    >
+                      <FiX />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="solicitudes-filtros"
+                  className={`${styles.filterFieldsRow} ${filtrosMovilAbiertos ? styles.filterFieldsRowAbierta : ""}`}
+                >
+                  <SelectFechaSimple
+                    label="Desde"
+                    value={filtros.fechaDesde}
+                    onChange={(val) => setValue("fechaDesde", val, { shouldDirty: true })}
+                    disableFuture
+                    maxDate={fechaHastaDate}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                  <SelectFechaSimple
+                    label="Hasta"
+                    value={filtros.fechaHasta}
+                    onChange={(val) => setValue("fechaHasta", val, { shouldDirty: true })}
+                    disableFuture
+                    minDate={fechaDesdeDate}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                  <SelectSimple
+                    name="estado"
+                    control={control}
+                    label="Estado"
+                    options={opcionesEstado}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                  <SelectSimple
+                    name="orden"
+                    control={control}
+                    label="Orden"
+                    options={opcionesOrden}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                </div>
+
+
+                {gruposHistorial.length === 0 ? (
+                  <div className={styles.historialVacio}>
+                    {hayFiltrosActivos
+                      ? "No encontramos solicitudes con esos filtros."
+                      : "Cuando una solicitud se resuelva, la vas a ver acá."}
+                  </div>
+                ) : (
+                  gruposHistorial.map((grupo) => (
+                    <div key={grupo.clave} className={styles.grupoMes}>
+                      <h3 className={styles.mesTitulo}>{grupo.titulo}</h3>
+                      {grupo.items.map((item) => (
+                        <FilaSolicitudHistorial
+                          key={item.id}
+                          solicitud={item}
+                          onVerDetalle={setSolicitudSeleccionada}
+                        />
+                      ))}
+                    </div>
+                  ))
+                )}
+              </section>
+            </>
           )}
         </div>
       </main>
+
+      <div className={styles.nuevaOpMovil} data-cta-fijo>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => handleNuevaOperacion(`${basePath}/alta-operacion`, "draft_alta_operacion")}
+          className={styles.nuevaOpMovilBoton}
+        >
+          <FiPlus /> Nueva operación
+        </Button>
+      </div>
 
       <ConfirmacionBorradorModal
         isOpen={!!flujoPendiente}

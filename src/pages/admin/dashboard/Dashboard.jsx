@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
@@ -19,7 +19,10 @@ import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
 import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
 import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
+import { importeEnPesosDeLimite, importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
+import { SolicitudPanel } from "../../../components/features/admin/SolicitudPanel/SolicitudPanel";
+import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
 import { mensajeNegocio } from "../../../utils/mensajesError";
@@ -70,6 +73,17 @@ const dotYPillClaseDesde = (isAprobada, isRechazada, isCancelada) => {
   if (isRechazada) return "Rechazada";
   if (isCancelada) return "Cancelada";
   return "Pendiente";
+};
+
+const formatearFechaHoraFila = (iso) => {
+  if (!iso) return "—";
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "—";
+  const tieneHora = fecha.getHours() !== 0 || fecha.getMinutes() !== 0;
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "short",
+    ...(tieneHora ? { timeStyle: "short" } : {}),
+  }).format(fecha);
 };
 
 const getIniciales = (denominacion) => {
@@ -135,6 +149,7 @@ export default function Dashboard() {
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
   const [solicitudCda, setSolicitudCda] = useState(null);
   const [solicitudARechazar, setSolicitudARechazar] = useState(null);
+  const [empresaActividad, setEmpresaActividad] = useState(null);
   const [isChainModalOpen, setIsChainModalOpen] = useState(false);
   const { abrir: abrirModeloDocumento, pendienteId: pendienteModeloDocumentoId } = useAbrirModeloDocumento();
   const [chainSearchQuery, setChainSearchQuery] = useState("");
@@ -158,6 +173,23 @@ export default function Dashboard() {
     const map = new Map();
     (todasCadenasConEstado || []).forEach((c) => {
       map.set(String(c.cadenavalorid), c.modelodocumentoid);
+    });
+    return map;
+  }, [todasCadenasConEstado]);
+
+  const cadenaInfoPorId = useMemo(() => {
+    const map = new Map();
+    (todasCadenasConEstado || []).forEach((c) => {
+      const logo = c.logo || c.Logo || "";
+      map.set(String(c.cadenavalorid ?? c.CadenaValorID), {
+        nombre: (c.referencia || c.Referencia || "").trim() || c.denominacion || c.Denominacion || "",
+        nombreCompleto: c.denominacion || c.Denominacion || "",
+        logo: !logo
+          ? ""
+          : logo.startsWith("data:") || logo.startsWith("http")
+            ? logo
+            : `data:image/png;base64,${logo}`,
+      });
     });
     return map;
   }, [todasCadenasConEstado]);
@@ -302,9 +334,13 @@ export default function Dashboard() {
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
       const tipoText = familiaDeLinea(tipoLimiteId);
+      const lineaCatalogo = tiposLimiteGlobal?.raw?.find(
+        (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
+      );
+      const cadenaValorId = l.cadenavalorid || l.CadenaValorID;
 
-      const importeLimite = l.importelimite || l.ImporteLimite;
-      const monedaId = l.monedaid || l.MonedaID;
+      const importeLimite = importeOriginalDeLimite(l);
+      const monedaId = l.monedaid ?? l.MonedaId ?? l.MonedaID;
       const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
       const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
       const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
@@ -316,12 +352,18 @@ export default function Dashboard() {
         monto: importeLimite
           ? new Intl.NumberFormat("es-AR").format(importeLimite)
           : "0",
-        moneda: monedaId === 2 ? "U$D" : "$",
+        moneda: simboloMoneda(monedaId),
+        importePesos: importeEnPesosDeLimite(l),
         cliente: socio?.denominacion || "Socio no encontrado",
         cuit: socio?.cuit || "—",
         usuario: socio?.email || "—",
         socioid: socioId,
-        cadenavalorid: l.cadenavalorid || l.CadenaValorID,
+        cadenavalorid: cadenaValorId,
+        cadenaNombre: cadenaInfoPorId.get(String(cadenaValorId))?.nombre || "",
+        cadenaNombreCompleto: cadenaInfoPorId.get(String(cadenaValorId))?.nombreCompleto || "",
+        cadenaLogo: cadenaInfoPorId.get(String(cadenaValorId))?.logo || "",
+        lineaNombre: lineaCatalogo?.descripcion || "",
+        legajoMigrado: String(socio?.marcavinculacion ?? socio?.MarcaVinculacion ?? "") === "1",
         estado: estadoText,
         accionPendiente: accionText,
         creado: fchVigenciaDesde
@@ -335,7 +377,16 @@ export default function Dashboard() {
         raw: l,
       };
     });
-  }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId, familiaDeLinea]);
+  }, [
+    limitesData,
+    sociosData,
+    isRestricted,
+    restrictedIds,
+    targetCadenaId,
+    familiaDeLinea,
+    tiposLimiteGlobal,
+    cadenaInfoPorId,
+  ]);
 
   // La migración a SGR+ es un paso aparte de la aprobación en TipoLimiteSocio
   // (que ya quedó guardada) — si falla acá, no hay que revertir nada, solo
@@ -591,10 +642,7 @@ export default function Dashboard() {
       return orden === "desc" ? idB - idA : idA - idB;
     });
 
-  const totalMonto = solicitudesCanal.reduce((acc, curr) => {
-    const val = parseFloat(curr.monto.replace(/\./g, "")) || 0;
-    return acc + (curr.moneda === "U$D" ? val * 1500 : val);
-  }, 0);
+  const totalMonto = solicitudesCanal.reduce((acc, curr) => acc + (curr.importePesos || 0), 0);
 
   const totalPendientes = solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length;
   const totalAprobadas = solicitudesCanal.filter((s) => s.estado === "Aprobada").length;
@@ -611,6 +659,29 @@ export default function Dashboard() {
       .filter((s) => Number(s.tipoLimiteEstadoId) === ESTADO_PENDIENTE)
       .map((s) => s.socioid),
   );
+
+  const solicitudDetalleActual = solicitudDetalle
+    ? solicitudesCanal.find((s) => s.id === solicitudDetalle.id) || solicitudDetalle
+    : null;
+  const argumentosDocumentoDetalle = solicitudDetalleActual
+    ? [
+        modeloDocumentoIdPorCadena.get(String(solicitudDetalleActual.cadenavalorid)),
+        parametrosPorModelo.get(
+          Number(modeloDocumentoIdPorCadena.get(String(solicitudDetalleActual.cadenavalorid))),
+        ),
+        apoderadoFirmantePorSocio.get(Number(solicitudDetalleActual.socioid)),
+      ]
+    : [];
+  const modeloDocumentoDetalle =
+    solicitudDetalleActual &&
+    Number(solicitudDetalleActual.tipoLimiteEstadoId) === ESTADO_PENDIENTE
+      ? evaluarModeloDocumento({
+          solicitud: solicitudDetalleActual,
+          modeloDocumentoId: argumentosDocumentoDetalle[0],
+          parametrosCatalogo: argumentosDocumentoDetalle[1],
+          tieneApoderadoFirmante: argumentosDocumentoDetalle[2],
+        })
+      : null;
 
   return (
     <div className={styles.container} ref={contenedorRef}>
@@ -868,7 +939,26 @@ export default function Dashboard() {
                 <div className={styles.rowIdentity}>
                   <span className={styles.rowClientName}>{item.cliente}</span>
                   <span className={styles.rowMeta}>
-                    N°{item.id} · {item.creado} · {item.tipo} · CUIT {item.cuit} · {item.usuario}
+                    N°{item.id} · {item.lineaNombre || item.tipo} · CUIT {item.cuit}
+                  </span>
+                  <span className={styles.rowChips}>
+                    {item.cadenaNombre && (
+                      <span className={styles.rowCadena} title={item.cadenaNombreCompleto || item.cadenaNombre}>
+                        <span className={styles.rowCadenaLogo} aria-hidden="true">
+                          {item.cadenaLogo ? <img src={item.cadenaLogo} alt="" /> : item.cadenaNombre.charAt(0)}
+                        </span>
+                        {item.cadenaNombre}
+                      </span>
+                    )}
+                    <span className={styles.rowChip}>
+                      <FiClock aria-hidden="true" /> Creada {formatearFechaHoraFila(item.creadoISO)}
+                    </span>
+                    <span
+                      className={`${styles.rowChip} ${item.legajoMigrado ? styles.rowChipOk : styles.rowChipPendiente}`}
+                    >
+                      {item.legajoMigrado ? <FiCheck aria-hidden="true" /> : <FiFolder aria-hidden="true" />}
+                      {item.legajoMigrado ? "Legajo migrado a SGR+" : "Legajo en curso"}
+                    </span>
                   </span>
                 </div>
 
@@ -975,108 +1065,31 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Mock Detail Modal */}
-      <Modal
-        isOpen={!!solicitudDetalle}
+      <SolicitudPanel
+        key={solicitudDetalleActual?.id ?? "ninguna"}
+        isOpen={!!solicitudDetalleActual}
         onClose={() => setSolicitudDetalle(null)}
-        title="DETALLE DE SOLICITUD"
-        maxWidth="40rem"
-        variant="blue"
-      >
-        {solicitudDetalle && (
-          <>
-            <div className={styles.modalBodyCustom}>
-              {/* Solicitud Hero Card */}
-              <div className={styles.solicitudHeroCard}>
-                <div className={styles.solicitudAvatar}>
-                  <FiFileText size={20} />
-                </div>
-                <div className={styles.solicitudHeaderDetails}>
-                  <div className={styles.solicitudMeta}>
-                    <span className={styles.solicitudNumber}>SOLICITUD N°{solicitudDetalle.id}</span>
-                    <span className={`${styles.solicitudStatusBadge} ${
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_APROBADA ? styles.badgeAproved :
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_RECHAZADA ? styles.badgeRejected :
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ||
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_VENCIDA ? styles.badgeCancelled :
-                      styles.badgePending
-                    }`}>
-                      {solicitudDetalle.estado}
-                    </span>
-                  </div>
-                  <h3 className={styles.solicitudProduct}>{solicitudDetalle.tipo}</h3>
-                </div>
-                <div className={styles.solicitudAmount}>
-                  <span className={styles.amountLabel}>Monto Solicitado</span>
-                  <strong className={styles.amountValue}>
-                    {solicitudDetalle.moneda || "$"} {solicitudDetalle.monto}
-                  </strong>
-                </div>
-              </div>
+        solicitud={solicitudDetalleActual}
+        soloLectura={isRestricted}
+        pausado={!!solicitudCda || !!solicitudARechazar || !!empresaActividad}
+        modeloDocumento={modeloDocumentoDetalle}
+        cargandoDocumento={pendienteModeloDocumentoId === solicitudDetalleActual?.id}
+        decidiendo={actualizarEstadoMutation.isPending}
+        migrando={migrarLineaMutation.isPending}
+        onAceptar={() => handleAceptar(solicitudDetalleActual)}
+        onRechazar={() => handleRechazar(solicitudDetalleActual)}
+        onMigrar={() => handleReintentarMigracion(solicitudDetalleActual)}
+        onDocumento={() => abrirModeloDocumento(solicitudDetalleActual, ...argumentosDocumentoDetalle)}
+        onVerCriterios={() => setSolicitudCda(solicitudDetalleActual)}
+        onVerActividad={() => setEmpresaActividad(solicitudDetalleActual)}
+      />
 
-              {/* Grid with 2 columns */}
-              <div className={styles.detailsGridSplit}>
-                <div className={styles.detailsBlock}>
-                  <h4 className={styles.detailsBlockTitle}>Datos del Solicitante</h4>
-                  <div className={styles.detailFields}>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Razón Social</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.cliente}</span>
-                    </div>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>CUIT / Identificador</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.cuit}</span>
-                    </div>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Email Operador</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.usuario}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.detailsBlock}>
-                  <h4 className={styles.detailsBlockTitle}>Detalle de la Operación</h4>
-                  <div className={styles.detailFields}>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Línea / Producto</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.tipo}</span>
-                    </div>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Último Hito de Control</span>
-                      <span className={styles.fieldValueHighlight}>{solicitudDetalle.accionPendiente}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom metadata banner */}
-              <div className={styles.trazabilidadBanner}>
-                <div className={styles.trazabilidadItem}>
-                  <span className={styles.trazabilidadLabel}>Carga Inicial:</span>
-                  <span className={styles.trazabilidadValue}>{solicitudDetalle.creado}</span>
-                </div>
-                <div className={styles.trazabilidadItem}>
-                  <span className={styles.trazabilidadLabel}>Última Modificación:</span>
-                  <span className={styles.trazabilidadValue}>{solicitudDetalle.actualizado}</span>
-                </div>
-                <div className={styles.trazabilidadItem}>
-                  <span className={styles.trazabilidadLabel}>Canal Origen:</span>
-                  <span className={styles.trazabilidadValue}>BIND Garantías Portal Web</span>
-                </div>
-              </div>
-            </div>
-            <div className={styles.modalFootCustom}>
-              <Button
-                variant="outlineBlue"
-                size="sm"
-                onClick={() => setSolicitudDetalle(null)}
-              >
-                Cerrar
-              </Button>
-            </div>
-          </>
-        )}
-      </Modal>
+      <ActividadSocioModal
+        isOpen={!!empresaActividad}
+        onClose={() => setEmpresaActividad(null)}
+        cuit={empresaActividad?.cuit}
+        denominacion={empresaActividad?.cliente}
+      />
 
       <CriteriosAceptacionModal
         isOpen={!!solicitudCda}

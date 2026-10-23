@@ -12,7 +12,10 @@ import {
   FiCalendar,
   FiUsers,
   FiAlertCircle,
+  FiActivity,
+  FiServer,
 } from "react-icons/fi";
+import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
 
 const estadoConfig = {
   Cancelada: { color: styles.badgeGrey, label: "Cancelada" },
@@ -295,6 +298,30 @@ export const DetalleSolicitudModal = ({
               </ul>
             </div>
           )}
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionTitle}>
+              <FiActivity size={12} />
+              Estado de tu solicitud
+            </span>
+          </div>
+          <div className={styles.estadoBloque}>
+            <EstadoSolicitudPasos estado={estadoValue} fecha={solicitud.fecha} orientacion="vertical" />
+            <div className={styles.estadoSgr}>
+              <span className={styles.estadoSgrIcono} aria-hidden="true">
+                <FiServer size={14} />
+              </span>
+              <div>
+                <p className={styles.estadoSgrTitulo}>Seguimiento en SGR+</p>
+                <p className={styles.estadoSgrTexto}>
+                  Muy pronto vas a ver acá cada etapa de tu solicitud dentro de BIND Garantías: emisión del
+                  certificado, firma del contrato y activación de la línea.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── ACCIONISTAS / FIADORES ────────────────────────────────────── */}

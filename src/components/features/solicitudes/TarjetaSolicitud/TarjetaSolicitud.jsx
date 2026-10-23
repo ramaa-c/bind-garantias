@@ -1,5 +1,6 @@
 import React from "react";
 import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash } from "react-icons/fi";
+import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
 import styles from "./TarjetaSolicitud.module.css";
 
 const ESTADOS = {
@@ -17,10 +18,6 @@ const getStatusKey = (estado) => {
   return "statusWaiting";
 };
 
-// Fila compacta (opción A): ícono de estado + tipo/estado/N° y fecha, monto
-// a la derecha y acciones al final. Pensada para listas largas (vendors).
-// Toda la tarjeta abre el detalle (como en admin); "Ver detalle" es solo la
-// pista visual en escritorio y en mobile la reemplaza el chevron.
 export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
   const statusKey = getStatusKey(solicitud.estado);
   const StatusIcon = ESTADOS[statusKey].icon;
@@ -66,14 +63,24 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
             {solicitud.estado || "Pendiente"}
           </span>
         </div>
+        {solicitud.lineaNombre && solicitud.lineaNombre !== solicitud.tipo && (
+          <span className={styles.linea}>{solicitud.lineaNombre}</span>
+        )}
         <span className={styles.meta}>
           Solicitud N° {solicitud.id} · {solicitud.fecha || "-"}
         </span>
       </div>
 
       <div className={styles.montoBlock}>
-        <span className={styles.montoMoneda}>{solicitud.moneda || "$"}</span>
-        <span className={styles.montoValue}>{solicitud.monto}</span>
+        <span className={styles.montoLabel}>Monto solicitado</span>
+        <span className={styles.montoFila}>
+          <span className={styles.montoMoneda}>{solicitud.moneda || "$"}</span>
+          <span className={styles.montoValue}>{solicitud.monto}</span>
+        </span>
+      </div>
+
+      <div className={styles.recorrido}>
+        <EstadoSolicitudPasos estado={solicitud.estado} fecha={solicitud.fecha} />
       </div>
 
       <div className={styles.acciones}>

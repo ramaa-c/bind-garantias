@@ -157,7 +157,7 @@
   align-items: center;
   gap: 0.75rem;
   /* Sin contenedor visible: los campos van directo sobre la página. */
-  margin: 1.25rem 0 1rem;
+  margin: 0;
 }
 
 .searchBox {
@@ -215,9 +215,87 @@
 .filterFieldsRow {
   order: 3;
   flex-basis: 100%;
-  display: grid;
+  display: none;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.6rem;
+}
+
+.filterFieldsRowAbierta {
+  display: grid;
+  animation: filtrosAbren 0.2s ease;
+}
+
+.filtrosToggle {
+  order: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  height: 2.5rem;
+  padding: 0 0.8rem;
+  background: rgba(var(--overlay-rgb), 0.035);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  border-radius: 0.7rem;
+  color: var(--white-muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.filtrosToggleActivo {
+  color: var(--white);
+  border-color: rgba(245, 244, 0, 0.35);
+  background: rgba(245, 244, 0, 0.06);
+}
+
+.filtrosToggle:focus-visible {
+  outline: 2px solid var(--color-amarillo-bind);
+  outline-offset: 2px;
+}
+
+.filtrosBadge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind, #1a1a1a);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.filtrosChevron {
+  font-size: 0.95rem;
+  transition: transform 0.2s ease;
+}
+
+.filtrosChevronAbierto {
+  transform: rotate(180deg);
+}
+
+@keyframes filtrosAbren {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filterFieldsRowAbierta {
+    animation: none;
+  }
+
+  .filtrosChevron {
+    transition: none;
+  }
 }
 
 .filterField {
@@ -394,9 +472,7 @@
   }
 
   .filterFieldsRow {
-    flex-basis: auto;
-    grid-template-columns: repeat(4, 7rem);
-    flex-shrink: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .clearFiltersBtn {
@@ -421,6 +497,25 @@
 
   .compactHeader {
     margin-top: 0;
+  }
+}
+
+@media (max-width: 63.99rem) {
+  .pageContainer {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+    padding-bottom: 2rem;
+  }
+
+  .main,
+  .listContainer {
+    flex: none;
+    overflow: visible;
+  }
+
+  .listContainer {
+    gap: 0.75rem;
   }
 }
 
@@ -456,4 +551,94 @@
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.seccionTitulo {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.seccionTituloEnCurso {
+  color: var(--badge-amarillo-text, #f5f400);
+}
+
+.historialCabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.historialCabecera .filterBar {
+  flex: 1;
+}
+
+.grupoMes {
+  display: flex;
+  flex-direction: column;
+}
+
+.mesTitulo {
+  margin: 0.5rem 0 0.15rem;
+  padding: 0 0.5rem;
+  color: var(--white-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.historialVacio {
+  padding: 1.5rem 1rem;
+  border: 1px dashed rgba(var(--overlay-rgb), 0.1);
+  border-radius: 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.nuevaOpMovil {
+  display: none;
+}
+
+@media (max-width: 47.99rem) {
+  .btnNuevaOp {
+    display: none;
+  }
+
+  .nuevaOpMovil {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 5;
+    display: flex;
+    margin-top: 1.5rem;
+  }
+
+  .nuevaOpMovilBoton {
+    width: 100%;
+    min-height: 3rem;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(244, 245, 0, 0.18);
+  }
+}
+
+@media (min-width: 48rem) {
+  .historialCabecera {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .historialCabecera .filterBar {
+    flex: 0 1 30rem;
+    flex-wrap: nowrap;
+  }
 }

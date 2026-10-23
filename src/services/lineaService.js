@@ -58,4 +58,13 @@ export const lineaService = {
             'api/Linea/Migrar',
             lineaAdapter.adaptarPayload6({ tipolimitesocioid: tipoLimiteSocioId }),
         )).data,
+
+    obtenerExecuteCda: async (tipoLimiteSocioId) => {
+        try {
+            return (await api.get('api/Lineas/ExecuteCda', { params: { LineaID: tipoLimiteSocioId } })).data;
+        } catch (error) {
+            if (error.response?.status === 404) return [];
+            throw error;
+        }
+    },
 };

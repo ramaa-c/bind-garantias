@@ -40,7 +40,7 @@ export const useAccesoDashboardCliente = () => {
     useObtenerLimitesSocio(socioIdActivo || 0);
   const { data: solicitudesEnProceso, isLoading: cargandoProceso } =
     useObtenerSolicitudesEnProceso(cuitActivo);
-  const { faltanLegajo, isLoading: cargandoLegajo } = useValidacionLegajo();
+  const { faltanLegajo, faltanDocumentos, isLoading: cargandoLegajo } = useValidacionLegajo();
 
   const tieneSolicitudActiva = useMemo(() => {
     const huboSolicitudLegitima =
@@ -65,6 +65,7 @@ export const useAccesoDashboardCliente = () => {
   return {
     hayLineaActiva,
     solicitudEnOtraPlataforma,
+    faltanDocumentos: !cargandoLegajo && !!faltanDocumentos,
     legajoDesbloqueado,
     documentacionDesbloqueada,
     cargando:

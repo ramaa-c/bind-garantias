@@ -102,3 +102,11 @@ export const useActualizarProductoLimite = () => {
     });
 };
 
+
+export const useHistorialCdaLinea = (tipoLimiteSocioId, enabled = true) => {
+    return useQuery({
+        queryKey: ['linea', 'executeCda', String(tipoLimiteSocioId)],
+        queryFn: () => lineaService.obtenerExecuteCda(tipoLimiteSocioId),
+        enabled: enabled && !!tipoLimiteSocioId,
+    });
+};

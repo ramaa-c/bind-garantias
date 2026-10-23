@@ -656,6 +656,81 @@
   text-overflow: ellipsis;
 }
 
+.rowChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.rowChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 0.4rem;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  color: #8b949e;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rowChip svg {
+  font-size: 0.72rem;
+}
+
+.rowCadena {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 14rem;
+  padding: 0.12rem 0.55rem 0.12rem 0.15rem;
+  border-radius: 0.45rem;
+  background: rgba(76, 101, 230, 0.12);
+  border: 1px solid rgba(76, 101, 230, 0.32);
+  color: #c9d2ff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowCadenaLogo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 0.3rem;
+  background: #ffffff;
+  color: #3b4ed1;
+  font-size: 0.6rem;
+  font-weight: 800;
+  overflow: hidden;
+}
+
+.rowCadenaLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.rowChipOk {
+  background: rgba(61, 220, 132, 0.08);
+  border-color: rgba(61, 220, 132, 0.22);
+  color: var(--success-green, #3ddc84);
+}
+
+.rowChipPendiente {
+  background: rgba(245, 166, 35, 0.08);
+  border-color: rgba(245, 166, 35, 0.22);
+  color: #f5a623;
+}
+
 .rowPill {
   display: inline-flex;
   align-items: center;

@@ -51,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cambiarEmpresaStore = useAuthStore((state) => state.cambiarEmpresa);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
-  const { legajoDesbloqueado, documentacionDesbloqueada, solicitudEnOtraPlataforma } =
+  const { legajoDesbloqueado, documentacionDesbloqueada, solicitudEnOtraPlataforma, faltanDocumentos } =
     useAccesoDashboardCliente();
   const motivoBloqueoOtraPlataforma = "Solicitud en curso en otra plataforma";
   const emailUsuario = typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
@@ -181,11 +181,44 @@ export default function Sidebar({ isOpen, onClose }) {
   // Se muestra mientras la empresa no esté migrada: es lo que el socio
   // tiene que cumplir para llegar ahí. El último paso se da por hecho
   // con la migración (marcavinculacion, mismo dato que LegajoUniversalBar).
-  const { data: socioWeb } = useSocioWebPorId(empresaOperable ? socioIdActivo : undefined);
+  const esperandoRevision = documentacionDesbloqueada && !faltanDocumentos;
+  const { data: socioWeb } = useSocioWebPorId(empresaOperable ? socioIdActivo : undefined, {
+    refetchOnWindowFocus: esperandoRevision ? "always" : false,
+  });
   const migrado = String(socioWeb?.marcavinculacion ?? "") === "1";
   const pasosHechos =
     1 + (legajoDesbloqueado ? 1 : 0) + (documentacionDesbloqueada ? 1 : 0) + (migrado ? 1 : 0);
-  const mostrarProgreso = empresaOperable && !migrado;
+
+  const claveAltaCompleta = `bind_alta_completa_vista_${socioIdActivo}`;
+  const [altaCompletaYaVista] = useState(() => {
+    try {
+      return localStorage.getItem(claveAltaCompleta) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (!migrado || !socioIdActivo) return;
+    try {
+      localStorage.setItem(claveAltaCompleta, "1");
+    } catch {
+      return;
+    }
+  }, [migrado, socioIdActivo, claveAltaCompleta]);
+
+  const altaCompleta = migrado;
+  const mostrarProgreso = empresaOperable && (!migrado || !altaCompletaYaVista);
+  const proximoPaso = altaCompleta
+    ? "¡Alta completa! Tu empresa ya está en SGR+"
+    : !legajoDesbloqueado
+      ? solicitudEnOtraPlataforma
+        ? "Tenés una solicitud en curso en otra plataforma"
+        : "Próximo: cargá una solicitud"
+      : !documentacionDesbloqueada
+        ? "Próximo: completá el legajo"
+        : faltanDocumentos
+          ? "Próximo: subí la documentación"
+          : "En revisión de BIND Garantías";
   const CIRCUNFERENCIA_ANILLO = 2 * Math.PI * 15;
 
   const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio vinculado" : "Sin empresa vinculada";
@@ -240,8 +273,8 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {mostrarProgreso && (
           <div
-            className={styles.progreso}
-            title={`Tu alta: ${pasosHechos} de 4`}
+            className={`${styles.progreso} ${altaCompleta ? styles.progresoCompleto : ""}`}
+            title={`Tu alta: ${pasosHechos} de 4 · ${proximoPaso}`}
           >
             <div className={styles.progresoTexto}>
               <span className={styles.progresoLabel}>Tu alta</span>
@@ -250,6 +283,7 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className={styles.progresoBarra} aria-hidden="true">
               <span style={{ width: `${(pasosHechos / 4) * 100}%` }} />
             </div>
+            <span className={styles.progresoProximo}>{proximoPaso}</span>
             {/* Versión compacta (solo rail de escritorio): anillo. */}
             <svg
               className={styles.progresoAnillo}

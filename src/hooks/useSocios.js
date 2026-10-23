@@ -10,8 +10,7 @@ import { sociosService } from "../services/sociosService";
 import { usuarioService } from "../services/usuarioService";
 import { esSocioVacio } from "../utils/socioUtils";
 import { calcularEstadoDesdeHistorial } from "../utils/executeCda";
-import { esCdaActivo } from "../utils/cdaUtils";
-import { useObtenerGrupoCdaConCdas } from "./useCadenaValor";
+import { idsCdasActivos, useObtenerGrupoCdaConCdas } from "./useCadenaValor";
 import { useEstadoValidarSocio } from "./useSgrPlusCore";
 
 export const useObtenerSocios = (params = {}) => {
@@ -71,13 +70,14 @@ export const useObtenerExecuteCda = (socioId) => {
   });
 };
 
-export const useSocioWebPorId = (socioId) => {
+export const useSocioWebPorId = (socioId, opciones = {}) => {
   return useQuery({
     queryKey: ["sociosWeb", "detalle", socioId],
     queryFn: () => sociosService.obtenerSocioWebPorId(socioId),
     enabled: !!socioId,
     staleTime: 1000 * 60 * 5, // 5 minutos
     placeholderData: keepPreviousData,
+    ...opciones,
   });
 };
 
@@ -197,8 +197,7 @@ export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
     if (estadoHistorial !== null) return estadoHistorial ?? "pendiente";
     if (!necesitaChequearVinculacion) return "pendiente";
     if (isPendingGrupo) return undefined;
-    const cdasActivos = (grupoCdaData?.cdas || []).filter(esCdaActivo);
-    return cdasActivos.length === 0 ? "aprobado" : "pendiente";
+    return idsCdasActivos(grupoCdaData).length === 0 ? "aprobado" : "pendiente";
   }, [socioId, isPending, estadoHistorial, necesitaChequearVinculacion, isPendingGrupo, grupoCdaData]);
 
   return {

@@ -600,6 +600,26 @@
   transition: width 0.4s ease;
 }
 
+.progresoProximo {
+  color: var(--white-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.progresoCompleto .progresoBarra span {
+  background: var(--success-green, #3ddc84);
+}
+
+.progresoCompleto .progresoProximo,
+.progresoCompleto .progresoCuenta {
+  color: var(--success-green, #3ddc84);
+}
+
+.progresoCompleto .anilloValor {
+  stroke: var(--success-green, #3ddc84);
+}
+
 .progresoAnillo {
   display: none;
 }
@@ -772,7 +792,8 @@
   }
 
   .compacto .progresoTexto,
-  .compacto .progresoBarra {
+  .compacto .progresoBarra,
+  .compacto .progresoProximo {
     display: none;
   }
 

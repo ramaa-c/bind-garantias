@@ -87,14 +87,28 @@ export const consultaGrupoCdaConCdas = (cadenaId, pantalla) => ({
         const grupoList = Array.isArray(grupo) ? grupo : grupo?.items || grupo?.data || (grupo ? [grupo] : []);
         const grupoRow = grupoList[0] || null;
         if (!grupoRow?.grupocdaid) return { grupo: null, cdas: [] };
-        const cdas = await cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid);
+        const [vinculados, catalogo] = await Promise.all([
+            cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid),
+            cdaService.obtenerTodosCdas().catch(() => null),
+        ]);
+        const listaCatalogo = Array.isArray(catalogo) ? catalogo : catalogo?.items || catalogo?.data || [];
+        const activoGlobalPorId = new Map(
+            listaCatalogo.map((c) => [Number(c.cdaid ?? c.CdaID), String(c.activo ?? c.Activo ?? "") === "1"]),
+        );
+        const listaVinculados = Array.isArray(vinculados) ? vinculados : vinculados?.items || vinculados?.data || [];
+        const cdas = listaVinculados.map((c) => {
+            const id = Number(c.cdaid ?? c.CdaID);
+            return activoGlobalPorId.has(id) ? { ...c, activoglobal: activoGlobalPorId.get(id) } : c;
+        });
         return { grupo: grupoRow, cdas };
     },
 });
 
+export const esCdaVigenteEnGrupo = (cda) => esCdaActivo(cda) && cda?.activoglobal !== false;
+
 export const idsCdasActivos = (grupoConCdas) =>
     (grupoConCdas?.cdas || [])
-        .filter(esCdaActivo)
+        .filter(esCdaVigenteEnGrupo)
         .map((c) => Number(c.cdaid ?? c.CdaID))
         .filter((id) => !Number.isNaN(id));
 

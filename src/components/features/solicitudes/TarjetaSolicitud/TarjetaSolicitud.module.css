@@ -1,32 +1,34 @@
-/* Fila compacta (opción A). Mobile first: ícono + tipo/estado + chevron
-   arriba, monto (y Cancelar si aplica) abajo. Desde 48rem todo va en una
-   sola fila con columnas de ancho fijo para monto y acciones, así quedan
-   alineados entre filas. */
+/* Tarjeta de dos niveles. Arriba: estado, tipo/línea y monto. Abajo: el
+   recorrido de la solicitud y las acciones. Mobile first: todo apilado;
+   desde 48rem el monto va a la derecha y las acciones al lado del recorrido. */
 .card {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
   grid-template-areas:
     "icono info chevron"
-    "monto monto acciones";
+    "monto monto monto"
+    "recorrido recorrido recorrido"
+    "acciones acciones acciones";
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   align-items: center;
-  column-gap: 0.75rem;
-  row-gap: 0.7rem;
-  padding: 0.8rem 0.9rem 0.8rem 1rem;
-  background: var(--bg-elevado);
-  border: 1px solid rgba(var(--overlay-rgb), 0.07);
-  border-radius: 1rem;
-  /* Franja de estado a la izquierda: con sombra interna y no con
-     border-left, así el hover (o cualquier border-color) no la pisa. */
-  box-shadow: inset 0.2rem 0 0 var(--tone);
-  transition: border-color 0.18s ease, background-color 0.18s ease;
+  column-gap: 0.85rem;
+  row-gap: 0.9rem;
+  padding: 1rem 1rem 1rem 1.15rem;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--tone) 7%, transparent), transparent 45%),
+    var(--bg-elevado);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 1.1rem;
+  box-shadow:
+    inset 0.22rem 0 0 var(--tone),
+    0 6px 22px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
 }
 
 @media (hover: hover) {
   .card:hover {
-    border-color: rgba(var(--overlay-rgb), 0.14);
-    background: color-mix(in srgb, var(--bg-elevado) 94%, var(--white));
+    border-color: rgba(var(--overlay-rgb), 0.16);
   }
 
   .card:hover .btnDetalle {
@@ -36,7 +38,7 @@
 }
 
 .card:active {
-  background: color-mix(in srgb, var(--bg-elevado) 90%, var(--white));
+  transform: scale(0.995);
 }
 
 .card:focus-visible {
@@ -54,6 +56,10 @@
   .card {
     transition: none;
   }
+
+  .card:active {
+    transform: none;
+  }
 }
 
 /* --- estados: un único token de color por estado, todo lo demás lo deriva --- */
@@ -62,7 +68,7 @@
 }
 
 .statusWaiting {
-  --tone: var(--warning);
+  --tone: var(--color-amarillo-bind);
 }
 
 .statusRejected {
@@ -75,14 +81,15 @@
 
 .icono {
   grid-area: icono;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   display: grid;
   place-items: center;
-  border-radius: 0.75rem;
-  font-size: 1.05rem;
+  border-radius: 0.85rem;
+  font-size: 1.2rem;
   color: var(--tone);
-  background: color-mix(in srgb, var(--tone) 13%, transparent);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 28%, transparent);
 }
 
 .info {
@@ -97,14 +104,14 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.3rem 0.5rem;
+  gap: 0.3rem 0.55rem;
   min-width: 0;
 }
 
 .tipo {
   margin: 0;
   color: var(--white, #fffefe);
-  font-size: 0.9375rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
@@ -114,13 +121,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.15rem 0.55rem;
+  padding: 0.18rem 0.6rem;
   border-radius: 999px;
   font-size: 0.6875rem;
   font-weight: 700;
   white-space: nowrap;
   color: var(--tone);
   background: color-mix(in srgb, var(--tone) 13%, transparent);
+}
+
+.linea {
+  color: var(--white-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .meta {
@@ -132,24 +146,46 @@
 .montoBlock {
   grid-area: monto;
   display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.montoLabel {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.montoFila {
+  display: flex;
   align-items: baseline;
-  gap: 0.3rem;
+  gap: 0.35rem;
   min-width: 0;
 }
 
 .montoMoneda {
   color: var(--text-muted, #7b8394);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .montoValue {
   color: var(--white, #fffefe);
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+}
+
+.recorrido {
+  grid-area: recorrido;
+  min-width: 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
 }
 
 .acciones {
@@ -167,12 +203,12 @@
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  min-height: 2rem;
-  padding: 0 0.75rem;
-  border-radius: 0.6rem;
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  border-radius: 0.65rem;
   background: transparent;
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -221,17 +257,47 @@
   color: var(--white);
 }
 
-/* Escritorio: una sola fila. */
+@media (max-width: 47.99rem) {
+  .acciones:empty {
+    display: none;
+  }
+
+  .btnCancel {
+    width: 100%;
+  }
+}
+
 @media (min-width: 48rem) {
   .card {
-    grid-template-columns: 2.5rem minmax(0, 1fr) 10.5rem 14.5rem;
-    grid-template-areas: "icono info monto acciones";
-    column-gap: 1rem;
-    padding: 0.75rem 1rem 0.75rem 1.1rem;
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      "icono info monto"
+      "recorrido recorrido acciones";
+    column-gap: 1.1rem;
+    row-gap: 1rem;
+    padding: 1.15rem 1.25rem 1.1rem 1.4rem;
   }
 
   .montoBlock {
-    justify-content: flex-end;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .montoValue {
+    font-size: 1.75rem;
+  }
+
+  .recorrido {
+    padding-top: 1rem;
+    padding-right: 1rem;
+  }
+
+  .acciones {
+    align-self: end;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
+    height: 100%;
+    align-items: center;
   }
 
   .chevron {
@@ -240,9 +306,5 @@
 
   .btnDetalle {
     display: inline-flex;
-  }
-
-  .montoValue {
-    font-size: 1.2rem;
   }
 }

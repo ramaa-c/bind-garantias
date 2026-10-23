@@ -120,3 +120,8 @@
     scrollbar-gutter: stable;
   }
 }
+@media (max-width: 47.99rem) {
+  .columnaPrincipal:has([data-cta-fijo]) .indicadorScroll {
+    display: none;
+  }
+}
