@@ -324,12 +324,15 @@ input[type="password"]::-ms-clear {
    barra se ve sin pasar el mouse, con el riel marcado y el pulgar en el
    amarillo de marca. Va junto con el degradé inferior de IndicadorScroll
    (y el de DashboardLayout para la página). */
+/* !important: es una clase utilitaria y algunos módulos fijan su propio
+   scrollbar-color casi transparente para el mismo contenedor. */
 .scroll-visible {
-  scrollbar-color: rgba(245, 244, 0, 0.55) rgba(var(--overlay-rgb), 0.07);
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(245, 244, 0, 0.55) rgba(var(--overlay-rgb), 0.07) !important;
 }
 
 .scroll-visible:hover {
-  scrollbar-color: rgba(245, 244, 0, 0.8) rgba(var(--overlay-rgb), 0.07);
+  scrollbar-color: rgba(245, 244, 0, 0.8) rgba(var(--overlay-rgb), 0.07) !important;
 }
 
 .scroll-visible::-webkit-scrollbar {
@@ -347,7 +350,7 @@ input[type="password"]::-ms-clear {
 
 /* Admin (Legajo/Documentación compartidos): mismo criterio en azul. */
 .admin-theme .scroll-visible {
-  scrollbar-color: rgba(76, 101, 230, 0.6) rgba(var(--overlay-rgb), 0.07);
+  scrollbar-color: rgba(76, 101, 230, 0.6) rgba(var(--overlay-rgb), 0.07) !important;
 }
 
 .admin-theme .scroll-visible::-webkit-scrollbar-thumb {
