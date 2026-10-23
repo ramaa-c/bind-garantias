@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FiBriefcase, FiCheck, FiChevronDown, FiSearch } from "react-icons/fi";
+import { FiBriefcase, FiCheck, FiChevronDown, FiChevronRight, FiFileText, FiSearch, FiUsers } from "react-icons/fi";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import styles from "./VendorSidebar.module.css";
 
@@ -20,6 +20,9 @@ export function TarjetaVendor({ nombre, canal, compacto }) {
 }
 
 const MINIMO_PARA_BUSCAR = 6;
+// Con muchas empresas la lista no crece más (scroll + buscador) y ofrece
+// ir a la vista Empresas, que tiene filtros y paginación.
+const MAXIMO_SIN_ATAJO = 8;
 const soloDigitos = (s) => String(s || "").replace(/\D/g, "");
 
 // Selector de empresa siempre visible. Se despliega dentro del propio sidebar
@@ -27,7 +30,7 @@ const soloDigitos = (s) => String(s || "").replace(/\D/g, "");
 // Rango 2, y en mobile funciona igual dentro del drawer.
 // En el sidebar compacto (rail) no entra la lista: el primer click lo
 // expande (onExpandir) y abre el selector.
-export function SelectorEmpresaVendor({ empresas, socioIdActivo, empresaActiva, onElegir, compacto, onExpandir }) {
+export function SelectorEmpresaVendor({ empresas, socioIdActivo, empresaActiva, onElegir, compacto, onExpandir, onVerTodas }) {
   const [abierto, setAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const contenedorRef = useRef(null);
@@ -170,8 +173,78 @@ export function SelectorEmpresaVendor({ empresas, socioIdActivo, empresaActiva, 
             })}
             {filtradas.length === 0 && <li className={styles.sinResultados}>No encontramos esa empresa.</li>}
           </ul>
+          {onVerTodas && empresas.length > MAXIMO_SIN_ATAJO && (
+            <button
+              type="button"
+              className={styles.verTodas}
+              onClick={() => {
+                setAbierto(false);
+                setBusqueda("");
+                onVerTodas();
+              }}
+            >
+              Ver las {empresas.length} empresas en Empresas <FiChevronRight aria-hidden="true" />
+            </button>
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+const VISTAS_VENDOR = [
+  { clave: "solicitudes", label: "Todas las solicitudes", icono: <FiFileText /> },
+  { clave: "empresas", label: "Mis empresas", icono: <FiUsers /> },
+];
+
+// Bloque del vendor (en azul, separado de la navegación de la empresa):
+// identidad, selector de empresa y las dos vistas de su panel. Las vistas
+// se ven siempre; con una empresa elegida, entrar a una vuelve a "Todas".
+export function PanelVendor({
+  nombre,
+  canal,
+  empresas,
+  socioIdActivo,
+  empresaActiva,
+  vistaActiva,
+  onElegir,
+  onIrVista,
+  compacto,
+  onExpandir,
+}) {
+  return (
+    <section className={`${styles.grupo} ${compacto ? styles.compacto : ""}`} aria-label="Panel vendor">
+      <TarjetaVendor nombre={nombre} canal={canal} compacto={compacto} />
+      <SelectorEmpresaVendor
+        empresas={empresas}
+        socioIdActivo={socioIdActivo}
+        empresaActiva={empresaActiva}
+        onElegir={onElegir}
+        compacto={compacto}
+        onExpandir={onExpandir}
+        onVerTodas={() => onIrVista("empresas")}
+      />
+      <ul className={styles.vistas}>
+        {VISTAS_VENDOR.map(({ clave, label, icono }) => {
+          const activa = vistaActiva === clave;
+          return (
+            <li key={clave}>
+              <button
+                type="button"
+                className={`${styles.vista} ${activa ? styles.vistaActiva : ""}`}
+                onClick={() => onIrVista(clave)}
+                aria-current={activa ? "page" : undefined}
+                title={label}
+              >
+                <span className={styles.vistaIcono} aria-hidden="true">
+                  {icono}
+                </span>
+                <span className={styles.vistaLabel}>{label}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

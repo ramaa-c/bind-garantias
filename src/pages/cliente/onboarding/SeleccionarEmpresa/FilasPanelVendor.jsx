@@ -87,16 +87,23 @@ export function FilaSolicitudVendor({ solicitud, onVerDetalle, onCancelar }) {
 // la elige y abre directamente el alta de una operación.
 export function FilaEmpresaVendor({ empresa, cantidadEnCurso, cantidadTotal, onAbrir, onIniciarOperacion }) {
   const abrir = () => onAbrir(empresa);
-  const detalle =
-    cantidadEnCurso > 0
+  const enCurso = cantidadEnCurso > 0;
+  const nueva = cantidadTotal === 0;
+  // Tres estados que se distinguen a simple vista: con solicitud en curso
+  // (franja, avatar y etiqueta ámbar; la acción es verla), sin ninguna
+  // solicitud todavía (etiqueta neutra) y con solicitudes ya cerradas.
+  // La etiqueta ya dice el estado: abajo solo lo que agrega información.
+  const detalle = enCurso
+    ? cantidadEnCurso > 1
       ? `${cantidadEnCurso} en curso`
-      : cantidadTotal > 0
-        ? `${cantidadTotal} ${cantidadTotal === 1 ? "solicitud cerrada" : "solicitudes cerradas"}`
-        : "Sin solicitudes";
+      : ""
+    : nueva
+      ? ""
+      : `${cantidadTotal} ${cantidadTotal === 1 ? "solicitud cerrada" : "solicitudes cerradas"}`;
 
   return (
     <article
-      className={`${styles.fila} ${styles.filaEmpresa}`}
+      className={`${styles.fila} ${styles.filaEmpresa} ${enCurso ? `${styles.tonoEnCurso} ${styles.empresaEnCurso}` : ""}`}
       role="button"
       tabIndex={0}
       aria-label={`Entrar a ${empresa.nombre}`}
@@ -108,23 +115,38 @@ export function FilaEmpresaVendor({ empresa, cantidadEnCurso, cantidadTotal, onA
       </span>
 
       <div className={styles.filaInfo}>
-        <h3 className={styles.filaNombre}>{empresa.nombre || "Cargando…"}</h3>
+        <div className={styles.filaTitulo}>
+          <h3 className={styles.filaNombre}>{empresa.nombre || "Cargando…"}</h3>
+          {enCurso && (
+            <span className={styles.pill}>
+              <FiClock aria-hidden="true" />
+              Solicitud en curso
+            </span>
+          )}
+          {nueva && <span className={`${styles.pill} ${styles.pillNueva}`}>Sin solicitudes</span>}
+        </div>
         <span className={styles.filaMeta}>
-          {empresa.cuit ? `CUIT ${empresa.cuit} · ` : ""}
-          {detalle}
+          {[empresa.cuit && `CUIT ${empresa.cuit}`, detalle].filter(Boolean).join(" · ")}
         </span>
       </div>
 
       <div className={styles.filaAcciones}>
-        <button
-          type="button"
-          className={styles.btnIniciar}
-          onClick={sinPropagar(() => onIniciarOperacion(empresa))}
-        >
-          <FiPlus aria-hidden="true" />
-          <span className={styles.btnIniciarLargo}>Iniciar operación</span>
-          <span className={styles.btnIniciarCorto}>Iniciar</span>
-        </button>
+        {enCurso ? (
+          <button type="button" className={styles.btnVer} onClick={sinPropagar(abrir)}>
+            <span className={styles.btnIniciarLargo}>Ver solicitud</span>
+            <span className={styles.btnIniciarCorto}>Ver</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.btnIniciar}
+            onClick={sinPropagar(() => onIniciarOperacion(empresa))}
+          >
+            <FiPlus aria-hidden="true" />
+            <span className={styles.btnIniciarLargo}>Iniciar operación</span>
+            <span className={styles.btnIniciarCorto}>Iniciar</span>
+          </button>
+        )}
       </div>
 
       <FiChevronRight className={styles.filaChevronSiempre} aria-hidden="true" />

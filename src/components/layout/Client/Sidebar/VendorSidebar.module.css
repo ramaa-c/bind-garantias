@@ -1,12 +1,27 @@
+/* El bloque del vendor va en azul Bind, separado de la navegación de la
+   empresa (amarilla, la de siempre del cliente). */
+.grupo {
+  --azul: var(--color-azul-bind-300, #8a9fff);
+  --azul-fuerte: var(--color-azul-bind, #4c65e6);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.45rem;
+  border-radius: 1.05rem;
+  background: linear-gradient(160deg, rgba(76, 101, 230, 0.14), rgba(76, 101, 230, 0.04) 70%);
+  border: 1px solid rgba(76, 101, 230, 0.28);
+}
+
+[data-theme="light"] .grupo {
+  --azul: var(--color-azul-bind-600, #3448b8);
+}
+
 /* ── Tarjeta del vendor (solo informativa) ── */
 .tarjeta {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  padding: 0.65rem 0.7rem;
-  background: rgba(var(--overlay-rgb), 0.035);
-  border: 1px solid rgba(var(--overlay-rgb), 0.07);
-  border-radius: 0.9rem;
+  padding: 0.45rem 0.5rem 0.35rem;
 }
 
 .tarjetaAvatar {
@@ -18,9 +33,9 @@
   border-radius: 0.75rem;
   font-size: 0.8rem;
   font-weight: 700;
-  background: var(--badge-amarillo-bg);
-  border: 1px solid var(--badge-amarillo-border);
-  color: var(--badge-amarillo-text);
+  background: rgba(76, 101, 230, 0.22);
+  border: 1px solid rgba(76, 101, 230, 0.4);
+  color: var(--azul, #8a9fff);
 }
 
 .tarjetaTexto {
@@ -66,8 +81,8 @@
   min-height: 2.4rem;
   padding: 0.35rem 0.7rem;
   border-radius: 0.7rem;
-  border: 1px solid rgba(var(--overlay-rgb), 0.1);
-  background: rgba(var(--overlay-rgb), 0.025);
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  background: rgba(10, 14, 40, 0.35);
   color: var(--white-muted);
   font-family: inherit;
   font-size: 0.8125rem;
@@ -79,12 +94,12 @@
 
 .disparador:hover,
 .disparadorAbierto {
-  border-color: rgba(245, 244, 0, 0.35);
-  background: rgba(245, 244, 0, 0.04);
+  border-color: rgba(138, 159, 255, 0.6);
+  background: rgba(76, 101, 230, 0.12);
 }
 
 .disparador:focus-visible {
-  outline: 2px solid var(--color-amarillo-bind);
+  outline: 2px solid var(--azul, #8a9fff);
   outline-offset: 2px;
 }
 
@@ -132,7 +147,7 @@
 
 .iconoTodas {
   flex-shrink: 0;
-  color: var(--color-amarillo-bind);
+  color: var(--azul, #8a9fff);
 }
 
 .chevron {
@@ -156,15 +171,15 @@
   gap: 0.3rem;
   min-height: 1.9rem;
   border-radius: 0.55rem;
-  background: rgba(245, 244, 0, 0.08);
-  border: 1px solid rgba(245, 244, 0, 0.22);
-  color: var(--color-amarillo-bind);
+  background: rgba(76, 101, 230, 0.2);
+  border: 1px solid rgba(138, 159, 255, 0.35);
+  color: var(--azul, #8a9fff);
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .disparadorEmpresa:hover .cambiar {
-  background: rgba(245, 244, 0, 0.14);
+  background: rgba(76, 101, 230, 0.3);
 }
 
 .cambiar svg {
@@ -185,8 +200,8 @@
 }
 
 .avatarTodas {
-  background: rgba(245, 244, 0, 0.1);
-  color: var(--color-amarillo-bind);
+  background: rgba(76, 101, 230, 0.2);
+  color: var(--azul, #8a9fff);
 }
 
 /* ── Lista desplegada ── */
@@ -213,7 +228,7 @@
 }
 
 .buscador:focus-within {
-  border-color: var(--color-amarillo-bind);
+  border-color: var(--azul, #8a9fff);
 }
 
 .buscador input {
@@ -258,12 +273,12 @@
 }
 
 .opcion:focus-visible {
-  outline: 2px solid var(--color-amarillo-bind);
+  outline: 2px solid var(--azul, #8a9fff);
   outline-offset: -2px;
 }
 
 .opcionActiva {
-  background: rgba(245, 244, 0, 0.06);
+  background: rgba(76, 101, 230, 0.14);
 }
 
 .opcionTexto {
@@ -291,7 +306,88 @@
 
 .check {
   flex-shrink: 0;
-  color: var(--color-amarillo-bind);
+  color: var(--azul, #8a9fff);
+}
+
+.verTodas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 2rem;
+  border: 0;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
+  background: none;
+  color: var(--azul, #8a9fff);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.verTodas:focus-visible {
+  outline: 2px solid var(--azul, #8a9fff);
+  outline-offset: -2px;
+}
+
+/* ── Vistas del panel vendor ── */
+.vistas {
+  list-style: none;
+  margin: 0.1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.vista {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  background: none;
+  color: var(--white-muted);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.vista:hover {
+  background: rgba(76, 101, 230, 0.12);
+  color: var(--white);
+}
+
+.vista:focus-visible {
+  outline: 2px solid var(--azul, #8a9fff);
+  outline-offset: 1px;
+}
+
+.vistaActiva,
+.vistaActiva:hover {
+  background: rgba(76, 101, 230, 0.24);
+  border-color: rgba(138, 159, 255, 0.4);
+  color: var(--white);
+}
+
+.vistaIcono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  color: var(--azul, #8a9fff);
+}
+
+.vistaLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sinResultados {
@@ -303,6 +399,21 @@
 /* ── Sidebar compacto (rail, solo escritorio) ── */
 @media (min-width: 64rem) {
   .tarjeta.compacto {
+    display: none;
+  }
+
+  .grupo.compacto {
+    align-items: center;
+    padding: 0.4rem 0.3rem;
+  }
+
+  .compacto .vista {
+    justify-content: center;
+    width: 3rem;
+    padding: 0;
+  }
+
+  .compacto .vistaLabel {
     display: none;
   }
 

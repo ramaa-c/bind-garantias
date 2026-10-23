@@ -7,7 +7,6 @@ import {
   FiX,
   FiLogOut,
   FiUser,
-  FiUsers,
   FiLock,
   FiChevronRight,
   FiSidebar,
@@ -26,7 +25,7 @@ import { useSocioWebPorId } from "../../../../hooks/useSocios";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useEmpresasVendor } from "../../../../hooks/useEmpresasVendor";
 import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
-import { TarjetaVendor, SelectorEmpresaVendor } from "./VendorSidebar";
+import { PanelVendor } from "./VendorSidebar";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/useChannel";
@@ -154,7 +153,14 @@ export default function Sidebar({ isOpen, onClose }) {
   // Vendor: cambio de empresa desde el selector siempre visible. Es un
   // logout "suave" (cambiarEmpresa limpia drafts y la empresa activa) y
   // después se elige la nueva, o ninguna para volver al panel con todas.
-  const handleElegirEmpresa = (socioId) => {
+  // vista: "solicitudes" | "empresas" para ir al panel con todas.
+  const handleElegirEmpresa = (socioId, vista = "solicitudes") => {
+    const rutaPanel = `${basePath}/seleccionar-empresa${vista === "empresas" ? "?vista=empresas" : ""}`;
+    if (!socioId && !socioIdActivo) {
+      navigate(rutaPanel);
+      onClose();
+      return;
+    }
     if (String(socioId ?? "") === String(socioIdActivo ?? "")) return;
     const cambiar = () => {
       cambiarEmpresaStore();
@@ -162,7 +168,7 @@ export default function Sidebar({ isOpen, onClose }) {
         setActiveSocioId(socioId);
         navigate(`${basePath}/solicitudes`);
       } else {
-        navigate(`${basePath}/seleccionar-empresa`);
+        navigate(rutaPanel);
       }
       onClose();
     };
@@ -174,17 +180,9 @@ export default function Sidebar({ isOpen, onClose }) {
   };
 
   // Vendor sin empresa elegida: su panel (todas las empresas) con dos
-  // vistas; Legajo y Documentación quedan a la vista pero bloqueados.
+  // vistas, en el bloque del vendor (ver PanelVendor).
   const enPanelVendor = isVendor && !socioIdActivo && location.pathname.endsWith("/seleccionar-empresa");
   const vistaPanel = new URLSearchParams(location.search).get("vista") === "empresas" ? "empresas" : "solicitudes";
-  const itemsPanelVendor = [
-    { clave: "solicitudes", path: "/seleccionar-empresa", label: "Solicitudes", icono: <FiFileText />, ayuda: "De todas tus empresas" },
-    { clave: "empresas", path: "/seleccionar-empresa?vista=empresas", label: "Empresas", icono: <FiUsers />, ayuda: "Las que tenés vinculadas" },
-  ];
-  const itemsBloqueadosPanel = [
-    { path: "/legajo", label: "Legajo", icono: <FiClipboard /> },
-    { path: "/documentacion", label: "Documentación", icono: <FiFolder /> },
-  ];
   const empresaActivaVendor = isVendor && socioIdActivo
     ? { nombre: nombreEmpresa || "", cuit: cuitActivo || "" }
     : null;
@@ -299,68 +297,18 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <div className={styles.cuerpo}>
         {isVendor && !enAltaDatosEmpresa && (
-          <div className={styles.vendor}>
-            <TarjetaVendor
-              nombre={denominacionUsuario || emailUsuario}
-              canal={channelInfo?.id !== "default" ? channelInfo?.nombre : ""}
-              compacto={compacto}
-            />
-            <SelectorEmpresaVendor
-              empresas={empresasVendor}
-              socioIdActivo={socioIdActivo}
-              empresaActiva={empresaActivaVendor}
-              onElegir={handleElegirEmpresa}
-              compacto={compacto}
-              onExpandir={toggleCompacto}
-            />
-          </div>
-        )}
-
-        {enPanelVendor && (
-          <nav className={styles.nav}>
-            <ul className={styles.navLista}>
-              {itemsPanelVendor.map(({ clave, path, label, icono, ayuda }) => {
-                const activo = vistaPanel === clave;
-                return (
-                  <li key={clave}>
-                    <button
-                      type="button"
-                      className={`${styles.navItem} ${activo ? styles.navItemActivo : ""}`}
-                      onClick={() => {
-                        navigate(`${basePath}${path}`);
-                        onClose();
-                      }}
-                      aria-current={activo ? "page" : undefined}
-                      title={label}
-                    >
-                      <span className={styles.navIcono} aria-hidden="true">{icono}</span>
-                      <span className={styles.navTexto}>
-                        <span className={styles.navLabel}>{label}</span>
-                        <span className={styles.navAyuda}>{ayuda}</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-              {itemsBloqueadosPanel.map(({ path, label, icono }) => (
-                <li key={path}>
-                  <button
-                    type="button"
-                    className={`${styles.navItem} ${styles.navItemBloqueado}`}
-                    disabled
-                    title={`${label} · Elegí una empresa arriba`}
-                  >
-                    <span className={styles.navIcono} aria-hidden="true">{icono}</span>
-                    <span className={styles.navTexto}>
-                      <span className={styles.navLabel}>{label}</span>
-                      <span className={styles.navAyuda}>Elegí una empresa arriba</span>
-                    </span>
-                    <FiLock className={styles.navEstado} aria-label="Bloqueado" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <PanelVendor
+            nombre={denominacionUsuario || emailUsuario}
+            canal={channelInfo?.id !== "default" ? channelInfo?.nombre : ""}
+            empresas={empresasVendor}
+            socioIdActivo={socioIdActivo}
+            empresaActiva={empresaActivaVendor}
+            vistaActiva={enPanelVendor ? vistaPanel : null}
+            onElegir={(socioId) => handleElegirEmpresa(socioId)}
+            onIrVista={(vista) => handleElegirEmpresa(null, vista)}
+            compacto={compacto}
+            onExpandir={toggleCompacto}
+          />
         )}
 
         {isVinculado && !isVendor && (

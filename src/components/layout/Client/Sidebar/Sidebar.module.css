@@ -118,13 +118,6 @@
   display: none;
 }
 
-/* ── Vendor: tarjeta + selector de empresa (ver VendorSidebar) ── */
-.vendor {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
 /* ── Empresa activa ── */
 .empresa {
   display: flex;

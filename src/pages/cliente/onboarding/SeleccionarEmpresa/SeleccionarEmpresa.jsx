@@ -12,7 +12,7 @@ import {
   FiXCircle,
   FiAlertTriangle,
 } from "react-icons/fi";
-import { Modal, Paginacion, SelectSimple, Skeleton } from "../../../../components/ui";
+import { Paginacion, SelectSimple, Skeleton } from "../../../../components/ui";
 import { DetalleSolicitudModal } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
@@ -24,7 +24,6 @@ import { solicitudesService } from "../../../../services/solicitudesService";
 import { etiquetaFamiliaDeLinea } from "../../../../utils/familiaLinea";
 import { importeOriginalDeLimite, simboloMoneda } from "../../../../utils/monedaUtils";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
-import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
@@ -107,55 +106,6 @@ const FilasCargando = () => (
   </div>
 );
 
-// "Nueva operación" desde la vista de todas las empresas: primero hay que
-// elegir para cuál.
-function ElegirEmpresaModal({ isOpen, onClose, empresas, onElegir }) {
-  const [texto, setTexto] = useState("");
-  const filtradas = empresas.filter((e) => coincideTexto(texto.trim().toLowerCase(), e.nombre, e.cuit));
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Nueva operación"
-      subtitle="¿Para qué empresa es?"
-      maxWidth="30rem"
-    >
-      <div className={styles.elegirModal}>
-        {empresas.length > 5 && (
-          <label className={styles.buscador}>
-            <FiSearch className={styles.buscadorIcono} aria-hidden="true" />
-            <input
-              type="text"
-              className={styles.buscadorInput}
-              placeholder="Razón social o CUIT"
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              autoFocus
-            />
-          </label>
-        )}
-        <ul className={`${styles.elegirLista} scroll-visible`}>
-          {filtradas.map((e) => (
-            <li key={e.socioId}>
-              <button type="button" className={styles.elegirOpcion} onClick={() => onElegir(e)}>
-                <span className={styles.avatar} aria-hidden="true">
-                  {obtenerInicialesEmpresa(e.nombre || "?")}
-                </span>
-                <span className={styles.filaInfo}>
-                  <span className={styles.filaNombre}>{e.nombre}</span>
-                  {e.cuit && <span className={styles.filaMeta}>CUIT {e.cuit}</span>}
-                </span>
-              </button>
-            </li>
-          ))}
-          {filtradas.length === 0 && <li className={styles.sinCoincidencias}>No encontramos esa empresa.</li>}
-        </ul>
-      </div>
-    </Modal>
-  );
-}
-
 /* ─── Panel del vendor: solicitudes y empresas de todas sus empresas ─── */
 
 export const SeleccionarEmpresa = () => {
@@ -195,7 +145,6 @@ export const SeleccionarEmpresa = () => {
   const setPagina = (p) => setPaginacion({ clave: claveFiltros, pagina: p });
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [solicitudACancelar, setSolicitudACancelar] = useState(null);
-  const [elegirEmpresaAbierto, setElegirEmpresaAbierto] = useState(false);
 
   /* — datos — */
   const solicitudes = useMemo(
@@ -407,18 +356,7 @@ export const SeleccionarEmpresa = () => {
             </p>
           </div>
         </div>
-        {vista === "solicitudes" ? (
-          <button
-            type="button"
-            className={styles.btnPrimario}
-            onClick={() => setElegirEmpresaAbierto(true)}
-            disabled={sinEmpresas}
-          >
-            <FiPlus aria-hidden="true" />
-            <span className={styles.textoLargo}>Nueva operación</span>
-            <span className={styles.textoCorto}>Nueva</span>
-          </button>
-        ) : (
+        {vista === "empresas" && (
           <button
             type="button"
             className={`${styles.btnSecundario} ${styles.soloAncho}`}
@@ -583,15 +521,6 @@ export const SeleccionarEmpresa = () => {
         </>
       )}
 
-      <ElegirEmpresaModal
-        isOpen={elegirEmpresaAbierto}
-        onClose={() => setElegirEmpresaAbierto(false)}
-        empresas={empresas}
-        onElegir={(empresa) => {
-          setElegirEmpresaAbierto(false);
-          iniciarOperacion(empresa);
-        }}
-      />
 
       <DetalleSolicitudModal
         isOpen={!!solicitudSeleccionada}
