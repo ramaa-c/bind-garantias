@@ -22,6 +22,15 @@ export const esEstadoEnCurso = (estadoId) => {
 // plataforma, sobre la que no tenemos control.
 export const TERCERO_VIA_PLATAFORMA_PROPIA = 4000000;
 
+export const esProcesoDeOtraPlataforma = (proceso) => {
+  const terceroVia = proceso?.terceroviaid ?? proceso?.TerceroViaID;
+  if (terceroVia === null || terceroVia === undefined || terceroVia === "") return false;
+  return Number(terceroVia) !== TERCERO_VIA_PLATAFORMA_PROPIA;
+};
+
+export const MENSAJE_SOLICITUD_OTRA_PLATAFORMA =
+  "Tenés una solicitud de línea en curso en otra plataforma. Hasta que se resuelva no podés iniciar una operación nueva ni avanzar con tu legajo y documentación desde acá.";
+
 // Mensajes de rechazo automático (guardados en TipoLimiteSocio.Observaciones
 // cuando el propio frontend rechaza una solicitud, sin intervención del
 // admin). Concisos a propósito: no exponen los parámetros/valores concretos
@@ -90,8 +99,13 @@ export const procesosVigentes = (solicitudesEnProceso, limitesSocio) => {
   const huerfanos = new Set(
     procesosHuerfanosPorRechazoAutomatico(solicitudesEnProceso, limitesSocio),
   );
-  return procesosAbiertos(solicitudesEnProceso).filter((p) => !huerfanos.has(p));
+  return procesosAbiertos(solicitudesEnProceso).filter(
+    (p) => !huerfanos.has(p) && !esProcesoDeOtraPlataforma(p),
+  );
 };
+
+export const procesosDeOtraPlataforma = (solicitudesEnProceso) =>
+  procesosAbiertos(solicitudesEnProceso).filter(esProcesoDeOtraPlataforma);
 
 export const quitarPrefijoRechazoAutomatico = (observaciones) =>
   esRechazoAutomatico(observaciones)
