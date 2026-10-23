@@ -8,7 +8,8 @@ import styles from "./LoadingScreen.module.css";
 // - "ensamble": la flor se arma y aparece "bind garantías". Solo en el
 //   primer ingreso: la secuencia de cargas del arranque con sesión iniciada
 //   (si el arranque fue el login, la de después de loguearse).
-// - "floracion": la flor se abre y se cierra con ondas. Todas las demás.
+// - "orbita": dos anillos (amarillo y azul) giran alrededor de la flor.
+//   Todas las demás.
 // Una secuencia de arranque son las LoadingScreen que se encadenan sin
 // pausa (plataforma → acceso → perfil): termina cuando no queda ninguna
 // montada durante FIN_SECUENCIA_MS.
@@ -18,7 +19,7 @@ let temporizadorFin = null;
 let ingresoMostrado = false;
 
 function useVarianteCarga(forzada) {
-  const [variante] = useState(() => forzada || (ingresoMostrado ? "floracion" : "ensamble"));
+  const [variante] = useState(() => forzada || (ingresoMostrado ? "orbita" : "ensamble"));
 
   useEffect(() => {
     pantallasMontadas += 1;
@@ -81,10 +82,11 @@ export function LoadingScreen({ title, message, absolute = false, variante: vari
             </svg>
           </div>
         ) : (
-          <div className={styles.floracion}>
-            <span className={styles.onda} aria-hidden="true" />
-            <span className={`${styles.onda} ${styles.ondaDemorada}`} aria-hidden="true" />
-            <Flor className={styles.florFloracion} tamano={56} />
+          <div className={styles.orbita}>
+            <span className={styles.orbitaPista} aria-hidden="true" />
+            <span className={styles.orbitaAnillo} aria-hidden="true" />
+            <span className={styles.orbitaAnilloInterno} aria-hidden="true" />
+            <Flor className={styles.florOrbita} tamano={48} />
           </div>
         )}
 

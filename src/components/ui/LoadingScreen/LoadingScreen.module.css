@@ -1,5 +1,5 @@
 /* =========================================
-   LoadingScreen — variantes "ensamble" (primer ingreso) y "floracion"
+   LoadingScreen — variantes "ensamble" (primer ingreso) y "orbita"
    ========================================= */
 
 .overlay {
@@ -133,49 +133,56 @@
   50% { opacity: 1; transform: translateY(-4px); }
 }
 
-/* Floración: la flor se abre y se cierra girando lento, con ondas. */
-.floracion {
+/* Órbita: anillos amarillo y azul girando en sentidos opuestos alrededor
+   de la flor, que rota lenta con un brillo suave. */
+.orbita {
   position: relative;
-  width: 12.5rem;
-  height: 11.5rem;
+  width: 9.5rem;
+  height: 9.5rem;
   display: grid;
   place-items: center;
 }
 
-.floracion > * {
+.orbita > * {
   grid-area: 1 / 1;
 }
 
-.florFloracion .florGrupo {
-  animation: girar 12s linear infinite;
+.orbitaPista,
+.orbitaAnillo,
+.orbitaAnilloInterno {
+  border-radius: 50%;
+  place-self: stretch;
 }
 
-.florFloracion .petalo {
-  animation: abrir 2.4s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+.orbitaPista {
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+}
+
+.orbitaAnillo {
+  background: conic-gradient(from 0deg, transparent 0 62%, rgba(245, 244, 0, 0.9) 88%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  animation: girar 1.6s linear infinite;
+}
+
+.orbitaAnilloInterno {
+  margin: 1rem;
+  background: conic-gradient(from 180deg, transparent 0 70%, rgba(138, 159, 255, 0.8) 92%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  animation: girar 2.6s linear infinite reverse;
+}
+
+.florOrbita {
+  filter: drop-shadow(0 0 14px rgba(245, 244, 0, 0.35));
+}
+
+.florOrbita .florGrupo {
+  animation: girar 8s linear infinite;
 }
 
 @keyframes girar {
   to { transform: rotate(360deg); }
-}
-
-@keyframes abrir {
-  0%, 100% { transform: scale(0.72); opacity: 0.55; }
-  50% { transform: scale(1); opacity: 1; }
-}
-
-.onda {
-  border-radius: 50%;
-  border: 1px solid rgba(245, 244, 0, 0.35);
-  animation: onda 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
-}
-
-.ondaDemorada {
-  animation-delay: 1.2s;
-}
-
-@keyframes onda {
-  0% { width: 4.5rem; height: 4.5rem; opacity: 0.9; }
-  100% { width: 12rem; height: 12rem; opacity: 0; }
 }
 
 /* --- Texto --- */
@@ -190,8 +197,8 @@
   animation: fadeUp 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) 0.1s both;
 }
 
-.floracion + .titulo {
-  margin-top: 0.5rem;
+.orbita + .titulo {
+  margin-top: 1.75rem;
 }
 
 .mensaje {
@@ -226,11 +233,9 @@
   .petalo,
   .florGrupo,
   .palabra,
-  .puntos span {
+  .puntos span,
+  .orbitaAnillo,
+  .orbitaAnilloInterno {
     animation: none !important;
-  }
-
-  .onda {
-    display: none;
   }
 }
