@@ -5,9 +5,7 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiHelpCircle,
-  FiRepeat,
   FiLogOut,
-  FiBriefcase,
   FiUser,
   FiSun,
   FiMoon,
@@ -41,7 +39,6 @@ const Navbar = ({
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
   const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
@@ -100,15 +97,6 @@ const Navbar = ({
     navigate(`${basePath}/login`);
   };
 
-  // Logout "suave": tira formularios/empresa activa/verificación de
-  // términos de la sesión anterior (ver cambiarEmpresa en useAuthStore) pero
-  // conserva user/isAuthenticated. Solo para vendors.
-  const handleCambiarEmpresa = () => {
-    setIsDropdownOpen(false);
-    cambiarEmpresa();
-    navigate(`${basePath}/seleccionar-empresa`);
-  };
-
   const handleOpenHelp = () => {
     document.dispatchEvent(new CustomEvent("bindHelp:toggle"));
   };
@@ -141,15 +129,6 @@ const Navbar = ({
           </span>
         )}
 
-
-        {/* En mobile la identidad de vendor vive en el sidebar (ver
-            Sidebar.jsx); acá va compacta, sin repetir el email. */}
-        {isVendor && (
-          <span className={styles.vendorBadge}>
-            <FiBriefcase className={styles.vendorBadgeIcon} aria-hidden="true" />
-            Vendor
-          </span>
-        )}
       </div>
 
       <div className={styles.derecha}>
@@ -238,26 +217,6 @@ const Navbar = ({
                       <FiChevronRight className={styles.dropdownItemFlecha} aria-hidden="true" />
                     </button>
 
-                    {/* Solo tiene sentido si ya hay una empresa activa para
-                        "cambiar" — sin eso ya existe el botón "Volver a
-                        Inicio" en Paso1Cuit/BarraProgreso. */}
-                    {isVendor && isVinculado && (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className={styles.dropdownItem}
-                        onClick={handleCambiarEmpresa}
-                      >
-                        <span className={styles.dropdownItemIcono} aria-hidden="true">
-                          <FiRepeat />
-                        </span>
-                        <span className={styles.dropdownItemTexto}>
-                          <span className={styles.dropdownItemLabel}>Cambiar empresa</span>
-                          <span className={styles.dropdownItemAyuda}>Gestionar otra empresa</span>
-                        </span>
-                        <FiChevronRight className={styles.dropdownItemFlecha} aria-hidden="true" />
-                      </button>
-                    )}
                   </div>
 
                   <div className={styles.dropdownDivisor} />

@@ -138,7 +138,10 @@ export const useVerificarHabilitacionNuevaOperacion = () => {
       // status === 404 (nunca tuvo líneas en el core) o cualquier otro
       // caso (error de red, 500, etc.): no bloquea, no exige AptaNuevaLinea.
 
-      if (isMounted) setEstado({ verificando: false, habilitada, motivo });
+      // cuitVerificado: a qué empresa corresponde el resultado (quien
+      // dispare "Nueva operación" solo, sin click, no debe usar el de la
+      // empresa anterior ni el valor por defecto mientras arranca).
+      if (isMounted) setEstado({ verificando: false, habilitada, motivo, cuitVerificado: cuitActivo });
     };
 
     verificar();

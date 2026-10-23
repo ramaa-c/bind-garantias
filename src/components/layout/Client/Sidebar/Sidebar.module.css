@@ -118,6 +118,13 @@
   display: none;
 }
 
+/* ── Vendor: tarjeta + selector de empresa (ver VendorSidebar) ── */
+.vendor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 /* ── Empresa activa ── */
 .empresa {
   display: flex;
@@ -194,37 +201,6 @@
   font-size: 0.7rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-}
-
-.empresaCambiar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 0.6rem;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.empresaCambiar:hover {
-  background: var(--color-azul-bind-bg, rgba(76, 101, 230, 0.1));
-  border-color: rgba(76, 101, 230, 0.3);
-  color: var(--color-azul-bind-300, #8a9fff);
-}
-
-.empresaCambiar:focus-visible {
-  outline: 2px solid var(--color-azul-bind-300, #8a9fff);
-  outline-offset: 1px;
 }
 
 /* ── Navegación ── */
@@ -864,7 +840,6 @@
   .container,
   .navItem,
   .navIcono,
-  .empresaCambiar,
   .cuentaAccion,
   .closeButton {
     transition: none;

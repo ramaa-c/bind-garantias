@@ -7,7 +7,7 @@ import {
   FiX,
   FiLogOut,
   FiUser,
-  FiRepeat,
+  FiUsers,
   FiLock,
   FiChevronRight,
   FiSidebar,
@@ -23,6 +23,10 @@ import { useThemeStore } from "../../../../store/useThemeStore";
 import { useSidebarStore } from "../../../../store/useSidebarStore";
 import { useVersionApi } from "../../../../hooks/useSistema";
 import { useSocioWebPorId } from "../../../../hooks/useSocios";
+import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
+import { useEmpresasVendor } from "../../../../hooks/useEmpresasVendor";
+import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
+import { TarjetaVendor, SelectorEmpresaVendor } from "./VendorSidebar";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/useChannel";
@@ -50,6 +54,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cambiarEmpresaStore = useAuthStore((state) => state.cambiarEmpresa);
+  const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
   const { legajoDesbloqueado, documentacionDesbloqueada, solicitudEnOtraPlataforma, faltanDocumentos } =
     useAccesoDashboardCliente();
@@ -58,6 +63,13 @@ export default function Sidebar({ isOpen, onClose }) {
   const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
+  const { empresas: empresasVendor } = useEmpresasVendor(!isVendor);
+  const { data: usuarioDb } = useObtenerPorNombreOEmail(isVendor ? emailUsuario : "");
+  const denominacionUsuario = (
+    extraerRegistroUsuario(usuarioDb)?.denominacion ||
+    extraerRegistroUsuario(usuarioDb)?.Denominacion ||
+    ""
+  ).trim();
 
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
   const compacto = useSidebarStore((state) => state.compacto);
@@ -65,6 +77,9 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const { hasUnsavedChanges, setUnsavedChanges } = useNavigationStore();
   const [pendingPath, setPendingPath] = useState(null);
+  // Cambio de empresa con cambios sin guardar: misma confirmación que al
+  // navegar, pero lo pendiente es una acción (no solo una ruta).
+  const [accionPendiente, setAccionPendiente] = useState(null);
 
   const isActive = (path) => location.pathname.startsWith(`${basePath}${path}`);
 
@@ -113,6 +128,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const confirmNavigation = () => {
     setUnsavedChanges(false);
+    if (accionPendiente) {
+      const accion = accionPendiente;
+      setAccionPendiente(null);
+      accion();
+      return;
+    }
     if (pendingPath) {
       navigate(pendingPath);
       setPendingPath(null);
@@ -122,6 +143,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const cancelNavigation = () => {
     setPendingPath(null);
+    setAccionPendiente(null);
   };
 
   const handleLogout = () => {
@@ -129,12 +151,43 @@ export default function Sidebar({ isOpen, onClose }) {
     navigate(`${basePath}/login`);
   };
 
-  // Mismo criterio que Navbar.jsx: logout "suave", solo para vendors.
-  const handleCambiarEmpresa = () => {
-    cambiarEmpresaStore();
-    navigate(`${basePath}/seleccionar-empresa`);
-    onClose();
+  // Vendor: cambio de empresa desde el selector siempre visible. Es un
+  // logout "suave" (cambiarEmpresa limpia drafts y la empresa activa) y
+  // después se elige la nueva, o ninguna para volver al panel con todas.
+  const handleElegirEmpresa = (socioId) => {
+    if (String(socioId ?? "") === String(socioIdActivo ?? "")) return;
+    const cambiar = () => {
+      cambiarEmpresaStore();
+      if (socioId) {
+        setActiveSocioId(socioId);
+        navigate(`${basePath}/solicitudes`);
+      } else {
+        navigate(`${basePath}/seleccionar-empresa`);
+      }
+      onClose();
+    };
+    if (hasUnsavedChanges) {
+      setAccionPendiente(() => cambiar);
+      return;
+    }
+    cambiar();
   };
+
+  // Vendor sin empresa elegida: su panel (todas las empresas) con dos
+  // vistas; Legajo y Documentación quedan a la vista pero bloqueados.
+  const enPanelVendor = isVendor && !socioIdActivo && location.pathname.endsWith("/seleccionar-empresa");
+  const vistaPanel = new URLSearchParams(location.search).get("vista") === "empresas" ? "empresas" : "solicitudes";
+  const itemsPanelVendor = [
+    { clave: "solicitudes", path: "/seleccionar-empresa", label: "Solicitudes", icono: <FiFileText />, ayuda: "De todas tus empresas" },
+    { clave: "empresas", path: "/seleccionar-empresa?vista=empresas", label: "Empresas", icono: <FiUsers />, ayuda: "Las que tenés vinculadas" },
+  ];
+  const itemsBloqueadosPanel = [
+    { path: "/legajo", label: "Legajo", icono: <FiClipboard /> },
+    { path: "/documentacion", label: "Documentación", icono: <FiFolder /> },
+  ];
+  const empresaActivaVendor = isVendor && socioIdActivo
+    ? { nombre: nombreEmpresa || "", cuit: cuitActivo || "" }
+    : null;
 
   const itemsNavegacion = [
     isSolicitudesEnabled && {
@@ -245,7 +298,72 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
 
       <div className={styles.cuerpo}>
-        {isVinculado && (
+        {isVendor && !enAltaDatosEmpresa && (
+          <div className={styles.vendor}>
+            <TarjetaVendor
+              nombre={denominacionUsuario || emailUsuario}
+              canal={channelInfo?.id !== "default" ? channelInfo?.nombre : ""}
+              compacto={compacto}
+            />
+            <SelectorEmpresaVendor
+              empresas={empresasVendor}
+              socioIdActivo={socioIdActivo}
+              empresaActiva={empresaActivaVendor}
+              onElegir={handleElegirEmpresa}
+              compacto={compacto}
+              onExpandir={toggleCompacto}
+            />
+          </div>
+        )}
+
+        {enPanelVendor && (
+          <nav className={styles.nav}>
+            <ul className={styles.navLista}>
+              {itemsPanelVendor.map(({ clave, path, label, icono, ayuda }) => {
+                const activo = vistaPanel === clave;
+                return (
+                  <li key={clave}>
+                    <button
+                      type="button"
+                      className={`${styles.navItem} ${activo ? styles.navItemActivo : ""}`}
+                      onClick={() => {
+                        navigate(`${basePath}${path}`);
+                        onClose();
+                      }}
+                      aria-current={activo ? "page" : undefined}
+                      title={label}
+                    >
+                      <span className={styles.navIcono} aria-hidden="true">{icono}</span>
+                      <span className={styles.navTexto}>
+                        <span className={styles.navLabel}>{label}</span>
+                        <span className={styles.navAyuda}>{ayuda}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+              {itemsBloqueadosPanel.map(({ path, label, icono }) => (
+                <li key={path}>
+                  <button
+                    type="button"
+                    className={`${styles.navItem} ${styles.navItemBloqueado}`}
+                    disabled
+                    title={`${label} · Elegí una empresa arriba`}
+                  >
+                    <span className={styles.navIcono} aria-hidden="true">{icono}</span>
+                    <span className={styles.navTexto}>
+                      <span className={styles.navLabel}>{label}</span>
+                      <span className={styles.navAyuda}>Elegí una empresa arriba</span>
+                    </span>
+                    <FiLock className={styles.navEstado} aria-label="Bloqueado" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
+        {isVinculado && !isVendor && (
           <div className={styles.empresa}>
             <div
               className={`${styles.companyAvatar} ${styles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa)}`]}`}
@@ -257,17 +375,6 @@ export default function Sidebar({ isOpen, onClose }) {
               <p className={styles.empresaNombre}>{nombreEmpresa}</p>
               {cuitActivo && <p className={styles.empresaCuit}>CUIT {cuitActivo}</p>}
             </div>
-            {isVendor && (
-              <button
-                type="button"
-                className={styles.empresaCambiar}
-                onClick={handleCambiarEmpresa}
-                aria-label="Cambiar de empresa"
-                title="Cambiar de empresa"
-              >
-                <FiRepeat />
-              </button>
-            )}
           </div>
         )}
 
@@ -350,18 +457,21 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <div className={styles.pie}>
         <div className={styles.cuentaMovil}>
-          <div className={styles.cuentaIdentidad}>
-            <span className={styles.cuentaAvatar} aria-hidden="true">
-              <FiUser />
-            </span>
-            <div className={styles.cuentaTexto}>
-              <p className={styles.cuentaEmail} title={emailUsuario}>{emailUsuario}</p>
-              <p className={`${styles.cuentaRol} ${!isVinculado && !isVendor ? styles.cuentaRolNeutro : ""}`}>
-                {rolUsuario}
-                {isVendor && channelInfo?.nombre ? ` · ${channelInfo.nombre}` : ""}
-              </p>
+          {/* El vendor ya tiene su tarjeta arriba (ver VendorSidebar). */}
+          {!isVendor && (
+            <div className={styles.cuentaIdentidad}>
+              <span className={styles.cuentaAvatar} aria-hidden="true">
+                <FiUser />
+              </span>
+              <div className={styles.cuentaTexto}>
+                <p className={styles.cuentaEmail} title={emailUsuario}>{emailUsuario}</p>
+                <p className={`${styles.cuentaRol} ${!isVinculado && !isVendor ? styles.cuentaRolNeutro : ""}`}>
+                  {rolUsuario}
+                  {isVendor && channelInfo?.nombre ? ` · ${channelInfo.nombre}` : ""}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <ul className={styles.cuentaAcciones}>
             <li>
@@ -371,18 +481,6 @@ export default function Sidebar({ isOpen, onClose }) {
                 <FiChevronRight className={styles.cuentaAccionFlecha} aria-hidden="true" />
               </button>
             </li>
-            {/* Solo tiene sentido si ya hay una empresa activa para "cambiar"
-                — sin eso ya existe el botón "Volver a Inicio" en
-                Paso1Cuit/BarraProgreso. */}
-            {isVendor && isVinculado && (
-              <li>
-                <button type="button" className={styles.cuentaAccion} onClick={handleCambiarEmpresa}>
-                  <span className={styles.cuentaAccionIcono} aria-hidden="true"><FiRepeat /></span>
-                  Cambiar empresa
-                  <FiChevronRight className={styles.cuentaAccionFlecha} aria-hidden="true" />
-                </button>
-              </li>
-            )}
             <li>
               <button
                 type="button"
@@ -420,7 +518,7 @@ export default function Sidebar({ isOpen, onClose }) {
       <PerfilModal isOpen={isPerfilModalOpen} onClose={() => setIsPerfilModalOpen(false)} />
 
       <ConfirmacionModal
-        isOpen={!!pendingPath}
+        isOpen={!!pendingPath || !!accionPendiente}
         onClose={cancelNavigation}
         onConfirm={confirmNavigation}
         titulo="Cambios sin guardar"

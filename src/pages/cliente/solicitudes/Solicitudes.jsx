@@ -168,6 +168,7 @@ export default function Solicitudes() {
   const {
     habilitada: nuevaOperacionHabilitada,
     motivo: motivoNuevaOperacionBloqueada,
+    cuitVerificado: cuitNuevaOperacionVerificado,
   } = useVerificarHabilitacionNuevaOperacion();
 
   const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
@@ -181,7 +182,7 @@ export default function Solicitudes() {
 
   const isLoadingData = cargandoSolicitudes || cargandoProceso || cargandoTiposLimite;
 
-  const { solicitudEnOtraPlataforma } = useAccesoDashboardCliente();
+  const { solicitudEnOtraPlataforma, cargando: cargandoAccesoDashboard } = useAccesoDashboardCliente();
   const [modalOtraPlataformaOpen, setModalOtraPlataformaOpen] = useState(false);
   const [avisoOtraPlataformaCerrado, setAvisoOtraPlataformaCerrado] = useState(false);
   const claveAvisoOtraPlataforma = `bind_aviso_otra_plataforma_${cuitActivo || ""}`;
@@ -465,6 +466,27 @@ export default function Solicitudes() {
       navigate(ruta);
     }
   };
+
+  // Vendor: "Iniciar operación" desde su panel entra a la empresa y pide
+  // abrir el alta acá, con todas las validaciones de siempre. Se dispara una
+  // sola vez y recién cuando los datos y la habilitación de ESTA empresa
+  // terminaron de cargar.
+  const iniciarOperacionPedida = !!location.state?.iniciarOperacion;
+  const iniciarOperacionAtendidaRef = useRef(false);
+  const listoParaIniciarOperacion =
+    iniciarOperacionPedida &&
+    !!cuitActivo &&
+    !isLoadingData &&
+    !cargandoAccesoDashboard &&
+    cuitNuevaOperacionVerificado === cuitActivo;
+
+  useEffect(() => {
+    if (!listoParaIniciarOperacion || iniciarOperacionAtendidaRef.current) return;
+    iniciarOperacionAtendidaRef.current = true;
+    navigate(location.pathname, { replace: true, state: null });
+    handleNuevaOperacion(`${basePath}/alta-operacion`, "draft_alta_operacion");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listoParaIniciarOperacion]);
 
   const handleConfirmStartNew = () => {
     if (draftKeyPendiente) {
