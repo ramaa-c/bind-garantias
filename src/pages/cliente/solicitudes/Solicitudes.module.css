@@ -155,13 +155,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.875rem;
-  /* Misma superficie que las filas de solicitudes (opción A). */
-  background: var(--bg-elevado);
-  border: 1px solid rgba(var(--overlay-rgb), 0.07);
-  border-radius: 1rem;
-  padding: 0.9rem 1rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  /* Sin contenedor visible: los campos van directo sobre la página. */
+  margin: 1.25rem 0 1rem;
 }
 
 .searchBox {
@@ -257,6 +253,11 @@
   pointer-events: auto;
 }
 
+/* Mobile: apagado no reserva lugar, así el buscador usa todo el ancho. */
+.clearFiltersBtn:not(.clearFiltersBtnVisible) {
+  display: none;
+}
+
 .clearFiltersBtn:hover {
   color: var(--color-amarillo-bind);
   border-color: rgba(244, 245, 0, 0.3);
@@ -269,7 +270,6 @@
   gap: 0.6rem;
   flex: 1;
   overflow-y: auto;
-  padding-right: 0.5rem;
   /* Sin esto, el "levantado" + sombra al hacer hover de la primera tarjeta
      quedaba cortado por el borde superior del propio contenedor con scroll. */
   padding-top: 0.4rem;
@@ -363,13 +363,17 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    /* Mismo valor que el padding horizontal: así el hueco entre "Orden" y
-       el botón de limpiar queda igual al hueco entre el botón y el borde
-       de la card, sin necesitar un margin-left:auto que se comiera todo
-       el espacio sobrante de forma asimétrica. */
-    gap: 1.25rem;
-    padding: 0.75rem 1.25rem;
-    margin-bottom: 1.25rem;
+    gap: 0.75rem;
+  }
+
+  /* Escritorio: el botón de limpiar vuelve a reservar su lugar, para que
+     la fila no se corra al aparecer. */
+  .clearFiltersBtn:not(.clearFiltersBtnVisible) {
+    display: inline-flex;
+  }
+
+  .listContainer {
+    padding-right: 0.5rem;
   }
 
   /* El orden visual mobile (search, limpiar, campos) se resuelve con

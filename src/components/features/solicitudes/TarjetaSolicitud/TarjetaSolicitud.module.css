@@ -1,12 +1,15 @@
-/* Fila compacta (opción A). Mobile first: ícono + tipo/estado arriba, monto
-   y acciones abajo. Desde 48rem todo va en una sola fila con columnas de
-   ancho fijo para monto y acciones, así quedan alineados entre filas. */
+/* Fila compacta (opción A). Mobile first: ícono + tipo/estado + chevron
+   arriba, monto (y Cancelar si aplica) abajo. Desde 48rem todo va en una
+   sola fila con columnas de ancho fijo para monto y acciones, así quedan
+   alineados entre filas. */
 .card {
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1fr) auto;
   grid-template-areas:
-    "icono info info"
+    "icono info chevron"
     "monto monto acciones";
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   align-items: center;
   column-gap: 0.75rem;
   row-gap: 0.7rem;
@@ -25,6 +28,26 @@
     border-color: rgba(var(--overlay-rgb), 0.14);
     background: color-mix(in srgb, var(--bg-elevado) 94%, var(--white));
   }
+
+  .card:hover .btnDetalle {
+    background: rgba(245, 244, 0, 0.16);
+    border-color: rgba(245, 244, 0, 0.5);
+  }
+}
+
+.card:active {
+  background: color-mix(in srgb, var(--bg-elevado) 90%, var(--white));
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-amarillo-bind);
+  outline-offset: 2px;
+}
+
+.chevron {
+  grid-area: chevron;
+  font-size: 1.15rem;
+  color: var(--text-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -181,20 +204,13 @@
   color: var(--white);
 }
 
+/* Solo pista visual (la tarjeta entera es el botón): oculto en mobile,
+   donde lo reemplaza el chevron. */
 .btnDetalle {
+  display: none;
   border: 1px solid rgba(245, 244, 0, 0.3);
   background: rgba(245, 244, 0, 0.08);
   color: var(--color-amarillo-bind);
-}
-
-.btnDetalle:hover {
-  background: rgba(245, 244, 0, 0.16);
-  border-color: rgba(245, 244, 0, 0.5);
-}
-
-.btnDetalle:focus-visible {
-  outline: 2px solid var(--color-amarillo-bind);
-  outline-offset: 2px;
 }
 
 [data-theme="light"] .btnCancel {
@@ -216,6 +232,14 @@
 
   .montoBlock {
     justify-content: flex-end;
+  }
+
+  .chevron {
+    display: none;
+  }
+
+  .btnDetalle {
+    display: inline-flex;
   }
 
   .montoValue {

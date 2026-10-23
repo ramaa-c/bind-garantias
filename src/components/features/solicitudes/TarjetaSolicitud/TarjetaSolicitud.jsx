@@ -19,9 +19,25 @@ const getStatusKey = (estado) => {
 
 // Fila compacta (opción A): ícono de estado + tipo/estado/N° y fecha, monto
 // a la derecha y acciones al final. Pensada para listas largas (vendors).
+// Toda la tarjeta abre el detalle (como en admin); "Ver detalle" es solo la
+// pista visual en escritorio y en mobile la reemplaza el chevron.
 export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
   const statusKey = getStatusKey(solicitud.estado);
   const StatusIcon = ESTADOS[statusKey].icon;
+
+  const verDetalle = () => onVerDetalle && onVerDetalle(solicitud);
+  const handleKeyDown = (e) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      verDetalle();
+    }
+  };
+  // Las acciones propias (Cancelar) no deben abrir además el detalle.
+  const sinPropagar = (onClick) => (e) => {
+    e.stopPropagation();
+    onClick?.(e);
+  };
 
   // Hoy "acciones" solo trae "Cancelar" (variant danger): va con label
   // explícito (nada de ícono solo) para que cancelar una solicitud no se
@@ -30,7 +46,14 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
   const otrasAcciones = acciones?.filter((a) => a.variant !== "danger");
 
   return (
-    <article className={`${styles.card} ${styles[statusKey]}`}>
+    <article
+      className={`${styles.card} ${styles[statusKey]}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver detalle de la solicitud N° ${solicitud.id}`}
+      onClick={verDetalle}
+      onKeyDown={handleKeyDown}
+    >
       <span className={styles.icono} aria-hidden="true">
         <StatusIcon />
       </span>
@@ -55,19 +78,21 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
 
       <div className={styles.acciones}>
         {accionDestructiva && (
-          <button type="button" className={styles.btnCancel} onClick={accionDestructiva.onClick}>
+          <button type="button" className={styles.btnCancel} onClick={sinPropagar(accionDestructiva.onClick)}>
             {accionDestructiva.label}
           </button>
         )}
         {otrasAcciones?.map((accion) => (
-          <button type="button" key={accion.label} className={styles.btnAction} onClick={accion.onClick}>
+          <button type="button" key={accion.label} className={styles.btnAction} onClick={sinPropagar(accion.onClick)}>
             {accion.label}
           </button>
         ))}
-        <button type="button" className={styles.btnDetalle} onClick={() => onVerDetalle && onVerDetalle(solicitud)}>
+        <span className={styles.btnDetalle} aria-hidden="true">
           Ver detalle <FiChevronRight size={13} />
-        </button>
+        </span>
       </div>
+
+      <FiChevronRight className={styles.chevron} aria-hidden="true" />
     </article>
   );
 };
