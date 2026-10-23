@@ -20,7 +20,10 @@
   content: "";
   position: fixed;
   inset: 0;
-  width: 100vw;
+  /* Deja libre el carril de la barra de scroll de la página (ver
+     --gutter-scroll en DashboardLayout): esta capa fija la tapaba. */
+  right: var(--gutter-scroll, 0px);
+  width: auto;
   height: 100vh;
   z-index: -1;
   pointer-events: none;

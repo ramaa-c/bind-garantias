@@ -20,6 +20,9 @@ export default function DashboardLayout({ children, hideHelpButton = false }) {
     if (!columna || !contenido) return;
 
     const actualizar = () => {
+      // Ancho real de la barra de scroll (varía según navegador y zoom): los
+      // fondos fijos de cada pantalla lo usan para no taparla.
+      columna.style.setProperty("--gutter-scroll", `${columna.offsetWidth - columna.clientWidth}px`);
       const restante = columna.scrollHeight - columna.scrollTop - columna.clientHeight;
       setHayMasAbajo(restante > MARGEN_FINAL_PX);
     };
