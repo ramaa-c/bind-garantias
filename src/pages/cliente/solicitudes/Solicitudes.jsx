@@ -455,8 +455,8 @@ export default function Solicitudes() {
             <FaFileInvoiceDollar />
           </div>
           <div className={styles.titleWrapper}>
-            <h1 className={styles.title}>Mis Solicitudes</h1>
-            <p className={styles.subtitle}>Gestioná tus operaciones.</p>
+            <h1 className={styles.title}>Mis solicitudes</h1>
+            <p className={styles.subtitle}>Seguí el estado de tus operaciones y cargá una nueva.</p>
           </div>
         </div>
 
@@ -572,7 +572,7 @@ export default function Solicitudes() {
                     puedeCancelar
                       ? [
                           {
-                            label: "Cancelar solicitud",
+                            label: "Cancelar",
                             variant: "danger",
                             onClick: () => setSolicitudACancelar(item),
                           },
