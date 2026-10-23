@@ -7,13 +7,15 @@ import styles from "./VinculacionModal.module.css";
 // Confirmación de "esta es mi empresa" antes de vincularla al usuario (es
 // irreversible). A diferencia del ConfirmacionModal genérico, muestra la
 // empresa destacada y exige marcar un check antes de habilitar Confirmar,
-// para evitar confirmaciones por error.
+// para evitar confirmaciones por error. Un vendor no vincula "su" empresa
+// sino una que va a gestionar: mismos pasos, textos en tercera persona.
 export default function VinculacionModal({
   isOpen,
   onClose,
   onConfirm,
   nombreEmpresa,
   cuit,
+  esVendor = false,
 }) {
   const [confirmado, setConfirmado] = useState(false);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -53,10 +55,14 @@ export default function VinculacionModal({
           <span className={styles.icono} aria-hidden="true">
             <FiLink />
           </span>
-          <h2 className={styles.titulo}>Confirmá tu empresa</h2>
+          <h2 className={styles.titulo}>{esVendor ? "Confirmá la empresa" : "Confirmá tu empresa"}</h2>
         </div>
 
-        <p className={styles.texto}>Vas a vincular esta empresa a tu usuario:</p>
+        <p className={styles.texto}>
+          {esVendor
+            ? "Vas a sumar esta empresa a las que gestionás:"
+            : "Vas a vincular esta empresa a tu usuario:"}
+        </p>
 
         <div className={styles.empresa}>
           <span className={styles.avatar} aria-hidden="true">
@@ -70,8 +76,9 @@ export default function VinculacionModal({
 
         <p className={styles.aviso}>
           <FiAlertTriangle aria-hidden="true" />
-          Una vez que confirmes no vas a poder cambiarla. Asegurate de que sea
-          la correcta.
+          {esVendor
+            ? "Una vez que confirmes queda vinculada a tu usuario. Asegurate de que sea la correcta."
+            : "Una vez que confirmes no vas a poder cambiarla. Asegurate de que sea la correcta."}
         </p>
 
         <label
@@ -82,7 +89,11 @@ export default function VinculacionModal({
             checked={confirmado}
             onChange={(e) => setConfirmado(e.target.checked)}
           />
-          <span>Confirmo que esta es mi empresa y que los datos son correctos.</span>
+          <span>
+            {esVendor
+              ? "Confirmo que es la empresa que voy a gestionar y que los datos son correctos."
+              : "Confirmo que esta es mi empresa y que los datos son correctos."}
+          </span>
         </label>
       </div>
     </Modal>

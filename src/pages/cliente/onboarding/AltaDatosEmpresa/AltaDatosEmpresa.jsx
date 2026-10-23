@@ -493,14 +493,19 @@ export const AltaDatosEmpresa = () => {
       case 1:
         return {
           badge: "Alta de empresa",
-          t: "¿Cuál es el CUIT de tu empresa?",
-          s: "Validamos tu información fiscal y crediticia en tiempo real para agilizar el registro de tu empresa.",
+          // Vendor: da de alta una empresa que va a gestionar, no la propia.
+          t: isVendor ? "¿Cuál es el CUIT de la empresa?" : "¿Cuál es el CUIT de tu empresa?",
+          s: isVendor
+            ? "Validamos su información fiscal y crediticia en tiempo real para agilizar el alta de la empresa."
+            : "Validamos tu información fiscal y crediticia en tiempo real para agilizar el registro de tu empresa.",
         };
       case 2:
         return {
           badge: "Alta de empresa",
           t: "Completá los datos de la empresa",
-          s: "Solo faltan estos datos para crear tu legajo.",
+          s: isVendor
+            ? "Solo faltan estos datos para crear su legajo."
+            : "Solo faltan estos datos para crear tu legajo.",
         };
       default:
         return { badge: "Alta de empresa", t: "Datos de la empresa", s: "" };
@@ -575,8 +580,12 @@ export const AltaDatosEmpresa = () => {
   if (cargandoDatosCompletar) {
     return (
       <LoadingScreen
-        title="Recuperando tus datos"
-        message="Estamos actualizando la información de tu empresa..."
+        title={isVendor ? "Recuperando los datos" : "Recuperando tus datos"}
+        message={
+          isVendor
+            ? "Estamos actualizando la información de la empresa..."
+            : "Estamos actualizando la información de tu empresa..."
+        }
       />
     );
   }
@@ -813,8 +822,12 @@ export const AltaDatosEmpresa = () => {
       {/* ── PANTALLA DE CARGA ────────────────────────────────────────── */}
       {enviandoSolicitud && (
         <LoadingScreen
-          title="Configurando tu entorno"
-          message="Registrando los datos de tu empresa en el sistema..."
+          title={isVendor ? "Configurando la empresa" : "Configurando tu entorno"}
+          message={
+            isVendor
+              ? "Registrando los datos de la empresa en el sistema..."
+              : "Registrando los datos de tu empresa en el sistema..."
+          }
         />
       )}
     </div>

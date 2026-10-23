@@ -29,6 +29,9 @@ const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 // ofrecen "Reintentar".
 const MENSAJE_VALIDACION_RECHAZADA =
   "Registramos algunas observaciones sobre tu empresa. Vas a poder continuar con la carga, pero tu legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.";
+// Vendor: da de alta una empresa que va a gestionar, no la propia.
+const MENSAJE_VALIDACION_RECHAZADA_VENDOR =
+  "Registramos algunas observaciones sobre la empresa. Vas a poder continuar con la carga, pero su legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.";
 
 const formatearCuit = (cuit) => {
   const limpio = String(cuit || "").replace(/\D/g, "");
@@ -43,6 +46,9 @@ const formatearCuit = (cuit) => {
 // "durante" (en el click de handleValidar, con datos potencialmente todavía
 // en vuelo) ni tenga forma de desincronizarse de lo que ve el resto del wizard.
 export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, isVendor = false, vendorCuit = null }) {
+  const mensajeValidacionRechazada = isVendor
+    ? MENSAJE_VALIDACION_RECHAZADA_VENDOR
+    : MENSAJE_VALIDACION_RECHAZADA;
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
@@ -298,7 +304,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
                 error: esErrorSistema
                   ? resultCda.errors.find((e) => e.isInvalidante)?.message ||
                     "No pudimos completar la validación."
-                  : MENSAJE_VALIDACION_RECHAZADA,
+                  : mensajeValidacionRechazada,
               }
             : p,
         ),
@@ -384,7 +390,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
             ? {
                 ...p,
                 estado: "error",
-                error: MENSAJE_VALIDACION_RECHAZADA,
+                error: mensajeValidacionRechazada,
               }
             : { ...p, estado: "completado" }
           : p.id === "pyme"
@@ -453,7 +459,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
 
     setProcesoModal({
       isOpen: true,
-      titulo: "Validando tu empresa",
+      titulo: isVendor ? "Validando la empresa" : "Validando tu empresa",
       pasos: [
         {
           id: "socio",
@@ -702,7 +708,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         />
         {!errors.cuit && (
           <p className={styles.ayuda}>
-            11 dígitos, sin guiones. Lo encontrás en tu constancia de AFIP.
+            11 dígitos, sin guiones.{" "}
+            {isVendor
+              ? "Lo encontrás en la constancia de AFIP de la empresa."
+              : "Lo encontrás en tu constancia de AFIP."}
           </p>
         )}
       </div>
@@ -715,22 +724,22 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           <li className={styles.siguienteItem}>
             <span className={styles.siguienteNum}>01</span>
             <span className={styles.siguienteTexto}>
-              <strong>Validamos tu empresa</strong>
-              <span>Verificamos la información de tu empresa.</span>
+              <strong>{isVendor ? "Validamos la empresa" : "Validamos tu empresa"}</strong>
+              <span>{isVendor ? "Verificamos su información." : "Verificamos la información de tu empresa."}</span>
             </span>
           </li>
           <li className={styles.siguienteItem}>
             <span className={styles.siguienteNum}>02</span>
             <span className={styles.siguienteTexto}>
-              <strong>Completás tus datos</strong>
-              <span>Sumás algunos datos de contacto.</span>
+              <strong>{isVendor ? "Completás sus datos" : "Completás tus datos"}</strong>
+              <span>{isVendor ? "Sumás algunos datos de contacto de la empresa." : "Sumás algunos datos de contacto."}</span>
             </span>
           </li>
           <li className={styles.siguienteItem}>
             <span className={styles.siguienteNum}>03</span>
             <span className={styles.siguienteTexto}>
-              <strong>Entrás a tu legajo</strong>
-              <span>Seguís el alta desde tu legajo.</span>
+              <strong>{isVendor ? "Entrás a su legajo" : "Entrás a tu legajo"}</strong>
+              <span>{isVendor ? "Seguís el alta desde el legajo de la empresa." : "Seguís el alta desde tu legajo."}</span>
             </span>
           </li>
         </ol>
@@ -788,6 +797,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           continuarValidacionCompleta();
         }}
         nombreEmpresa={confirmVinculacion.nombreEmpresa}
+        esVendor={isVendor}
         cuit={formatearCuit(confirmVinculacion.cuit)}
       />
     </div>
