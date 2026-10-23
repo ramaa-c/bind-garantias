@@ -62,12 +62,14 @@ export default function DashboardLayout({ children, hideHelpButton = false }) {
 
       <div className={styles.columnaPrincipal}>
         {/* scroll-visible: la barra se ve sin pasar el mouse (ver index.css). */}
+        {/* El navbar queda fuera de la columna que scrollea: así la barra de
+            scroll arranca debajo de él y no le pasa por encima. */}
+        <Navbar
+          usuario="asesoramiento@mailinator.com"
+          onToggleSidebar={toggleSidebar}
+          hideHelpButton={hideHelpButton}
+        />
         <div className={`${styles.mainColumn} scroll-visible`} ref={columnaRef}>
-          <Navbar
-            usuario="asesoramiento@mailinator.com"
-            onToggleSidebar={toggleSidebar}
-            hideHelpButton={hideHelpButton}
-          />
           <main className={styles.content} ref={contenidoRef}>
             {children}
           </main>
