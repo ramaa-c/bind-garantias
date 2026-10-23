@@ -614,7 +614,7 @@ export function SociosLegajo({
           de espacio terminaba comprimiendo toda la columna en vez de
           scrollear (reportado el 2026-09-30). Oculta en mobile (ver el
           mismo comentario del lado del CSS). */}
-      <div className={styles.sidebarNav}>
+      <div className={`${styles.sidebarNav} scroll-visible`}>
         {tabsDisponibles.map((doc, index) => renderCategoriaYBoton(doc, index))}
       </div>
       {tabsDisponibles.map((doc, index) => {
@@ -639,7 +639,7 @@ export function SociosLegajo({
             {renderCategoriaYBoton(doc, index, { inlineOnly: true })}
 
             {isActive && (
-              <section className={styles.viewer}>
+              <section className={`${styles.viewer} scroll-visible`}>
                 {/* La categoría ("Legajo") y el nombre de la pestaña ya se ven
                     resaltados en el botón activo del sidebar, a centímetros de
                     acá: repetirlos como badge + título aparte era puro relleno

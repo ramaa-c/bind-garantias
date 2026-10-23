@@ -1,5 +1,5 @@
 import React from "react";
-import { FiCalendar, FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash } from "react-icons/fi";
+import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash } from "react-icons/fi";
 import styles from "./TarjetaSolicitud.module.css";
 
 const ESTADOS = {
@@ -17,60 +17,82 @@ const getStatusKey = (estado) => {
   return "statusWaiting";
 };
 
+// Fila compacta (opción A): ícono de estado + tipo/estado/N° y fecha, monto
+// a la derecha y acciones al final. Pensada para listas largas (vendors).
+// Toda la tarjeta abre el detalle (como en admin); "Ver detalle" es solo la
+// pista visual en escritorio y en mobile la reemplaza el chevron.
 export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
   const statusKey = getStatusKey(solicitud.estado);
   const StatusIcon = ESTADOS[statusKey].icon;
 
-  // Hoy "acciones" solo trae "Cancelar" (variant danger). Va en la misma
-  // barra de pie que "Ver detalle" pero en la punta opuesta — misma altura,
-  // máxima distancia posible entre ambas dentro de la tarjeta, y con label
-  // explícito (nada de ícono solo): que cancelar una solicitud no se pueda
-  // confundir con una "x" de cerrar.
+  const verDetalle = () => onVerDetalle && onVerDetalle(solicitud);
+  const handleKeyDown = (e) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      verDetalle();
+    }
+  };
+  // Las acciones propias (Cancelar) no deben abrir además el detalle.
+  const sinPropagar = (onClick) => (e) => {
+    e.stopPropagation();
+    onClick?.(e);
+  };
+
+  // Hoy "acciones" solo trae "Cancelar" (variant danger): va con label
+  // explícito (nada de ícono solo) para que cancelar una solicitud no se
+  // confunda con una "x" de cerrar.
   const accionDestructiva = acciones?.find((a) => a.variant === "danger");
   const otrasAcciones = acciones?.filter((a) => a.variant !== "danger");
 
   return (
-    <div className={`${styles.card} ${styles[statusKey]}`}>
-      <div className={styles.topRow}>
-        <span className={styles.statusPill}>
-          <StatusIcon size={11} />
-          {solicitud.estado || "Pendiente"}
-        </span>
-        <span className={styles.eyebrow}>Solicitud N° {solicitud.id}</span>
-      </div>
+    <article
+      className={`${styles.card} ${styles[statusKey]}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver detalle de la solicitud N° ${solicitud.id}`}
+      onClick={verDetalle}
+      onKeyDown={handleKeyDown}
+    >
+      <span className={styles.icono} aria-hidden="true">
+        <StatusIcon />
+      </span>
 
-      <div className={styles.body}>
-        <div className={styles.info}>
+      <div className={styles.info}>
+        <div className={styles.tituloFila}>
           <h3 className={styles.tipo}>{solicitud.tipo || "Operación"}</h3>
-          <div className={styles.dateBlock}>
-            <FiCalendar size={12} />
-            <span>{solicitud.fecha || "-"}</span>
-          </div>
+          <span className={styles.statusPill}>
+            <StatusIcon size={11} />
+            {solicitud.estado || "Pendiente"}
+          </span>
         </div>
-
-        <div className={styles.montoBlock}>
-          <span className={styles.montoMoneda}>{solicitud.moneda || "$"}</span>
-          <span className={styles.montoValue}>{solicitud.monto}</span>
-        </div>
+        <span className={styles.meta}>
+          Solicitud N° {solicitud.id} · {solicitud.fecha || "-"}
+        </span>
       </div>
 
-      <div className={styles.footer}>
+      <div className={styles.montoBlock}>
+        <span className={styles.montoMoneda}>{solicitud.moneda || "$"}</span>
+        <span className={styles.montoValue}>{solicitud.monto}</span>
+      </div>
+
+      <div className={styles.acciones}>
         {accionDestructiva && (
-          <button type="button" className={styles.btnCancel} onClick={accionDestructiva.onClick}>
+          <button type="button" className={styles.btnCancel} onClick={sinPropagar(accionDestructiva.onClick)}>
             {accionDestructiva.label}
           </button>
         )}
-        <div className={styles.footerRight}>
-          {otrasAcciones?.map((accion) => (
-            <button type="button" key={accion.label} className={styles.btnAction} onClick={accion.onClick}>
-              {accion.label}
-            </button>
-          ))}
-          <button type="button" className={styles.btnDetalle} onClick={() => onVerDetalle && onVerDetalle(solicitud)}>
-            Ver detalle <FiChevronRight size={13} />
+        {otrasAcciones?.map((accion) => (
+          <button type="button" key={accion.label} className={styles.btnAction} onClick={sinPropagar(accion.onClick)}>
+            {accion.label}
           </button>
-        </div>
+        ))}
+        <span className={styles.btnDetalle} aria-hidden="true">
+          Ver detalle <FiChevronRight size={13} />
+        </span>
       </div>
-    </div>
+
+      <FiChevronRight className={styles.chevron} aria-hidden="true" />
+    </article>
   );
 };

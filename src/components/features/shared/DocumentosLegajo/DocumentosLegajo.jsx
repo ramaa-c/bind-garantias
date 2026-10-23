@@ -1108,7 +1108,7 @@ export function DocumentosLegajo({
       {confirmarEliminarArchivoModal}
       {legajoToolbar}
       <div className={`${styles.workspace} ${adminMode ? "" : styles.workspaceCliente}`}>
-        <div className={styles.sidebar}>
+        <div className={`${styles.sidebar} scroll-visible`}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =
               index === 0 ||
@@ -1178,7 +1178,9 @@ export function DocumentosLegajo({
             );
           })}
         </div>
-        <div className={styles.viewerContainer}>{renderViewer(activeDoc)}</div>
+        <div className={`${styles.viewerContainer} scroll-visible`}>
+          {renderViewer(activeDoc)}
+        </div>
       </div>
       </>
     );

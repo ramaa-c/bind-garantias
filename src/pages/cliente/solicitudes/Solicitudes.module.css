@@ -20,7 +20,10 @@
   content: "";
   position: fixed;
   inset: 0;
-  width: 100vw;
+  /* Deja libre el carril de la barra de scroll de la página (ver
+     --gutter-scroll en DashboardLayout): esta capa fija la tapaba. */
+  right: var(--gutter-scroll, 0px);
+  width: auto;
   height: 100vh;
   z-index: -1;
   pointer-events: none;
@@ -56,11 +59,12 @@
 }
 
 .iconCircleSmall {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   background-color: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   color: var(--badge-amarillo-text);
-  border-radius: 50%;
+  border-radius: 0.8rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -151,12 +155,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.875rem;
-  background: rgba(var(--overlay-rgb), 0.02);
-  border: 1px solid rgba(var(--overlay-rgb), 0.06);
-  border-radius: 1rem;
-  padding: 1rem 1.125rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  /* Sin contenedor visible: los campos van directo sobre la página. */
+  margin: 1.25rem 0 1rem;
 }
 
 .searchBox {
@@ -185,9 +186,9 @@
 .searchInput {
   width: 100%;
   height: 2.5rem;
-  background: rgba(var(--overlay-rgb), 0.03);
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
-  border-radius: 0.625rem;
+  background: rgba(var(--overlay-rgb), 0.035);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  border-radius: 0.7rem;
   padding: 0 0.875rem 0 2.5rem;
   color: var(--white);
   font-size: 0.85rem;
@@ -252,6 +253,11 @@
   pointer-events: auto;
 }
 
+/* Mobile: apagado no reserva lugar, así el buscador usa todo el ancho. */
+.clearFiltersBtn:not(.clearFiltersBtnVisible) {
+  display: none;
+}
+
 .clearFiltersBtn:hover {
   color: var(--color-amarillo-bind);
   border-color: rgba(244, 245, 0, 0.3);
@@ -261,10 +267,9 @@
 .listContainer {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.6rem;
   flex: 1;
   overflow-y: auto;
-  padding-right: 0.5rem;
   /* Sin esto, el "levantado" + sombra al hacer hover de la primera tarjeta
      quedaba cortado por el borde superior del propio contenedor con scroll. */
   padding-top: 0.4rem;
@@ -358,13 +363,17 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    /* Mismo valor que el padding horizontal: así el hueco entre "Orden" y
-       el botón de limpiar queda igual al hueco entre el botón y el borde
-       de la card, sin necesitar un margin-left:auto que se comiera todo
-       el espacio sobrante de forma asimétrica. */
-    gap: 1.25rem;
-    padding: 0.75rem 1.25rem;
-    margin-bottom: 1.5rem;
+    gap: 0.75rem;
+  }
+
+  /* Escritorio: el botón de limpiar vuelve a reservar su lugar, para que
+     la fila no se corra al aparecer. */
+  .clearFiltersBtn:not(.clearFiltersBtnVisible) {
+    display: inline-flex;
+  }
+
+  .listContainer {
+    padding-right: 0.5rem;
   }
 
   /* El orden visual mobile (search, limpiar, campos) se resuelve con

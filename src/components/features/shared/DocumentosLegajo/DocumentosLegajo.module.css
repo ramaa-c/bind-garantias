@@ -931,17 +931,6 @@
     overflow-y: auto;
     background: rgba(0, 0, 0, 0.12);
     border-right: 0.5px solid rgba(var(--overlay-rgb), 0.06);
-    scrollbar-width: thin;
-    scrollbar-color: rgba(var(--overlay-rgb), 0.1) transparent;
-  }
-
-  .sidebar::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(var(--overlay-rgb), 0.1);
-    border-radius: 4px;
   }
 
   .viewerContainer {
@@ -949,17 +938,6 @@
     flex-direction: column;
     height: 100%;
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(var(--overlay-rgb), 0.08) transparent;
-  }
-
-  .viewerContainer::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .viewerContainer::-webkit-scrollbar-thumb {
-    background: rgba(var(--overlay-rgb), 0.08);
-    border-radius: 4px;
   }
 
   .categoryLabel {
