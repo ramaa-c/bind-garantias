@@ -641,7 +641,11 @@
     z-index: 10;
     width: 17rem;
     flex-shrink: 0;
-    height: 100dvh;
+    /* --zoom-marco (DashboardLayout): en Rango 2 el sidebar no sigue
+       creciendo con el zoom. El alto se divide por el mismo factor para que
+       siga ocupando toda la pantalla. */
+    zoom: var(--zoom-marco, 1);
+    height: calc(100dvh / var(--zoom-marco, 1));
     margin: 0;
     border: 0;
     border-right: 1px solid rgba(var(--overlay-rgb), 0.07);
