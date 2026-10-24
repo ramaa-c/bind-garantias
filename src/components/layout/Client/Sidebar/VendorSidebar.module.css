@@ -156,8 +156,7 @@
   transition: transform 0.15s ease;
 }
 
-.disparadorAbierto .chevron,
-.disparadorAbierto .cambiar svg {
+.disparadorAbierto .chevron {
   transform: rotate(180deg);
 }
 
@@ -205,15 +204,142 @@
   color: var(--azul, #8a9fff);
 }
 
-/* ── Lista desplegada ── */
-.panel {
+/* ── Modo acotado (panel del vendor): sin contenedor propio, flota dentro
+   del bloque y siempre ocupa lo mismo (buscador + 3 + "Ver todas"). ── */
+.acotado {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.4rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  gap: 0.3rem;
+  padding: 0.15rem 0 0.1rem;
+}
+
+.cap {
+  margin: 0.35rem 0.45rem 0.1rem;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.enCurso {
+  flex-shrink: 0;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+  color: var(--warning);
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Modo flotante (con empresa elegida): panel al lado del sidebar; en
+   mobile, hoja desde abajo. Va en un portal, fuera del zoom del marco. ── */
+.flotante,
+.hoja {
+  --azul: var(--color-azul-bind-300, #8a9fff);
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-elevado);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  animation: aparecer 0.16s ease-out;
+}
+
+.flotante {
+  width: 21rem;
+  border-radius: 1rem;
+}
+
+.hoja {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 80dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  border-radius: 1.25rem 1.25rem 0 0;
+  animation-name: subir;
+}
+
+.hojaFondo {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(8, 8, 10, 0.55);
+}
+
+.hojaTitulo {
+  padding: 1rem 1rem 0;
+  color: var(--white);
+  font-size: 1rem;
+}
+
+.flotante .buscador,
+.hoja .buscador {
+  flex-shrink: 0;
+  margin: 0.7rem 0.7rem 0.2rem;
+  height: 2.6rem;
+}
+
+.flotanteLista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 0.4rem 0.4rem;
+}
+
+.flotanteLista .lista {
+  max-height: none;
+  overflow: visible;
+}
+
+.flotantePie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--azul, #8a9fff);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--azul, #8a9fff);
+  outline-offset: 2px;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes subir {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flotante,
+  .hoja {
+    animation: none;
+  }
 }
 
 .buscador {
@@ -432,7 +558,7 @@
     display: none;
   }
 
-  .compacto .panel {
+  .compacto .acotado {
     display: none;
   }
 }

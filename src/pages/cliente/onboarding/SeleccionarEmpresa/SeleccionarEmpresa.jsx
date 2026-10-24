@@ -318,6 +318,7 @@ export const SeleccionarEmpresa = () => {
               const empresa = empresas.find((e) => String(e.socioId) === String(socioId));
               if (empresa) entrarAEmpresa(empresa);
             }}
+            onVerTodas={() => irAVista("empresas")}
           />
         </div>
       )}
