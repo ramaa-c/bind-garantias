@@ -29,7 +29,7 @@ export const useEmpresaActiva = (skip = false) => {
     !socioId &&
     !isVendor &&
     Array.isArray(socioUsuarios) &&
-    socioUsuarios.length > 0
+    socioUsuarios.length === 1
   ) {
     socioId = socioUsuarios[0].socioid || socioUsuarios[0].SocioID;
   }

@@ -4,6 +4,7 @@ import {
   FiFileText,
   FiClipboard,
   FiFolder,
+  FiUsers,
   FiX,
   FiLogOut,
   FiUser,
@@ -25,7 +26,9 @@ import { useSocioWebPorId } from "../../../../hooks/useSocios";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useEmpresasVendor } from "../../../../hooks/useEmpresasVendor";
 import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
-import { PanelVendor } from "./VendorSidebar";
+import { PanelVendor, SelectorEmpresaVendor } from "./VendorSidebar";
+import { useEmpresasDelUsuario } from "../../../../hooks/useEmpresasDelUsuario";
+import { ZONA_USUARIOS_HABILITADA } from "../../../../hooks/useUsuariosEmpresa";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/useChannel";
@@ -63,6 +66,8 @@ export default function Sidebar({ isOpen, onClose }) {
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
   const { empresas: empresasVendor } = useEmpresasVendor(!isVendor);
+  const { empresas: empresasCliente } = useEmpresasDelUsuario(isVendor);
+  const clienteMultiEmpresa = !isVendor && empresasCliente.length > 1;
   const { data: usuarioDb } = useObtenerPorNombreOEmail(isVendor ? emailUsuario : "");
   const denominacionUsuario = (
     extraerRegistroUsuario(usuarioDb)?.denominacion ||
@@ -155,7 +160,9 @@ export default function Sidebar({ isOpen, onClose }) {
   // después se elige la nueva, o ninguna para volver al panel con todas.
   // vista: "solicitudes" | "empresas" para ir al panel con todas.
   const handleElegirEmpresa = (socioId, vista = "solicitudes") => {
-    const rutaPanel = `${basePath}/seleccionar-empresa${vista === "empresas" ? "?vista=empresas" : ""}`;
+    const rutaPanel = !isVendor
+      ? `${basePath}/elegir-empresa`
+      : `${basePath}/seleccionar-empresa${vista === "empresas" ? "?vista=empresas" : ""}`;
     if (!socioId && !socioIdActivo) {
       navigate(rutaPanel);
       onClose();
@@ -218,6 +225,13 @@ export default function Sidebar({ isOpen, onClose }) {
       ayuda: "Subí la documentación requerida",
       novedad: documentacionRecienDesbloqueada,
       textoNovedad: "Recién habilitada: ya podés subir tu documentación",
+    },
+    ZONA_USUARIOS_HABILITADA && {
+      path: "/usuarios",
+      label: "Usuarios",
+      icono: <FiUsers />,
+      bloqueado: false,
+      ayuda: "Quiénes tienen acceso a la empresa",
     },
   ].filter(Boolean);
 
@@ -311,7 +325,18 @@ export default function Sidebar({ isOpen, onClose }) {
           />
         )}
 
-        {isVinculado && !isVendor && (
+        {isVinculado && clienteMultiEmpresa && (
+          <SelectorEmpresaVendor
+            empresas={empresasCliente}
+            socioIdActivo={socioIdActivo}
+            empresaActiva={{ nombre: nombreEmpresa || "", cuit: cuitActivo || "" }}
+            onElegir={(socioId) => handleElegirEmpresa(socioId)}
+            compacto={compacto}
+            onExpandir={toggleCompacto}
+          />
+        )}
+
+        {isVinculado && !isVendor && !clienteMultiEmpresa && (
           <div className={styles.empresa}>
             <div
               className={`${styles.companyAvatar} ${styles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa)}`]}`}

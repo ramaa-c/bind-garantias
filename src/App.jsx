@@ -10,6 +10,7 @@ import { ChannelProvider } from "./context/ChannelContext";
 import { useChannel } from "./context/useChannel";
 import { Toaster } from "sonner";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
+import { ZONA_USUARIOS_HABILITADA } from "./hooks/useUsuariosEmpresa";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import LegajoDataGuard from "./components/guards/LegajoDataGuard/LegajoDataGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
@@ -63,6 +64,10 @@ const SeleccionarEmpresa = lazy(
   () =>
     import("./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa"),
 );
+const ElegirEmpresa = lazy(
+  () => import("./pages/cliente/onboarding/ElegirEmpresa/ElegirEmpresa"),
+);
+const UsuariosEmpresa = lazy(() => import("./pages/cliente/usuarios/UsuariosEmpresa"));
 const Dashboard = lazy(() => import("./pages/admin/dashboard/Dashboard"));
 const Empresas = lazy(() => import("./pages/admin/empresas/Empresas"));
 const EmpresaDetalle = lazy(
@@ -203,6 +208,28 @@ const rutasCliente = (
                   <OnboardingGuard>
                     <DashboardLayout hideHelpButton>
                       <SeleccionarEmpresa />
+                    </DashboardLayout>
+                  </OnboardingGuard>
+                }
+              />
+              {ZONA_USUARIOS_HABILITADA && (
+                <Route
+                  path="usuarios"
+                  element={
+                    <OnboardingGuard>
+                      <DashboardLayout>
+                        <UsuariosEmpresa />
+                      </DashboardLayout>
+                    </OnboardingGuard>
+                  }
+                />
+              )}
+              <Route
+                path="elegir-empresa"
+                element={
+                  <OnboardingGuard>
+                    <DashboardLayout hideHelpButton>
+                      <ElegirEmpresa />
                     </DashboardLayout>
                   </OnboardingGuard>
                 }

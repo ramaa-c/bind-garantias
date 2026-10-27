@@ -40,6 +40,7 @@ export const OnboardingGuard = ({ children }) => {
   const isSeleccionarEmpresaPage = location.pathname.endsWith(
     "/seleccionar-empresa",
   );
+  const isElegirEmpresaPage = location.pathname.endsWith("/elegir-empresa");
   const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
   const isLegajoPage = location.pathname.endsWith("/legajo");
   const isDocumentacionPage = location.pathname.endsWith("/documentacion");
@@ -128,7 +129,11 @@ export const OnboardingGuard = ({ children }) => {
   // equipo el 2026-08-13): el socio puede entrar más allá del resultado del
   // CDA — el aviso y el bloqueo real (migración a SGR+) viven en
   // LegajoUniversalBar, que sí sigue consultando ese estado.
-  const empresaActual = !isVendor ? listaEmpresas[0] : null;
+  const esMultiEmpresa = !isVendor && listaEmpresas.length > 1;
+  const empresaElegida = listaEmpresas.find(
+    (s) => String(s?.socioid ?? s?.SocioID) === String(activeSocioId ?? ""),
+  );
+  const empresaActual = isVendor ? null : esMultiEmpresa ? empresaElegida : listaEmpresas[0];
   const telefonoActual = String(
     empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
   ).trim();
@@ -186,14 +191,13 @@ export const OnboardingGuard = ({ children }) => {
     // si tieneEmpresas resuelve antes, le fijaría un activeSocioId a un
     // vendor real antes de saber que lo es, y el guard de abajo ya no lo
     // manda a /seleccionar-empresa.
-    if (tieneEmpresas && !activeSocioId && vendorData && !vendorData.isVendor) {
-      const firstSocioId =
-        listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID;
-      if (firstSocioId) {
-        setActiveSocioId(firstSocioId);
+    if (listaEmpresas.length === 1 && vendorData && !vendorData.isVendor) {
+      const unicaSocioId = listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID;
+      if (unicaSocioId && String(unicaSocioId) !== String(activeSocioId ?? "")) {
+        setActiveSocioId(unicaSocioId);
       }
     }
-  }, [tieneEmpresas, activeSocioId, vendorData, listaEmpresas, setActiveSocioId]);
+  }, [activeSocioId, vendorData, listaEmpresas, setActiveSocioId]);
 
   React.useEffect(() => {
     if (isVendor && !isLoadingVendor && user) {
@@ -316,6 +320,11 @@ export const OnboardingGuard = ({ children }) => {
       ) {
         return <Navigate to={homePath} replace />;
       }
+    } else if (esMultiEmpresa && !empresaElegida) {
+      if (!isElegirEmpresaPage) {
+        return <Navigate to={`${basePath}/elegir-empresa`} replace />;
+      }
+      return <>{children}</>;
     } else if (!telefonoActual) {
       // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
       // "umbral", el Paso 2 es lo que termina de cargar datos como el
@@ -339,9 +348,14 @@ export const OnboardingGuard = ({ children }) => {
       (isTerminosPage && !debeAceptarTerminos) ||
       isAltaDatosPage ||
       isSeleccionarEmpresaPage ||
-      isInicioPage
+      isInicioPage ||
+      (isElegirEmpresaPage && !esMultiEmpresa)
     ) {
       return <Navigate to={homePath} replace />;
+    }
+
+    if (isElegirEmpresaPage) {
+      return <>{children}</>;
     }
 
     if (!isSolicitudesEnabled && isSolicitudesPage) {
