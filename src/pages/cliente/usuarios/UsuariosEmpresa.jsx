@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   FiUsers,
@@ -10,6 +10,8 @@ import {
   FiClock,
   FiEye,
   FiInfo,
+  FiChevronDown,
+  FiMoreVertical,
 } from "react-icons/fi";
 import { Button, Modal, Switch, Skeleton } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -154,6 +156,22 @@ export default function UsuariosEmpresa() {
   const [confirmarAsistencia, setConfirmarAsistencia] = useState(false);
   const [solicitando, setSolicitando] = useState(false);
   const [mostrarAsistenciaDemo, setMostrarAsistenciaDemo] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(null);
+
+  useEffect(() => {
+    if (!menuAbierto) return undefined;
+    const cerrar = (e) => {
+      if (e.type === "keydown" && e.key !== "Escape") return;
+      if (e.type === "mousedown" && e.target.closest?.(`.${styles.accionesMovil}`)) return;
+      setMenuAbierto(null);
+    };
+    document.addEventListener("mousedown", cerrar);
+    document.addEventListener("keydown", cerrar);
+    return () => {
+      document.removeEventListener("mousedown", cerrar);
+      document.removeEventListener("keydown", cerrar);
+    };
+  }, [menuAbierto]);
 
   const asistenciaVisible = asistenciaDisponible || (esDemo && mostrarAsistenciaDemo);
 
@@ -183,6 +201,118 @@ export default function UsuariosEmpresa() {
     setSolicitando(false);
     setConfirmarAsistencia(false);
     toast.success("Pedimos asistencia para tu empresa");
+  };
+
+  const vinculados = usuarios.filter((u) => u.estado !== ESTADO_INVITACION);
+  const invitaciones = usuarios.filter((u) => u.estado === ESTADO_INVITACION);
+  const admins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
+  const comunes = vinculados.length - admins;
+
+  const renderFila = (usuario) => {
+    const invitacion = usuario.estado === ESTADO_INVITACION;
+    const esUltimoAdmin = usuario.rol === ROL_ADMIN && !invitacion && cantidadAdmins <= 1;
+    return (
+      <li key={usuario.id} className={`${styles.fila} ${invitacion ? styles.filaInvitacion : ""}`}>
+        <span className={styles.avatar} aria-hidden="true">
+          {invitacion ? <FiMail /> : inicialesDeEmail(usuario.email)}
+        </span>
+
+        <span className={styles.info}>
+          <span className={styles.linea}>
+            <span className={styles.email} title={usuario.email}>
+              {usuario.email}
+            </span>
+            <span className={styles.etiquetas}>
+              {usuario.esVos && <span className={`${styles.pill} ${styles.pillVos}`}>Vos</span>}
+              <span className={`${styles.pill} ${usuario.rol === ROL_ADMIN ? styles.pillAdmin : styles.pillUsuario}`}>
+                {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
+                {usuario.rol === ROL_ADMIN ? "Administrador" : "Usuario"}
+              </span>
+              {invitacion && (
+                <span className={`${styles.pill} ${styles.pillInvitacion}`}>
+                  <FiClock aria-hidden="true" /> Pendiente
+                </span>
+              )}
+            </span>
+          </span>
+          <span className={styles.meta}>
+            {invitacion
+              ? `Invitación enviada el ${formatearFecha(usuario.desde)}`
+              : usuario.desde
+                ? `Con acceso desde el ${formatearFecha(usuario.desde)}`
+                : "Con acceso"}
+          </span>
+        </span>
+
+        {soyAdmin && (
+          <span className={styles.acciones}>
+            {esUltimoAdmin && <span className={styles.unicoAdmin}>Único administrador</span>}
+            <span className={styles.accionesEscritorio}>
+              <span className={styles.selectRol}>
+                <select
+                  value={usuario.rol}
+                  onChange={(e) => e.target.value !== usuario.rol && alternarRol(usuario)}
+                  disabled={esUltimoAdmin}
+                  aria-label={`Rol de ${usuario.email}`}
+                >
+                  <option value={ROL_ADMIN}>Administrador</option>
+                  <option value={ROL_USUARIO}>Usuario</option>
+                </select>
+                <FiChevronDown aria-hidden="true" />
+              </span>
+              {!esUltimoAdmin && (
+                <button type="button" className={styles.botonQuitar} onClick={() => setAQuitar(usuario)}>
+                  <FiUserX aria-hidden="true" />
+                  {invitacion ? "Cancelar invitación" : "Quitar acceso"}
+                </button>
+              )}
+            </span>
+            {!esUltimoAdmin && (
+              <span className={styles.accionesMovil}>
+                <button
+                  type="button"
+                  className={styles.botonMenu}
+                  onClick={() => setMenuAbierto(menuAbierto === usuario.id ? null : usuario.id)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuAbierto === usuario.id}
+                  aria-label={`Acciones para ${usuario.email}`}
+                >
+                  <FiMoreVertical aria-hidden="true" />
+                </button>
+                {menuAbierto === usuario.id && (
+                  <span className={styles.menu} role="menu">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.menuItem}
+                      onClick={() => {
+                        setMenuAbierto(null);
+                        alternarRol(usuario);
+                      }}
+                    >
+                      <FiShield aria-hidden="true" />
+                      {usuario.rol === ROL_ADMIN ? "Quitar administrador" : "Hacer administrador"}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={`${styles.menuItem} ${styles.menuItemPeligro}`}
+                      onClick={() => {
+                        setMenuAbierto(null);
+                        setAQuitar(usuario);
+                      }}
+                    >
+                      <FiUserX aria-hidden="true" />
+                      {invitacion ? "Cancelar invitación" : "Quitar acceso"}
+                    </button>
+                  </span>
+                )}
+              </span>
+            )}
+          </span>
+        )}
+      </li>
+    );
   };
 
   return (
@@ -242,15 +372,15 @@ export default function UsuariosEmpresa() {
       <section className={styles.seccion} aria-labelledby="usuarios-lista">
         <div className={styles.seccionCabecera}>
           <h2 id="usuarios-lista" className={styles.seccionTitulo}>
-            Con acceso
+            Con acceso {!cargando && <span className={styles.cuenta}>{vinculados.length}</span>}
           </h2>
           {!cargando && (
             <span className={styles.contador}>
-              {usuarios.length} {usuarios.length === 1 ? "persona" : "personas"}
+              {admins} {admins === 1 ? "administrador" : "administradores"} · {comunes}{" "}
+              {comunes === 1 ? "usuario" : "usuarios"}
             </span>
           )}
         </div>
-
         <ul className={styles.lista}>
           {cargando
             ? Array.from({ length: 3 }).map((_, i) => (
@@ -258,80 +388,20 @@ export default function UsuariosEmpresa() {
                   <Skeleton height="3.25rem" radius="0.85rem" />
                 </li>
               ))
-            : usuarios.map((usuario) => {
-                const esUltimoAdmin =
-                  usuario.rol === ROL_ADMIN && usuario.estado !== ESTADO_INVITACION && cantidadAdmins <= 1;
-                const invitacion = usuario.estado === ESTADO_INVITACION;
-                return (
-                  <li key={usuario.id} className={`${styles.fila} ${invitacion ? styles.filaInvitacion : ""}`}>
-                    <span className={styles.avatar} aria-hidden="true">
-                      {invitacion ? <FiMail /> : inicialesDeEmail(usuario.email)}
-                    </span>
-
-                    <span className={styles.info}>
-                      <span className={styles.email}>
-                        {usuario.email}
-                        {usuario.esVos && <span className={styles.vos}>Vos</span>}
-                      </span>
-                      <span className={styles.meta}>
-                        {invitacion
-                          ? `Invitación enviada el ${formatearFecha(usuario.desde)}`
-                          : usuario.desde
-                            ? `Con acceso desde el ${formatearFecha(usuario.desde)}`
-                            : "Con acceso"}
-                      </span>
-                    </span>
-
-                    <span className={styles.etiquetas}>
-                      {invitacion && (
-                        <span className={`${styles.pill} ${styles.pillInvitacion}`}>
-                          <FiClock aria-hidden="true" /> Pendiente
-                        </span>
-                      )}
-                      <span
-                        className={`${styles.pill} ${usuario.rol === ROL_ADMIN ? styles.pillAdmin : styles.pillUsuario}`}
-                      >
-                        {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
-                        {usuario.rol === ROL_ADMIN ? "Administrador" : "Usuario"}
-                      </span>
-                    </span>
-
-                    {soyAdmin && (
-                      <span className={styles.acciones}>
-                        <button
-                          type="button"
-                          className={styles.accion}
-                          onClick={() => alternarRol(usuario)}
-                          disabled={esUltimoAdmin}
-                          title={
-                            esUltimoAdmin
-                              ? "La empresa tiene que tener al menos un administrador"
-                              : undefined
-                          }
-                        >
-                          {usuario.rol === ROL_ADMIN ? "Quitar administrador" : "Hacer administrador"}
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.accion} ${styles.accionPeligro}`}
-                          onClick={() => setAQuitar(usuario)}
-                          disabled={esUltimoAdmin}
-                          title={
-                            esUltimoAdmin
-                              ? "La empresa tiene que tener al menos un administrador"
-                              : undefined
-                          }
-                        >
-                          <FiUserX aria-hidden="true" />
-                          {invitacion ? "Cancelar invitación" : "Quitar acceso"}
-                        </button>
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
+            : vinculados.map(renderFila)}
         </ul>
       </section>
+
+      {!cargando && invitaciones.length > 0 && (
+        <section className={styles.seccion} aria-labelledby="usuarios-invitaciones">
+          <div className={styles.seccionCabecera}>
+            <h2 id="usuarios-invitaciones" className={styles.seccionTitulo}>
+              Invitaciones pendientes <span className={styles.cuenta}>{invitaciones.length}</span>
+            </h2>
+          </div>
+          <ul className={styles.lista}>{invitaciones.map(renderFila)}</ul>
+        </section>
+      )}
 
       {asistenciaVisible && (
         <section className={styles.asistencia} aria-labelledby="usuarios-asistencia">
@@ -340,24 +410,24 @@ export default function UsuariosEmpresa() {
           </span>
           <div className={styles.asistenciaTexto}>
             <h2 id="usuarios-asistencia" className={styles.asistenciaTitulo}>
-              Asistencia interna
+              Asistencia de BIND Garantías
             </h2>
             {asistencia ? (
               <p className={styles.asistenciaDescripcion}>
                 Pediste asistencia el {formatearFechaHora(new Date(asistencia.solicitadaEl))}. Una persona de BIND
-                Garantías va a poder ingresar a la empresa durante {asistencia.horas} horas desde su primer ingreso.
+                Garantías va a poder ingresar durante {asistencia.horas} horas desde su primer ingreso.
               </p>
             ) : (
               <p className={styles.asistenciaDescripcion}>
-                Si hay algo que no podés resolver, una persona de BIND Garantías puede ingresar a tu empresa para
-                ayudarte. Va a tener el mismo acceso que un usuario y solo por un tiempo limitado.
+                Si algo no se puede resolver, una persona de BIND Garantías puede ingresar como usuario, por un tiempo
+                limitado, para ayudarte.
               </p>
             )}
           </div>
           {!asistencia && (
-            <Button type="button" variant="outline" size="md" onClick={() => setConfirmarAsistencia(true)}>
-              <FiLifeBuoy /> Solicitar asistencia
-            </Button>
+            <button type="button" className={styles.asistenciaBoton} onClick={() => setConfirmarAsistencia(true)}>
+              Solicitar asistencia
+            </button>
           )}
         </section>
       )}
