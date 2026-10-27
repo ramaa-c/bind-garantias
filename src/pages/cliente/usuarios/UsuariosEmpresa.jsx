@@ -185,6 +185,75 @@ export default function UsuariosEmpresa() {
     toast.success("Pedimos asistencia para tu empresa");
   };
 
+  const vinculados = usuarios.filter((u) => u.estado !== ESTADO_INVITACION);
+  const invitaciones = usuarios.filter((u) => u.estado === ESTADO_INVITACION);
+  const admins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
+  const comunes = vinculados.length - admins;
+
+  const renderFila = (usuario) => {
+    const invitacion = usuario.estado === ESTADO_INVITACION;
+    const esUltimoAdmin = usuario.rol === ROL_ADMIN && !invitacion && cantidadAdmins <= 1;
+    return (
+      <li key={usuario.id} className={`${styles.fila} ${invitacion ? styles.filaInvitacion : ""}`}>
+        <span className={styles.avatar} aria-hidden="true">
+          {invitacion ? <FiMail /> : inicialesDeEmail(usuario.email)}
+        </span>
+
+        <span className={styles.info}>
+          <span className={styles.linea}>
+            <span className={styles.email} title={usuario.email}>
+              {usuario.email}
+            </span>
+            <span className={styles.etiquetas}>
+              {usuario.esVos && <span className={`${styles.pill} ${styles.pillVos}`}>Vos</span>}
+              <span className={`${styles.pill} ${usuario.rol === ROL_ADMIN ? styles.pillAdmin : styles.pillUsuario}`}>
+                {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
+                {usuario.rol === ROL_ADMIN ? "Administrador" : "Usuario"}
+              </span>
+              {invitacion && (
+                <span className={`${styles.pill} ${styles.pillInvitacion}`}>
+                  <FiClock aria-hidden="true" /> Pendiente
+                </span>
+              )}
+            </span>
+          </span>
+          <span className={styles.meta}>
+            {invitacion
+              ? `Invitación enviada el ${formatearFecha(usuario.desde)}`
+              : usuario.desde
+                ? `Con acceso desde el ${formatearFecha(usuario.desde)}`
+                : "Con acceso"}
+          </span>
+        </span>
+
+        {soyAdmin && (
+          <span className={styles.acciones}>
+            {esUltimoAdmin ? (
+              <span className={styles.unicoAdmin}>
+                <FiInfo aria-hidden="true" /> Único administrador
+              </span>
+            ) : (
+              <>
+                <button type="button" className={styles.accion} onClick={() => alternarRol(usuario)}>
+                  <FiShield aria-hidden="true" />
+                  {usuario.rol === ROL_ADMIN ? "Quitar administrador" : "Hacer administrador"}
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.accion} ${styles.accionPeligro}`}
+                  onClick={() => setAQuitar(usuario)}
+                >
+                  <FiUserX aria-hidden="true" />
+                  {invitacion ? "Cancelar invitación" : "Quitar acceso"}
+                </button>
+              </>
+            )}
+          </span>
+        )}
+      </li>
+    );
+  };
+
   return (
     <section className={styles.pagina}>
       <header className={styles.cabecera}>
@@ -242,15 +311,15 @@ export default function UsuariosEmpresa() {
       <section className={styles.seccion} aria-labelledby="usuarios-lista">
         <div className={styles.seccionCabecera}>
           <h2 id="usuarios-lista" className={styles.seccionTitulo}>
-            Con acceso
+            Con acceso {!cargando && <span className={styles.cuenta}>{vinculados.length}</span>}
           </h2>
           {!cargando && (
             <span className={styles.contador}>
-              {usuarios.length} {usuarios.length === 1 ? "persona" : "personas"}
+              {admins} {admins === 1 ? "administrador" : "administradores"} · {comunes}{" "}
+              {comunes === 1 ? "usuario" : "usuarios"}
             </span>
           )}
         </div>
-
         <ul className={styles.lista}>
           {cargando
             ? Array.from({ length: 3 }).map((_, i) => (
@@ -258,80 +327,20 @@ export default function UsuariosEmpresa() {
                   <Skeleton height="3.25rem" radius="0.85rem" />
                 </li>
               ))
-            : usuarios.map((usuario) => {
-                const esUltimoAdmin =
-                  usuario.rol === ROL_ADMIN && usuario.estado !== ESTADO_INVITACION && cantidadAdmins <= 1;
-                const invitacion = usuario.estado === ESTADO_INVITACION;
-                return (
-                  <li key={usuario.id} className={`${styles.fila} ${invitacion ? styles.filaInvitacion : ""}`}>
-                    <span className={styles.avatar} aria-hidden="true">
-                      {invitacion ? <FiMail /> : inicialesDeEmail(usuario.email)}
-                    </span>
-
-                    <span className={styles.info}>
-                      <span className={styles.email}>
-                        {usuario.email}
-                        {usuario.esVos && <span className={styles.vos}>Vos</span>}
-                      </span>
-                      <span className={styles.meta}>
-                        {invitacion
-                          ? `Invitación enviada el ${formatearFecha(usuario.desde)}`
-                          : usuario.desde
-                            ? `Con acceso desde el ${formatearFecha(usuario.desde)}`
-                            : "Con acceso"}
-                      </span>
-                    </span>
-
-                    <span className={styles.etiquetas}>
-                      {invitacion && (
-                        <span className={`${styles.pill} ${styles.pillInvitacion}`}>
-                          <FiClock aria-hidden="true" /> Pendiente
-                        </span>
-                      )}
-                      <span
-                        className={`${styles.pill} ${usuario.rol === ROL_ADMIN ? styles.pillAdmin : styles.pillUsuario}`}
-                      >
-                        {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
-                        {usuario.rol === ROL_ADMIN ? "Administrador" : "Usuario"}
-                      </span>
-                    </span>
-
-                    {soyAdmin && (
-                      <span className={styles.acciones}>
-                        <button
-                          type="button"
-                          className={styles.accion}
-                          onClick={() => alternarRol(usuario)}
-                          disabled={esUltimoAdmin}
-                          title={
-                            esUltimoAdmin
-                              ? "La empresa tiene que tener al menos un administrador"
-                              : undefined
-                          }
-                        >
-                          {usuario.rol === ROL_ADMIN ? "Quitar administrador" : "Hacer administrador"}
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.accion} ${styles.accionPeligro}`}
-                          onClick={() => setAQuitar(usuario)}
-                          disabled={esUltimoAdmin}
-                          title={
-                            esUltimoAdmin
-                              ? "La empresa tiene que tener al menos un administrador"
-                              : undefined
-                          }
-                        >
-                          <FiUserX aria-hidden="true" />
-                          {invitacion ? "Cancelar invitación" : "Quitar acceso"}
-                        </button>
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
+            : vinculados.map(renderFila)}
         </ul>
       </section>
+
+      {!cargando && invitaciones.length > 0 && (
+        <section className={styles.seccion} aria-labelledby="usuarios-invitaciones">
+          <div className={styles.seccionCabecera}>
+            <h2 id="usuarios-invitaciones" className={styles.seccionTitulo}>
+              Invitaciones pendientes <span className={styles.cuenta}>{invitaciones.length}</span>
+            </h2>
+          </div>
+          <ul className={styles.lista}>{invitaciones.map(renderFila)}</ul>
+        </section>
+      )}
 
       {asistenciaVisible && (
         <section className={styles.asistencia} aria-labelledby="usuarios-asistencia">
@@ -340,24 +349,24 @@ export default function UsuariosEmpresa() {
           </span>
           <div className={styles.asistenciaTexto}>
             <h2 id="usuarios-asistencia" className={styles.asistenciaTitulo}>
-              Asistencia interna
+              Asistencia de BIND Garantías
             </h2>
             {asistencia ? (
               <p className={styles.asistenciaDescripcion}>
                 Pediste asistencia el {formatearFechaHora(new Date(asistencia.solicitadaEl))}. Una persona de BIND
-                Garantías va a poder ingresar a la empresa durante {asistencia.horas} horas desde su primer ingreso.
+                Garantías va a poder ingresar durante {asistencia.horas} horas desde su primer ingreso.
               </p>
             ) : (
               <p className={styles.asistenciaDescripcion}>
-                Si hay algo que no podés resolver, una persona de BIND Garantías puede ingresar a tu empresa para
-                ayudarte. Va a tener el mismo acceso que un usuario y solo por un tiempo limitado.
+                Si algo no se puede resolver, una persona de BIND Garantías puede ingresar como usuario, por un tiempo
+                limitado, para ayudarte.
               </p>
             )}
           </div>
           {!asistencia && (
-            <Button type="button" variant="outline" size="md" onClick={() => setConfirmarAsistencia(true)}>
-              <FiLifeBuoy /> Solicitar asistencia
-            </Button>
+            <button type="button" className={styles.asistenciaBoton} onClick={() => setConfirmarAsistencia(true)}>
+              Solicitar asistencia
+            </button>
           )}
         </section>
       )}
