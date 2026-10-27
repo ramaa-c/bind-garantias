@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiBriefcase, FiChevronRight, FiClock, FiCheck, FiSearch } from "react-icons/fi";
+import { FiBriefcase, FiChevronLeft, FiChevronRight, FiClock, FiCheck, FiSearch } from "react-icons/fi";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useChannel } from "../../../../context/useChannel";
 import { useEmpresasDelUsuario } from "../../../../hooks/useEmpresasDelUsuario";
@@ -46,8 +46,14 @@ export default function ElegirEmpresa() {
       (digitos.length > 0 && String(e.cuit).replace(/\D/g, "").includes(digitos)),
   );
   const cambiando = !!activeSocioId;
+  const empresaActual = empresas.find((e) => String(e.socioId) === String(activeSocioId ?? ""));
 
   const inicio = `${basePath}${isSolicitudesEnabled ? "/solicitudes" : "/legajo"}`;
+
+  const volver = () => {
+    if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+    else navigate(inicio);
+  };
 
   const elegir = (socioId) => {
     if (String(socioId) !== String(activeSocioId ?? "")) {
@@ -63,12 +69,20 @@ export default function ElegirEmpresa() {
         <span className={styles.cabeceraIcono} aria-hidden="true">
           <FiBriefcase />
         </span>
-        <div>
+        <div className={styles.cabeceraTextos}>
           <h1 className={styles.titulo}>{cambiando ? "Elegí una empresa" : "¿Con qué empresa querés ingresar?"}</h1>
           <p className={styles.subtitulo}>
             Tenés acceso a {empresas.length || "varias"} empresas. Podés cambiarla cuando quieras desde el menú.
           </p>
         </div>
+        {cambiando && (
+          <button type="button" className={styles.volver} onClick={volver}>
+            <FiChevronLeft aria-hidden="true" />
+            <span className={styles.volverTexto}>
+              Volver{empresaActual?.nombre ? ` a ${empresaActual.nombre}` : ""}
+            </span>
+          </button>
+        )}
       </header>
 
       <label className={styles.buscador}>

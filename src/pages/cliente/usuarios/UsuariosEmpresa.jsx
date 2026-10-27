@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   FiUsers,
@@ -10,6 +10,8 @@ import {
   FiClock,
   FiEye,
   FiInfo,
+  FiChevronDown,
+  FiMoreVertical,
 } from "react-icons/fi";
 import { Button, Modal, Switch, Skeleton } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -154,6 +156,22 @@ export default function UsuariosEmpresa() {
   const [confirmarAsistencia, setConfirmarAsistencia] = useState(false);
   const [solicitando, setSolicitando] = useState(false);
   const [mostrarAsistenciaDemo, setMostrarAsistenciaDemo] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(null);
+
+  useEffect(() => {
+    if (!menuAbierto) return undefined;
+    const cerrar = (e) => {
+      if (e.type === "keydown" && e.key !== "Escape") return;
+      if (e.type === "mousedown" && e.target.closest?.(`.${styles.accionesMovil}`)) return;
+      setMenuAbierto(null);
+    };
+    document.addEventListener("mousedown", cerrar);
+    document.addEventListener("keydown", cerrar);
+    return () => {
+      document.removeEventListener("mousedown", cerrar);
+      document.removeEventListener("keydown", cerrar);
+    };
+  }, [menuAbierto]);
 
   const asistenciaVisible = asistenciaDisponible || (esDemo && mostrarAsistenciaDemo);
 
@@ -228,25 +246,68 @@ export default function UsuariosEmpresa() {
 
         {soyAdmin && (
           <span className={styles.acciones}>
-            {esUltimoAdmin ? (
-              <span className={styles.unicoAdmin}>
-                <FiInfo aria-hidden="true" /> Único administrador
-              </span>
-            ) : (
-              <>
-                <button type="button" className={styles.accion} onClick={() => alternarRol(usuario)}>
-                  <FiShield aria-hidden="true" />
-                  {usuario.rol === ROL_ADMIN ? "Quitar administrador" : "Hacer administrador"}
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.accion} ${styles.accionPeligro}`}
-                  onClick={() => setAQuitar(usuario)}
+            {esUltimoAdmin && <span className={styles.unicoAdmin}>Único administrador</span>}
+            <span className={styles.accionesEscritorio}>
+              <span className={styles.selectRol}>
+                <select
+                  value={usuario.rol}
+                  onChange={(e) => e.target.value !== usuario.rol && alternarRol(usuario)}
+                  disabled={esUltimoAdmin}
+                  aria-label={`Rol de ${usuario.email}`}
                 >
+                  <option value={ROL_ADMIN}>Administrador</option>
+                  <option value={ROL_USUARIO}>Usuario</option>
+                </select>
+                <FiChevronDown aria-hidden="true" />
+              </span>
+              {!esUltimoAdmin && (
+                <button type="button" className={styles.botonQuitar} onClick={() => setAQuitar(usuario)}>
                   <FiUserX aria-hidden="true" />
                   {invitacion ? "Cancelar invitación" : "Quitar acceso"}
                 </button>
-              </>
+              )}
+            </span>
+            {!esUltimoAdmin && (
+              <span className={styles.accionesMovil}>
+                <button
+                  type="button"
+                  className={styles.botonMenu}
+                  onClick={() => setMenuAbierto(menuAbierto === usuario.id ? null : usuario.id)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuAbierto === usuario.id}
+                  aria-label={`Acciones para ${usuario.email}`}
+                >
+                  <FiMoreVertical aria-hidden="true" />
+                </button>
+                {menuAbierto === usuario.id && (
+                  <span className={styles.menu} role="menu">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.menuItem}
+                      onClick={() => {
+                        setMenuAbierto(null);
+                        alternarRol(usuario);
+                      }}
+                    >
+                      <FiShield aria-hidden="true" />
+                      {usuario.rol === ROL_ADMIN ? "Quitar administrador" : "Hacer administrador"}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={`${styles.menuItem} ${styles.menuItemPeligro}`}
+                      onClick={() => {
+                        setMenuAbierto(null);
+                        setAQuitar(usuario);
+                      }}
+                    >
+                      <FiUserX aria-hidden="true" />
+                      {invitacion ? "Cancelar invitación" : "Quitar acceso"}
+                    </button>
+                  </span>
+                )}
+              </span>
             )}
           </span>
         )}
