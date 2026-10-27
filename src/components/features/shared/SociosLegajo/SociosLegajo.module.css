@@ -714,6 +714,31 @@
   .perfilCard {
     padding: 0.9rem 1.15rem 0.4rem;
   }
+
+  .perfilFila {
+    flex: 1 0 auto;
+  }
+
+  .perfilDetalle > .perfilCard {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+  }
+
+  .perfilDetalle > .perfilCard:last-child {
+    flex-grow: 3;
+  }
+
+  .perfilDetalle .perfilRows {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .perfilDetalle .perfilRow {
+    flex: 1 0 auto;
+    align-items: center;
+  }
 }
 
 @media (min-width: 64rem) and (max-width: 1440px),

@@ -1,6 +1,8 @@
 import { CABECERAS_BASE_API } from "./cabecerasApi";
 
-const CLAVE_STORAGE = "tokenApi";
+export const CLAVE_STORAGE_TOKEN = "tokenApi";
+const CLAVE_STORAGE = CLAVE_STORAGE_TOKEN;
+const CLAVE_GUARDADO_EN = "tokenApiGuardadoEn";
 
 const leerPayload = (token) => {
   try {
@@ -19,6 +21,7 @@ const estaVencido = (token) => {
 export const guardarTokenApi = (token) => {
   try {
     localStorage.setItem(CLAVE_STORAGE, token);
+    localStorage.setItem(CLAVE_GUARDADO_EN, String(Date.now()));
   } catch {
     return;
   }
@@ -27,6 +30,7 @@ export const guardarTokenApi = (token) => {
 export const borrarTokenApi = () => {
   try {
     localStorage.removeItem(CLAVE_STORAGE);
+    localStorage.removeItem(CLAVE_GUARDADO_EN);
   } catch {
     return;
   }
@@ -51,6 +55,24 @@ export const obtenerVencimientoTokenMs = () => {
   const token = obtenerTokenApi();
   const payload = token ? leerPayload(token) : null;
   return payload?.exp ? payload.exp * 1000 : null;
+};
+
+export const obtenerDatosTokenApi = () => {
+  const token = obtenerTokenApi();
+  const payload = token ? leerPayload(token) : null;
+  if (!payload) return null;
+  let guardadoEn = null;
+  try {
+    guardadoEn = Number(localStorage.getItem(CLAVE_GUARDADO_EN)) || null;
+  } catch {
+    guardadoEn = null;
+  }
+  return {
+    token,
+    vencimientoMs: payload.exp ? payload.exp * 1000 : null,
+    emitidoMs: payload.iat ? payload.iat * 1000 : guardadoEn,
+    inicioSesionMs: payload.sat ? payload.sat * 1000 : null,
+  };
 };
 
 export const cerrarSesionApi = () => {

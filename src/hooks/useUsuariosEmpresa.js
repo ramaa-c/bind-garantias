@@ -1,133 +1,203 @@
 import { useMemo } from "react";
-import { create } from "zustand";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../store/useAuthStore";
+import { useChannel } from "../context/useChannel";
+import { useCadenaActiva } from "./useCadenaActiva";
 import { useUsuariosVinculadosASocio } from "./useSocios";
 import { useTipoCanalComercializacion } from "./useCatalogos";
-
-export const ZONA_USUARIOS_HABILITADA = import.meta.env.DEV;
+import { useObtenerCadenaPublicaWeb } from "./useCadenaValor";
+import { useAsistenciaInterna, CLAVE_ASISTENCIAS } from "./useAsistenciaInterna";
+import { sociosService } from "../services/sociosService";
+import { usuarioVinculacionService } from "../services/usuarioVinculacionService";
+import { mensajeNegocio } from "../utils/mensajesError";
 
 export const ROL_ADMIN = "admin";
 export const ROL_USUARIO = "usuario";
 export const ESTADO_VINCULADO = "vinculado";
 export const ESTADO_INVITACION = "invitacion";
 
-const HORAS_ASISTENCIA_DEMO = 48;
-const DEMO_VACIO = { roles: {}, invitaciones: [], bajas: [], asistencia: null };
+export const RESULTADO_INVITADA = "invitada";
+export const RESULTADO_VINCULADA = "vinculada";
 
-const useDemoStore = create((set) => ({
-  porSocio: {},
-  verComoUsuario: false,
-  actualizar: (socioId, cambio) =>
-    set((estado) => {
-      const actual = estado.porSocio[socioId] || { roles: {}, invitaciones: [], bajas: [], asistencia: null };
-      return { porSocio: { ...estado.porSocio, [socioId]: { ...actual, ...cambio(actual) } } };
-    }),
-  setVerComoUsuario: (valor) => set({ verComoUsuario: valor }),
-}));
+const MENSAJE_SIN_PERMISO = "Solo los administradores de la empresa pueden hacer esto.";
+const MENSAJE_ULTIMO_ADMIN = "El CUIT debe tener al menos un administrador.";
+const MENSAJE_LIMITE = "Hiciste muchos pedidos seguidos. Probá de nuevo en un rato.";
 
-const esperar = (ms = 450) => new Promise((resolver) => setTimeout(resolver, ms));
+const errorAmigable = (error, porDefecto, mensaje409) => {
+  const status = error?.response?.status;
+  if (status === 403) return new Error(MENSAJE_SIN_PERMISO);
+  if (status === 429) return new Error(MENSAJE_LIMITE);
+  if (status === 409 && mensaje409) return new Error(mensaje409);
+  return new Error(mensajeNegocio(error, porDefecto));
+};
 
-export const useUsuariosEmpresa = (socioId, tipoCanalComercializacionId) => {
+const mismoEmail = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+
+export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
+  const queryClient = useQueryClient();
   const emailPropio = String(useAuthStore((state) => state.user?.email) || "").toLowerCase();
+  const { basePath } = useChannel();
+  const { cadenaId } = useCadenaActiva();
   const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId);
   const { data: canales } = useTipoCanalComercializacion();
-  const demo = useDemoStore((state) => state.porSocio[socioId]) || DEMO_VACIO;
-  const verComoUsuario = useDemoStore((state) => state.verComoUsuario);
-  const setVerComoUsuario = useDemoStore((state) => state.setVerComoUsuario);
-  const actualizar = useDemoStore((state) => state.actualizar);
+  const { data: cadenaWeb } = useObtenerCadenaPublicaWeb(cadenaId);
+  const { asistenciaQueAtiendo, asistenciaPedida } = useAsistenciaInterna();
 
-  const usuarios = useMemo(() => {
-    const vinculados = usuariosVinculados
-      .filter((u) => !demo.bajas.includes(String(u.usuarioWebId)))
-      .map((u) => {
-        const email = String(u.email || "").toLowerCase();
-        const esVos = !!email && email === emailPropio;
-        const id = String(u.usuarioWebId);
+  const vinculados = useMemo(
+    () =>
+      usuariosVinculados.map((u) => {
+        const esVos = mismoEmail(u.email, emailPropio) && !!emailPropio;
         return {
-          id,
+          id: String(u.usuarioWebId),
+          usuarioWebId: u.usuarioWebId,
           email: u.email || `Usuario #${u.usuarioWebId}`,
-          rol: demo.roles[id] || (esVos ? ROL_ADMIN : ROL_USUARIO),
+          rol: u.esAdministradorCuit ? ROL_ADMIN : ROL_USUARIO,
           estado: ESTADO_VINCULADO,
           desde: u.momentoCreacion || null,
           esVos,
         };
-      });
-    const invitados = demo.invitaciones.map((inv) => ({
-      id: `inv-${inv.email}`,
-      email: inv.email,
-      rol: demo.roles[`inv-${inv.email}`] || inv.rol,
-      estado: ESTADO_INVITACION,
-      desde: inv.enviadaEl,
-      esVos: false,
-    }));
-    return [...vinculados, ...invitados].sort((a, b) => {
+      }),
+    [usuariosVinculados, emailPropio],
+  );
+
+  const yo = vinculados.find((u) => u.esVos);
+  const soyAdmin = yo?.rol === ROL_ADMIN;
+  const soyAsistente = !!asistenciaQueAtiendo(socioId);
+  const cuitLimpio = String(cuit || "").replace(/\D/g, "");
+
+  const { data: invitacionesApi, isPending: cargandoInvitaciones } = useQuery({
+    queryKey: ["usuarioVinculacion", "lista", cuitLimpio],
+    queryFn: () => usuarioVinculacionService.listarInvitaciones(cuitLimpio),
+    enabled: soyAdmin && !!cuitLimpio,
+    staleTime: 1000 * 60,
+  });
+
+  const usuarios = useMemo(() => {
+    const invitados = (invitacionesApi || [])
+      .filter((inv) => String(inv.vinculado ?? "") !== "1")
+      .filter((inv) => !vinculados.some((u) => mismoEmail(u.email, inv.email)))
+      .map((inv) => ({
+        id: `inv-${inv.usuariowebid ?? inv.email}`,
+        usuarioWebId: inv.usuariowebid ?? null,
+        email: inv.email || "",
+        nombre: inv.denominacion || "",
+        rol: ROL_USUARIO,
+        estado: ESTADO_INVITACION,
+        desde: null,
+        esVos: false,
+      }));
+    const ordenados = [...vinculados].sort((a, b) => {
       if (a.esVos !== b.esVos) return a.esVos ? -1 : 1;
       if (a.rol !== b.rol) return a.rol === ROL_ADMIN ? -1 : 1;
       return a.email.localeCompare(b.email, "es");
     });
-  }, [usuariosVinculados, demo, emailPropio]);
+    return [...ordenados, ...invitados];
+  }, [vinculados, invitacionesApi]);
 
-  const yo = usuarios.find((u) => u.esVos);
-  const soyAdmin = !verComoUsuario && yo?.rol === ROL_ADMIN;
-  const cantidadAdmins = usuarios.filter((u) => u.rol === ROL_ADMIN && u.estado === ESTADO_VINCULADO).length;
+  const cantidadAdmins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
 
-  const canal = (canales?.raw || []).find(
-    (c) => Number(c.tipocanalcomercializacionid) === Number(tipoCanalComercializacionId),
-  );
-  const asistenciaDisponible = String(canal?.observaciones ?? canal?.Observaciones ?? "").trim() !== "";
+  const cadena = Array.isArray(cadenaWeb) ? cadenaWeb[0] : cadenaWeb;
+  const canalId = Number(cadena?.tipocanalcomercializacionid) || Number(tipoCanalSocioId) || null;
+  const canal = (canales?.raw || []).find((c) => Number(c.tipocanalcomercializacionid) === canalId);
+  const asistenciaDisponible =
+    !soyAsistente && !!yo && String(canal?.observaciones ?? canal?.Observaciones ?? "").trim() !== "";
 
-  const invitar = async ({ email, esAdmin }) => {
-    await esperar();
+  const frontUrl = window.location.origin + basePath;
+
+  const refrescarVinculados = () =>
+    queryClient.invalidateQueries({ queryKey: ["socioUsuario", "listaPorSocio", socioId] });
+  const refrescarInvitaciones = () =>
+    queryClient.invalidateQueries({ queryKey: ["usuarioVinculacion", "lista", cuitLimpio] });
+
+  const invitar = async ({ email, nombre }) => {
     const normalizado = email.trim().toLowerCase();
-    if (usuarios.some((u) => u.email.toLowerCase() === normalizado)) {
-      throw new Error("Esa persona ya tiene acceso a la empresa o tiene una invitación pendiente.");
+    if (vinculados.some((u) => mismoEmail(u.email, normalizado))) {
+      throw new Error("Esa persona ya tiene acceso a la empresa.");
     }
-    actualizar(socioId, (actual) => ({
-      invitaciones: [
-        ...actual.invitaciones,
-        { email: normalizado, rol: esAdmin ? ROL_ADMIN : ROL_USUARIO, enviadaEl: new Date().toISOString() },
-      ],
-    }));
+    try {
+      await usuarioVinculacionService.invitar({
+        cuit: cuitLimpio,
+        email: normalizado,
+        denominacion: nombre.trim(),
+        fronturl: frontUrl,
+      });
+      await refrescarInvitaciones();
+      return RESULTADO_INVITADA;
+    } catch (error) {
+      if (error?.response?.status !== 409) {
+        throw errorAmigable(error, "No pudimos enviar la invitación. Probá de nuevo.");
+      }
+    }
+    try {
+      await sociosService.vincularUsuarioPorEmail({ socioId, email: normalizado, esAdministradorCuit: "0" });
+      await Promise.all([refrescarVinculados(), refrescarInvitaciones()]);
+      return RESULTADO_VINCULADA;
+    } catch (error) {
+      throw errorAmigable(error, "No pudimos darle acceso. Probá de nuevo.", "Esa persona ya tiene acceso a la empresa.");
+    }
+  };
+
+  const reenviar = async (usuario) => {
+    try {
+      await usuarioVinculacionService.invitar({
+        cuit: cuitLimpio,
+        email: usuario.email,
+        denominacion: usuario.nombre || usuario.email.split("@")[0],
+        fronturl: frontUrl,
+      });
+      await refrescarInvitaciones();
+    } catch (error) {
+      throw errorAmigable(error, "No pudimos reenviar la invitación. Probá de nuevo.");
+    }
   };
 
   const cambiarRol = async (usuario, rol) => {
-    await esperar(300);
-    actualizar(socioId, (actual) => ({ roles: { ...actual.roles, [usuario.id]: rol } }));
+    try {
+      await sociosService.cambiarRolSocioUsuario({
+        socioId,
+        usuarioWebId: usuario.usuarioWebId,
+        esAdministradorCuit: rol === ROL_ADMIN ? "1" : "0",
+      });
+      await refrescarVinculados();
+    } catch (error) {
+      throw errorAmigable(error, "No pudimos cambiar el rol. Probá de nuevo.", MENSAJE_ULTIMO_ADMIN);
+    }
   };
 
   const quitarAcceso = async (usuario) => {
-    await esperar(300);
-    actualizar(socioId, (actual) =>
-      usuario.estado === ESTADO_INVITACION
-        ? { invitaciones: actual.invitaciones.filter((inv) => `inv-${inv.email}` !== usuario.id) }
-        : { bajas: [...actual.bajas, usuario.id] },
-    );
+    try {
+      await sociosService.desvincularSocioUsuario({ socioId, usuarioWebId: usuario.usuarioWebId });
+      await Promise.all([refrescarVinculados(), refrescarInvitaciones()]);
+    } catch (error) {
+      throw errorAmigable(error, "No pudimos quitarle el acceso. Probá de nuevo.", MENSAJE_ULTIMO_ADMIN);
+    }
   };
 
   const solicitarAsistencia = async () => {
-    await esperar();
-    const ahora = new Date();
-    actualizar(socioId, () => ({
-      asistencia: {
-        solicitadaEl: ahora.toISOString(),
-        horas: HORAS_ASISTENCIA_DEMO,
-      },
-    }));
+    try {
+      await usuarioVinculacionService.solicitarAsistencia({ cuit: cuitLimpio, fronturl: frontUrl });
+      await queryClient.invalidateQueries({ queryKey: CLAVE_ASISTENCIAS });
+    } catch (error) {
+      throw errorAmigable(
+        error,
+        "No pudimos pedir la asistencia. Probá de nuevo.",
+        mensajeNegocio(error, "Para pedir asistencia, ingresá desde el sitio de tu entidad."),
+      );
+    }
   };
 
   return {
     usuarios,
-    cargando: isLoading,
+    cargando: isLoading || (soyAdmin && !!cuitLimpio && cargandoInvitaciones),
     soyAdmin,
+    soyAsistente,
     cantidadAdmins,
     asistenciaDisponible,
-    asistencia: demo.asistencia,
+    asistencia: asistenciaPedida(socioId),
     invitar,
+    reenviar,
     cambiarRol,
     quitarAcceso,
     solicitarAsistencia,
-    esDemo: true,
-    verComoUsuario,
-    setVerComoUsuario,
   };
 };

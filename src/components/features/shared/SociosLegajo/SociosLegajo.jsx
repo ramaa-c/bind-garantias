@@ -18,7 +18,6 @@ import {
   FiFileText,
   FiMapPin,
   FiBriefcase,
-  FiUsers,
 } from "react-icons/fi";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
@@ -798,24 +797,6 @@ export function SociosLegajo({
                       </div>
                     </div>
 
-                    {/* "Vincular usuarios" vivía como pestaña propia
-                        (categoría "Accesos"); ahora cuelga de Mi Perfil
-                        como una sección aparte, mismo criterio que
-                        cualquier settings page: la gestión de accesos de
-                        la cuenta vive junto al resto del perfil, no como
-                        un ítem de navegación de primer nivel. Solo en
-                        modo cliente: en adminMode esta sección entera no
-                        se renderiza (ver el filtro de "perfil" en
-                        tabsDisponibles). */}
-                    <section className={styles.perfilCard}>
-                      <header className={styles.perfilCardHeader}>
-                        <h5 className={styles.perfilCardTitle}>
-                          <span className={styles.perfilCardIcono} aria-hidden="true"><FiUsers size={13} /></span>
-                          Accesos
-                        </h5>
-                      </header>
-                      <VincularUsuarioSection socioIdActivo={socioIdActivo} compacto />
-                    </section>
                   </div>
                 ) : isUsuarios ? (
                   <VincularUsuarioSection socioIdActivo={socioIdActivo} />

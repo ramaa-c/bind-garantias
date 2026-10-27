@@ -10,7 +10,6 @@ import { ChannelProvider } from "./context/ChannelContext";
 import { useChannel } from "./context/useChannel";
 import { Toaster } from "sonner";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import { ZONA_USUARIOS_HABILITADA } from "./hooks/useUsuariosEmpresa";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import LegajoDataGuard from "./components/guards/LegajoDataGuard/LegajoDataGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
@@ -212,18 +211,16 @@ const rutasCliente = (
                   </OnboardingGuard>
                 }
               />
-              {ZONA_USUARIOS_HABILITADA && (
-                <Route
-                  path="usuarios"
-                  element={
-                    <OnboardingGuard>
-                      <DashboardLayout>
-                        <UsuariosEmpresa />
-                      </DashboardLayout>
-                    </OnboardingGuard>
-                  }
-                />
-              )}
+              <Route
+                path="usuarios"
+                element={
+                  <OnboardingGuard>
+                    <DashboardLayout>
+                      <UsuariosEmpresa />
+                    </DashboardLayout>
+                  </OnboardingGuard>
+                }
+              />
               <Route
                 path="elegir-empresa"
                 element={

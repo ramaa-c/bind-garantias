@@ -242,14 +242,32 @@ export const sociosService = {
     return response.data;
   },
 
-  vincularUsuarioPorEmail: async ({ socioId, email }) =>
+  vincularUsuarioPorEmail: async ({ socioId, email, esAdministradorCuit }) =>
     (
       await api.post(
         "api/SocioUsuario/porEmail",
-        sociosAdapter.adaptarVinculoPorEmail({ socioid: socioId, email }),
+        sociosAdapter.adaptarVinculoPorEmail({ socioid: socioId, email, esadministradorcuit: esAdministradorCuit }),
         { noRetry: true },
       )
     ).data,
+
+  // PUT api/SocioUsuario - Cambia si el usuario administra el CUIT ("1"/"0")
+  cambiarRolSocioUsuario: async ({ socioId, usuarioWebId, esAdministradorCuit }) =>
+    (
+      await api.put(
+        "api/SocioUsuario",
+        sociosAdapter.adaptarRolSocioUsuario({
+          socioid: socioId,
+          usuariowebid: usuarioWebId,
+          esadministradorcuit: esAdministradorCuit,
+        }),
+        { noRetry: true },
+      )
+    ).data,
+
+  // DELETE api/SocioUsuario/{SocioID}/{UsuarioWebID}
+  desvincularSocioUsuario: async ({ socioId, usuarioWebId }) =>
+    (await api.delete(`api/SocioUsuario/${socioId}/${usuarioWebId}`, { noRetry: true })).data,
 
   // POST api/SocioUsuario - Carga de nueva relación entre socio y usuario
   vincularSocioUsuario: async (socioUsuarioData) => {

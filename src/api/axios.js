@@ -90,6 +90,7 @@ const isPoolExhaustionError = (error) => {
 
 const RUTAS_CON_401_DE_NEGOCIO = [
   /auth\/login/i,
+  /auth\/refresh/i,
   /usuario\/(?:[^/]+\/)?(?:login|password)/i,
   /usuario\/notificar/i,
   /Socio\/ValidarCuit/i,
@@ -209,7 +210,7 @@ api.interceptors.response.use(
     }
 
     // Si ya no se reintenta y hubo un error de red en métodos de escritura
-    if (isNetworkError) {
+    if (isNetworkError && !config.silencioso) {
       const method = config.method?.toUpperCase();
       if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
         toast.error("Error de red. Verifica tu conexión e intenta nuevamente.");

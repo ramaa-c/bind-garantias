@@ -129,6 +129,25 @@
   border-radius: 0.9rem;
 }
 
+.asistenciaAviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(138, 159, 255, 0.28);
+  background: rgba(76, 101, 230, 0.1);
+  color: #c9d2ff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.asistenciaAviso svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
 .companyAvatar {
   width: 2.5rem;
   height: 2.5rem;
@@ -715,6 +734,15 @@
   /* ── Modo compacto (rail) ── */
   .compacto {
     width: 5.75rem;
+  }
+
+  .compacto .asistenciaAviso span {
+    display: none;
+  }
+
+  .compacto .asistenciaAviso {
+    justify-content: center;
+    padding: 0.55rem 0;
   }
 
   .compacto .marca {

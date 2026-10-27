@@ -12,6 +12,7 @@ import {
   FiChevronRight,
   FiSidebar,
   FiEdit3,
+  FiLifeBuoy,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
@@ -28,7 +29,8 @@ import { useEmpresasVendor } from "../../../../hooks/useEmpresasVendor";
 import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
 import { PanelVendor, SelectorEmpresaVendor } from "./VendorSidebar";
 import { useEmpresasDelUsuario } from "../../../../hooks/useEmpresasDelUsuario";
-import { ZONA_USUARIOS_HABILITADA } from "../../../../hooks/useUsuariosEmpresa";
+import { useAsistenciaInterna, ASISTENCIA_ACTIVA } from "../../../../hooks/useAsistenciaInterna";
+import { useFinAsistencia } from "../../../../hooks/useFinAsistencia";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/useChannel";
@@ -68,6 +70,20 @@ export default function Sidebar({ isOpen, onClose }) {
   const { empresas: empresasVendor } = useEmpresasVendor(!isVendor);
   const { empresas: empresasCliente } = useEmpresasDelUsuario(isVendor);
   const clienteMultiEmpresa = !isVendor && empresasCliente.length > 1;
+  const socioEnAlta = location.state?.socioParaCompletar;
+  const completandoEmpresaActiva =
+    enAltaDatosEmpresa &&
+    !!socioIdActivo &&
+    String(socioEnAlta?.socioid ?? socioEnAlta?.SocioID ?? "") === String(socioIdActivo);
+  const { asistenciaQueAtiendo, vigentesQueAtiendo } = useAsistenciaInterna({ habilitado: !isVendor });
+  const asistenciaActual = isVendor ? null : asistenciaQueAtiendo(socioIdActivo);
+  useFinAsistencia(asistenciaActual, vigentesQueAtiendo, nombreEmpresa);
+  const vencimientoAsistencia = asistenciaActual?.vencimiento ? new Date(asistenciaActual.vencimiento) : null;
+  const textoAsistencia =
+    asistenciaActual?.estado === ASISTENCIA_ACTIVA && vencimientoAsistencia && !Number.isNaN(vencimientoAsistencia.getTime())
+      ? `Acceso de asistencia hasta el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(vencimientoAsistencia)}`
+      : "Acceso de asistencia: el tiempo empieza a correr cuando abrís la empresa";
+  const mostrarSelectorCliente = clienteMultiEmpresa && !!nombreEmpresa && (isVinculado || completandoEmpresaActiva);
   const { data: usuarioDb } = useObtenerPorNombreOEmail(isVendor ? emailUsuario : "");
   const denominacionUsuario = (
     extraerRegistroUsuario(usuarioDb)?.denominacion ||
@@ -226,7 +242,7 @@ export default function Sidebar({ isOpen, onClose }) {
       novedad: documentacionRecienDesbloqueada,
       textoNovedad: "Recién habilitada: ya podés subir tu documentación",
     },
-    ZONA_USUARIOS_HABILITADA && {
+    !asistenciaActual && {
       path: "/usuarios",
       label: "Usuarios",
       icono: <FiUsers />,
@@ -325,7 +341,7 @@ export default function Sidebar({ isOpen, onClose }) {
           />
         )}
 
-        {isVinculado && clienteMultiEmpresa && (
+        {mostrarSelectorCliente && (
           <SelectorEmpresaVendor
             empresas={empresasCliente}
             socioIdActivo={socioIdActivo}
@@ -348,6 +364,13 @@ export default function Sidebar({ isOpen, onClose }) {
               <p className={styles.empresaNombre}>{nombreEmpresa}</p>
               {cuitActivo && <p className={styles.empresaCuit}>CUIT {cuitActivo}</p>}
             </div>
+          </div>
+        )}
+
+        {asistenciaActual && isVinculado && (
+          <div className={styles.asistenciaAviso} title={textoAsistencia}>
+            <FiLifeBuoy aria-hidden="true" />
+            <span>{textoAsistencia}</span>
           </div>
         )}
 

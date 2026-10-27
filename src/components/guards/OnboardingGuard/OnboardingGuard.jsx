@@ -20,6 +20,7 @@ import { useChannel } from "../../../context/useChannel";
 import { useVendor } from "../../../hooks/useVendor";
 import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
 import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
+import { useAsistenciaInterna, separarEmpresasAsistidas } from "../../../hooks/useAsistenciaInterna";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
@@ -117,10 +118,18 @@ export const OnboardingGuard = ({ children }) => {
   // datos) — eso no cuenta como empresa registrada. Filtramos esos casos acá
   // para no mandar al usuario a /legajo con una empresa vacía, dejándolo sin
   // forma de volver a completar el alta.
-  const { empresasCompletas, isLoading: isLoadingEmpresasCompletas } =
-    useEmpresasCompletas(listaEmpresasBase);
-  const listaEmpresas = empresasCompletas;
+  const { vigentesQueAtiendo, cargando: cargandoAsistencias } = useAsistenciaInterna({ habilitado: !isVendor });
+  const { propias: listaPropiasBase, asistidas: empresasAsistidas } = separarEmpresasAsistidas(
+    listaEmpresasBase,
+    vigentesQueAtiendo,
+  );
+  const { empresasCompletas, isLoading: isLoadingEmpresasCompletas } = useEmpresasCompletas(
+    cargandoAsistencias ? [] : listaPropiasBase,
+  );
+  const listaEmpresas = isVendor ? empresasCompletas : [...empresasCompletas, ...empresasAsistidas];
   const tieneEmpresas = listaEmpresas.length > 0;
+  const unicaEmpresaId =
+    listaEmpresas.length === 1 ? listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID || null : null;
 
   // El socio ya puede tener datos reales (esSocioVacio ya no alcanza) sin
   // que el CDA de PANTALLA_INGRESO_CUIT haya pasado — eso pasa siempre que
@@ -134,6 +143,7 @@ export const OnboardingGuard = ({ children }) => {
     (s) => String(s?.socioid ?? s?.SocioID) === String(activeSocioId ?? ""),
   );
   const empresaActual = isVendor ? null : esMultiEmpresa ? empresaElegida : listaEmpresas[0];
+  const atiendoEmpresaActual = !!empresaActual?.esAsistencia;
   const telefonoActual = String(
     empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
   ).trim();
@@ -191,13 +201,12 @@ export const OnboardingGuard = ({ children }) => {
     // si tieneEmpresas resuelve antes, le fijaría un activeSocioId a un
     // vendor real antes de saber que lo es, y el guard de abajo ya no lo
     // manda a /seleccionar-empresa.
-    if (listaEmpresas.length === 1 && vendorData && !vendorData.isVendor) {
-      const unicaSocioId = listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID;
-      if (unicaSocioId && String(unicaSocioId) !== String(activeSocioId ?? "")) {
-        setActiveSocioId(unicaSocioId);
+    if (unicaEmpresaId && vendorData && !vendorData.isVendor) {
+      if (String(unicaEmpresaId) !== String(activeSocioId ?? "")) {
+        setActiveSocioId(unicaEmpresaId);
       }
     }
-  }, [activeSocioId, vendorData, listaEmpresas, setActiveSocioId]);
+  }, [activeSocioId, vendorData, unicaEmpresaId, setActiveSocioId]);
 
   React.useEffect(() => {
     if (isVendor && !isLoadingVendor && user) {
@@ -265,7 +274,8 @@ export const OnboardingGuard = ({ children }) => {
       (isLoadingTerminosVigentes || isLoadingConfirmacionTyC)) ||
     isLoadingVendor ||
     isVerifying ||
-    cargandoAccesoDashboard
+    cargandoAccesoDashboard ||
+    (usuarioWebId && !isLoadingVendor && !isVendor && cargandoAsistencias)
   ) {
     return (
       <LoadingScreen
@@ -325,7 +335,7 @@ export const OnboardingGuard = ({ children }) => {
         return <Navigate to={`${basePath}/elegir-empresa`} replace />;
       }
       return <>{children}</>;
-    } else if (!telefonoActual) {
+    } else if (!telefonoActual && !atiendoEmpresaActual) {
       // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
       // "umbral", el Paso 2 es lo que termina de cargar datos como el
       // teléfono). Lo mandamos directo a completarlo, sin pasar de nuevo
@@ -335,7 +345,7 @@ export const OnboardingGuard = ({ children }) => {
       // aviso de "no pasaste las validaciones" vive en LegajoUniversalBar
       // (banner permanente) y el bloqueo real está en la migración a SGR+,
       // no en el acceso (acordado con el equipo el 2026-08-13).
-      if (!isAltaDatosPage && !debeAceptarTerminos) {
+      if (!isAltaDatosPage && !debeAceptarTerminos && !(esMultiEmpresa && isElegirEmpresaPage)) {
         return (
           <Navigate
             to={`${basePath}/alta-datos-empresa`}

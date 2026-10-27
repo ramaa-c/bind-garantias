@@ -1,9 +1,23 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiBriefcase, FiChevronLeft, FiChevronRight, FiClock, FiCheck, FiSearch } from "react-icons/fi";
+import {
+  FiBriefcase,
+  FiChevronLeft,
+  FiChevronRight,
+  FiClock,
+  FiCheck,
+  FiSearch,
+  FiShield,
+  FiLifeBuoy,
+} from "react-icons/fi";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useChannel } from "../../../../context/useChannel";
-import { useEmpresasDelUsuario } from "../../../../hooks/useEmpresasDelUsuario";
+import {
+  useEmpresasDelUsuario,
+  ROL_EMPRESA_ADMIN,
+  ROL_EMPRESA_ASISTENCIA,
+} from "../../../../hooks/useEmpresasDelUsuario";
+import { ASISTENCIA_ACTIVA } from "../../../../hooks/useAsistenciaInterna";
 import { useSolicitudesVendor } from "../../../../hooks/useEmpresasVendor";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 import { esEstadoEnCurso, ESTADO_PENDIENTE } from "../../../../utils/estadoLimiteSocio";
@@ -19,7 +33,8 @@ export default function ElegirEmpresa() {
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
 
   const { empresas, cargando } = useEmpresasDelUsuario();
-  const { porEmpresa } = useSolicitudesVendor(empresas);
+  const empresasPropias = useMemo(() => empresas.filter((e) => !e.esAsistencia), [empresas]);
+  const { porEmpresa } = useSolicitudesVendor(empresasPropias);
 
   const conSolicitudEnCurso = useMemo(() => {
     const ids = new Set();
@@ -47,6 +62,14 @@ export default function ElegirEmpresa() {
   );
   const cambiando = !!activeSocioId;
   const empresaActual = empresas.find((e) => String(e.socioId) === String(activeSocioId ?? ""));
+
+  const textoAsistencia = (empresa) => {
+    const vencimiento = empresa.asistencia?.vencimiento ? new Date(empresa.asistencia.vencimiento) : null;
+    if (empresa.asistencia?.estado === ASISTENCIA_ACTIVA && vencimiento && !Number.isNaN(vencimiento.getTime())) {
+      return `Asistencia hasta el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(vencimiento)}`;
+    }
+    return "Asistencia pendiente";
+  };
 
   const inicio = `${basePath}${isSolicitudesEnabled ? "/solicitudes" : "/legajo"}`;
 
@@ -126,20 +149,30 @@ export default function ElegirEmpresa() {
                       <span className={styles.nombre}>{empresa.nombre || "Empresa sin nombre"}</span>
                       {empresa.cuit && <span className={styles.cuit}>CUIT {empresa.cuit}</span>}
                     </span>
-                    {(enCurso || actual) && (
-                      <span className={styles.chips}>
-                        {enCurso && (
-                          <span className={`${styles.chip} ${styles.chipEnCurso}`}>
-                            <FiClock aria-hidden="true" /> Solicitud en curso
-                          </span>
-                        )}
-                        {actual && (
-                          <span className={`${styles.chip} ${styles.chipActual}`}>
-                            <FiCheck aria-hidden="true" /> Actual
-                          </span>
-                        )}
-                      </span>
-                    )}
+                    <span className={styles.chips}>
+                      {empresa.rol === ROL_EMPRESA_ASISTENCIA ? (
+                        <span className={`${styles.chip} ${styles.chipAsistencia}`}>
+                          <FiLifeBuoy aria-hidden="true" /> {textoAsistencia(empresa)}
+                        </span>
+                      ) : (
+                        <span
+                          className={`${styles.chip} ${empresa.rol === ROL_EMPRESA_ADMIN ? styles.chipAdmin : styles.chipUsuario}`}
+                        >
+                          {empresa.rol === ROL_EMPRESA_ADMIN && <FiShield aria-hidden="true" />}
+                          {empresa.rol === ROL_EMPRESA_ADMIN ? "Administrador" : "Usuario"}
+                        </span>
+                      )}
+                      {enCurso && (
+                        <span className={`${styles.chip} ${styles.chipEnCurso}`}>
+                          <FiClock aria-hidden="true" /> Solicitud en curso
+                        </span>
+                      )}
+                      {actual && (
+                        <span className={`${styles.chip} ${styles.chipActual}`}>
+                          <FiCheck aria-hidden="true" /> Actual
+                        </span>
+                      )}
+                    </span>
                     <FiChevronRight className={styles.chevron} aria-hidden="true" />
                   </button>
                 </li>

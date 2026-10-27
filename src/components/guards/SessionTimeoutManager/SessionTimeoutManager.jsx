@@ -7,7 +7,14 @@ import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useSessionTimeout } from "../../../hooks/useSessionTimeout";
 import { ConfirmacionModal } from "../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { SessionExpiryNotice } from "./SessionExpiryNotice";
-import { borrarTokenApi, obtenerVencimientoTokenMs } from "../../../api/tokenApi";
+import { borrarTokenApi, obtenerDatosTokenApi, CLAVE_STORAGE_TOKEN } from "../../../api/tokenApi";
+import {
+  renovarTokenApi,
+  RENOVACION_OK,
+  RENOVACION_EN_CURSO,
+  RENOVACION_RECHAZADA,
+} from "../../../api/renovacionToken";
+import { getLastActivity } from "../../../utils/sessionActivity";
 import { queryClient } from "../../../api/queryClient";
 
 // Estándar de industria (OWASP ASVS) para apps autenticadas de riesgo medio:
@@ -15,6 +22,11 @@ import { queryClient } from "../../../api/queryClient";
 // cliente (mismo useAuthStore para ambos).
 const IDLE_TIMEOUT_MS = 20 * 60 * 1000;
 const WARNING_MS = 60 * 1000;
+const ANTICIPO_RENOVACION_MS = 10 * 60 * 1000;
+const REINTENTO_RENOVACION_MS = 60 * 1000;
+const ESPERA_OTRA_PESTANA_MS = 5 * 1000;
+const SESION_MAXIMA_MS = 12 * 60 * 60 * 1000;
+const AVISO_SESION_MAXIMA_MS = 5 * 60 * 1000;
 
 // Fuera de TenantLayout, useChannel().id siempre vale "default" (ver
 // ChannelContext) - no sirve para reconstruir el login del cliente. En modo
@@ -85,10 +97,10 @@ export const SessionTimeoutManager = () => {
     navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
   };
 
-  const handleVencimientoToken = () => {
+  const handleVencimientoToken = (mensaje = "Tu sesión venció. Volvé a ingresar para continuar.") => {
     borrarTokenApi();
     clearAuth();
-    toast.info("Tu sesión venció. Volvé a ingresar para continuar.");
+    toast.info(mensaje);
     navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
   };
 
@@ -107,14 +119,83 @@ export const SessionTimeoutManager = () => {
 
   useEffect(() => {
     if (!isAuthenticated) return undefined;
-    const vencimientoMs = obtenerVencimientoTokenMs();
-    if (!vencimientoMs) return undefined;
-    const temporizador = setTimeout(
-      () => handleVencimientoTokenRef.current(),
-      Math.max(vencimientoMs - Date.now(), 0),
-    );
-    return () => clearTimeout(temporizador);
+    let temporizador = null;
+    let activo = true;
+
+    const programar = (demoraMs) => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(intentarRenovar, Math.max(demoraMs, 0));
+    };
+
+    const programarSegunToken = () => {
+      const datos = obtenerDatosTokenApi();
+      if (!datos?.vencimientoMs) return;
+      programar(datos.vencimientoMs - ANTICIPO_RENOVACION_MS - Date.now());
+    };
+
+    async function intentarRenovar() {
+      const datos = obtenerDatosTokenApi();
+      if (!datos?.vencimientoMs) return;
+      const restanteMs = datos.vencimientoMs - Date.now();
+      if (restanteMs > ANTICIPO_RENOVACION_MS + 1000) {
+        programarSegunToken();
+        return;
+      }
+      const ultimaActividad = getLastActivity();
+      const huboActividad = !!ultimaActividad && (!datos.emitidoMs || ultimaActividad >= datos.emitidoMs);
+      if (!huboActividad) {
+        if (restanteMs > REINTENTO_RENOVACION_MS) programar(REINTENTO_RENOVACION_MS);
+        return;
+      }
+      const resultado = await renovarTokenApi();
+      if (!activo) return;
+      if (resultado === RENOVACION_OK) {
+        programarSegunToken();
+      } else if (resultado === RENOVACION_RECHAZADA) {
+        handleVencimientoTokenRef.current();
+      } else if (resultado === RENOVACION_EN_CURSO) {
+        programar(ESPERA_OTRA_PESTANA_MS);
+      } else if (restanteMs > ESPERA_OTRA_PESTANA_MS) {
+        programar(Math.min(REINTENTO_RENOVACION_MS, restanteMs - ESPERA_OTRA_PESTANA_MS));
+      }
+    }
+
+    const handleCambioToken = (e) => {
+      if (e.key === CLAVE_STORAGE_TOKEN && e.newValue) programarSegunToken();
+    };
+
+    programarSegunToken();
+    window.addEventListener("storage", handleCambioToken);
+    return () => {
+      activo = false;
+      clearTimeout(temporizador);
+      window.removeEventListener("storage", handleCambioToken);
+    };
   }, [isAuthenticated, usuarioLogueado]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    const inicioSesionMs = obtenerDatosTokenApi()?.inicioSesionMs;
+    if (!inicioSesionMs) return undefined;
+    const finSesionMs = inicioSesionMs + SESION_MAXIMA_MS;
+    const ahora = Date.now();
+    const aviso = setTimeout(() => {
+      toast.warning("Tu sesión llega a su máximo en unos minutos", {
+        id: "sesion-maxima",
+        description: "Guardá tu trabajo: después vas a tener que volver a ingresar.",
+        duration: AVISO_SESION_MAXIMA_MS,
+      });
+    }, Math.max(finSesionMs - AVISO_SESION_MAXIMA_MS - ahora, 0));
+    const cierre = setTimeout(
+      () => handleVencimientoTokenRef.current("Tu sesión llegó a su máximo de 12 horas. Volvé a ingresar para continuar."),
+      Math.max(finSesionMs - ahora, 0),
+    );
+    return () => {
+      clearTimeout(aviso);
+      clearTimeout(cierre);
+    };
+  }, [isAuthenticated, usuarioLogueado]);
+
 
   const { showWarning, secondsLeft, extenderSesion } = useSessionTimeout({
     enabled: isAuthenticated,
@@ -122,6 +203,12 @@ export const SessionTimeoutManager = () => {
     warningMs: WARNING_MS,
     onTimeout: handleTimeout,
   });
+
+  const seguirConectado = async () => {
+    extenderSesion();
+    const resultado = await renovarTokenApi();
+    if (resultado === RENOVACION_RECHAZADA) handleVencimientoTokenRef.current();
+  };
 
   // Sincroniza el cierre de sesión entre pestañas: si se cierra sesión en
   // otra pestaña del mismo origen (manual, o por este mismo timeout corriendo
@@ -165,7 +252,7 @@ export const SessionTimeoutManager = () => {
     <ConfirmacionModal
       isOpen={isAuthenticated && showWarning}
       onClose={handleTimeout}
-      onConfirm={extenderSesion}
+      onConfirm={seguirConectado}
       preventClose
       variant={esAdmin ? "blue" : "default"}
       // tone="warning" (ámbar) en vez de "danger" (rojo) - todavía no es una

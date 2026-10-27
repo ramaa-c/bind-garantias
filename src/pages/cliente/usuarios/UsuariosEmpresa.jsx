@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   FiUsers,
@@ -8,23 +9,28 @@ import {
   FiUserX,
   FiLifeBuoy,
   FiClock,
-  FiEye,
   FiInfo,
-  FiChevronDown,
   FiMoreVertical,
+  FiSend,
 } from "react-icons/fi";
-import { Button, Modal, Switch, Skeleton } from "../../../components/ui";
+import { Button, Modal, Skeleton, SelectSimple } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
+import { useChannel } from "../../../context/useChannel";
+import { useAuthStore } from "../../../store/useAuthStore";
 import {
   useUsuariosEmpresa,
   ROL_ADMIN,
   ROL_USUARIO,
   ESTADO_INVITACION,
+  RESULTADO_VINCULADA,
 } from "../../../hooks/useUsuariosEmpresa";
+import { ASISTENCIA_ACTIVA } from "../../../hooks/useAsistenciaInterna";
 import styles from "./UsuariosEmpresa.module.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LARGO_MAXIMO_NOMBRE = 75;
+const LARGO_MAXIMO_EMAIL = 100;
 
 const formatearFecha = (iso) => {
   if (!iso) return "";
@@ -33,8 +39,12 @@ const formatearFecha = (iso) => {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(fecha);
 };
 
-const formatearFechaHora = (fecha) =>
-  new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(fecha);
+const formatearFechaHora = (iso) => {
+  if (!iso) return "";
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "";
+  return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(fecha);
+};
 
 const inicialesDeEmail = (email) => {
   const local = String(email || "").split("@")[0];
@@ -43,38 +53,50 @@ const inicialesDeEmail = (email) => {
 };
 
 function InvitarUsuarioModal({ isOpen, onClose, onInvitar }) {
+  const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
-  const [esAdmin, setEsAdmin] = useState(false);
-  const [error, setError] = useState("");
+  const [errores, setErrores] = useState({});
   const [enviando, setEnviando] = useState(false);
+
+  const limpiar = () => {
+    setNombre("");
+    setEmail("");
+    setErrores({});
+  };
 
   const cerrar = () => {
     if (enviando) return;
-    setEmail("");
-    setEsAdmin(false);
-    setError("");
+    limpiar();
     onClose();
   };
 
   const enviar = async (e) => {
     e.preventDefault();
-    const normalizado = email.trim();
-    if (!EMAIL_REGEX.test(normalizado)) {
-      setError("Ingresá un correo electrónico válido.");
+    const nombreLimpio = nombre.trim();
+    const emailLimpio = email.trim();
+    const nuevosErrores = {};
+    if (!nombreLimpio) nuevosErrores.nombre = "Ingresá el nombre de la persona.";
+    if (!EMAIL_REGEX.test(emailLimpio)) nuevosErrores.email = "Ingresá un correo electrónico válido.";
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrores(nuevosErrores);
       return;
     }
     setEnviando(true);
     try {
-      await onInvitar({ email: normalizado, esAdmin });
-      toast.success("Invitación enviada", { description: normalizado });
+      const resultado = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
+      if (resultado === RESULTADO_VINCULADA) {
+        toast.success("Le dimos acceso a la empresa", {
+          description: `${emailLimpio} ya tenía cuenta: puede ingresar cuando quiera.`,
+        });
+      } else {
+        toast.success("Invitación enviada", { description: emailLimpio });
+      }
       setEnviando(false);
-      setEmail("");
-      setEsAdmin(false);
-      setError("");
+      limpiar();
       onClose();
     } catch (err) {
       setEnviando(false);
-      setError(err.message || "No pudimos enviar la invitación. Probá de nuevo.");
+      setErrores({ general: err.message || "No pudimos enviar la invitación. Probá de nuevo." });
     }
   };
 
@@ -99,64 +121,87 @@ function InvitarUsuarioModal({ isOpen, onClose, onInvitar }) {
     >
       <form id="form-invitar-usuario" className={styles.formInvitar} onSubmit={enviar} noValidate>
         <label className={styles.campo}>
-          <span className={styles.campoLabel}>Correo electrónico</span>
+          <span className={styles.campoLabel}>Nombre y apellido</span>
           <input
-            type="email"
-            className={`${styles.campoInput} ${error ? styles.campoInputError : ""}`}
-            placeholder="nombre@empresa.com"
-            value={email}
+            type="text"
+            className={`${styles.campoInput} ${errores.nombre ? styles.campoInputError : ""}`}
+            placeholder="Ana Pérez"
+            value={nombre}
+            maxLength={LARGO_MAXIMO_NOMBRE}
             onChange={(e) => {
-              setEmail(e.target.value);
-              setError("");
+              setNombre(e.target.value);
+              setErrores({});
             }}
             autoFocus
           />
-          {error && <span className={styles.campoError}>{error}</span>}
+          {errores.nombre && <span className={styles.campoError}>{errores.nombre}</span>}
         </label>
 
-        <div className={styles.opcionAdmin}>
-          <div className={styles.opcionAdminTexto}>
-            <span className={styles.opcionAdminTitulo}>Darle permisos de administrador</span>
-            <span className={styles.opcionAdminAyuda}>Va a poder invitar a otras personas y cambiar roles.</span>
-          </div>
-          <Switch checked={esAdmin} onChange={setEsAdmin} variant="client" />
-        </div>
+        <label className={styles.campo}>
+          <span className={styles.campoLabel}>Correo electrónico</span>
+          <input
+            type="email"
+            className={`${styles.campoInput} ${errores.email ? styles.campoInputError : ""}`}
+            placeholder="nombre@empresa.com"
+            value={email}
+            maxLength={LARGO_MAXIMO_EMAIL}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setErrores({});
+            }}
+          />
+          {errores.email && <span className={styles.campoError}>{errores.email}</span>}
+        </label>
+
+        {errores.general && <p className={styles.errorGeneral}>{errores.general}</p>}
 
         <p className={styles.notaInvitar}>
           <FiInfo aria-hidden="true" />
-          Si la persona ya tiene una cuenta, la vinculamos y le avisamos por mail. Si no, le enviamos una invitación
-          para que se registre.
+          Si la persona ya tiene una cuenta, le damos acceso directamente. Si no, le enviamos un mail para que se
+          registre. Entra como usuario; una vez vinculada, podés hacerla administradora.
         </p>
       </form>
     </Modal>
   );
 }
 
+const OPCIONES_ROL = [
+  { value: ROL_ADMIN, label: "Administrador" },
+  { value: ROL_USUARIO, label: "Usuario" },
+];
+
 export default function UsuariosEmpresa() {
-  const { socioIdActivo, nombreEmpresa, tipoCanalComercializacionId } = useEmpresaActiva();
+  const navigate = useNavigate();
+  const { basePath } = useChannel();
+  const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
+  const { socioIdActivo, nombreEmpresa, cuitActivo, tipoCanalComercializacionId } = useEmpresaActiva();
   const {
     usuarios,
     cargando,
     soyAdmin,
+    soyAsistente,
     cantidadAdmins,
     asistenciaDisponible,
     asistencia,
     invitar,
+    reenviar,
     cambiarRol,
     quitarAcceso,
     solicitarAsistencia,
-    esDemo,
-    verComoUsuario,
-    setVerComoUsuario,
-  } = useUsuariosEmpresa(socioIdActivo, tipoCanalComercializacionId);
+  } = useUsuariosEmpresa({
+    socioId: socioIdActivo,
+    cuit: cuitActivo,
+    tipoCanalSocioId: tipoCanalComercializacionId,
+  });
 
   const [invitarAbierto, setInvitarAbierto] = useState(false);
   const [aQuitar, setAQuitar] = useState(null);
   const [quitando, setQuitando] = useState(false);
   const [confirmarAsistencia, setConfirmarAsistencia] = useState(false);
   const [solicitando, setSolicitando] = useState(false);
-  const [mostrarAsistenciaDemo, setMostrarAsistenciaDemo] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(null);
+  const [cambiandoRol, setCambiandoRol] = useState(null);
+  const [reenviando, setReenviando] = useState(null);
 
   useEffect(() => {
     if (!menuAbierto) return undefined;
@@ -173,34 +218,66 @@ export default function UsuariosEmpresa() {
     };
   }, [menuAbierto]);
 
-  const asistenciaVisible = asistenciaDisponible || (esDemo && mostrarAsistenciaDemo);
-
   const alternarRol = async (usuario) => {
     const nuevoRol = usuario.rol === ROL_ADMIN ? ROL_USUARIO : ROL_ADMIN;
-    await cambiarRol(usuario, nuevoRol);
-    toast.success(
-      nuevoRol === ROL_ADMIN ? "Ahora es administrador" : "Ya no es administrador",
-      { description: usuario.email },
-    );
+    setCambiandoRol(usuario.id);
+    try {
+      await cambiarRol(usuario, nuevoRol);
+      toast.success(nuevoRol === ROL_ADMIN ? "Ahora es administrador" : "Ya no es administrador", {
+        description: usuario.email,
+      });
+    } catch (error) {
+      toast.error(error?.message || "No pudimos cambiar el rol. Probá de nuevo.");
+    } finally {
+      setCambiandoRol(null);
+    }
+  };
+
+  const reenviarInvitacion = async (usuario) => {
+    setReenviando(usuario.id);
+    try {
+      await reenviar(usuario);
+      toast.success("Invitación reenviada", { description: usuario.email });
+    } catch (error) {
+      toast.error(error?.message || "No pudimos reenviar la invitación. Probá de nuevo.");
+    } finally {
+      setReenviando(null);
+    }
   };
 
   const confirmarQuitar = async () => {
     if (!aQuitar) return;
     setQuitando(true);
-    await quitarAcceso(aQuitar);
-    toast.success(aQuitar.estado === ESTADO_INVITACION ? "Invitación cancelada" : "Acceso quitado", {
-      description: aQuitar.email,
-    });
-    setQuitando(false);
-    setAQuitar(null);
+    try {
+      await quitarAcceso(aQuitar);
+      if (aQuitar.esVos) {
+        toast.success("Dejaste de tener acceso a la empresa", { description: nombreEmpresa || undefined });
+        cambiarEmpresa();
+        navigate(basePath || "/", { replace: true });
+        return;
+      }
+      toast.success("Acceso quitado", { description: aQuitar.email });
+      setAQuitar(null);
+    } catch (error) {
+      toast.error(error?.message || "No pudimos quitarle el acceso. Probá de nuevo.");
+    } finally {
+      setQuitando(false);
+    }
   };
 
   const pedirAsistencia = async () => {
     setSolicitando(true);
-    await solicitarAsistencia();
-    setSolicitando(false);
-    setConfirmarAsistencia(false);
-    toast.success("Pedimos asistencia para tu empresa");
+    try {
+      await solicitarAsistencia();
+      toast.success("Pedimos asistencia para tu empresa", {
+        description: "Le avisamos por mail al equipo de tu entidad.",
+      });
+      setConfirmarAsistencia(false);
+    } catch (error) {
+      toast.error(error?.message || "No pudimos pedir la asistencia. Probá de nuevo.");
+    } finally {
+      setSolicitando(false);
+    }
   };
 
   const vinculados = usuarios.filter((u) => u.estado !== ESTADO_INVITACION);
@@ -208,13 +285,52 @@ export default function UsuariosEmpresa() {
   const admins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
   const comunes = vinculados.length - admins;
 
-  const renderFila = (usuario) => {
-    const invitacion = usuario.estado === ESTADO_INVITACION;
-    const esUltimoAdmin = usuario.rol === ROL_ADMIN && !invitacion && cantidadAdmins <= 1;
+  const renderInvitacion = (usuario) => (
+    <li key={usuario.id} className={`${styles.fila} ${styles.filaInvitacion}`}>
+      <span className={styles.avatar} aria-hidden="true">
+        <FiMail />
+      </span>
+
+      <span className={styles.info}>
+        <span className={styles.linea}>
+          <span className={styles.email} title={usuario.email}>
+            {usuario.nombre || usuario.email}
+          </span>
+          <span className={styles.etiquetas}>
+            <span className={`${styles.pill} ${styles.pillInvitacion}`}>
+              <FiClock aria-hidden="true" /> Pendiente
+            </span>
+          </span>
+        </span>
+        <span className={styles.meta}>
+          {usuario.nombre ? `${usuario.email} · ` : ""}Todavía no se registró
+        </span>
+      </span>
+
+      <span className={styles.acciones}>
+        <button
+          type="button"
+          className={styles.botonReenviar}
+          onClick={() => reenviarInvitacion(usuario)}
+          disabled={reenviando === usuario.id}
+          aria-label={`Reenviar invitación a ${usuario.email}`}
+        >
+          <FiSend aria-hidden="true" />
+          <span className={styles.botonReenviarTexto}>
+            {reenviando === usuario.id ? "Reenviando…" : "Reenviar invitación"}
+          </span>
+        </button>
+      </span>
+    </li>
+  );
+
+  const renderVinculado = (usuario) => {
+    const esUltimoAdmin = usuario.rol === ROL_ADMIN && cantidadAdmins <= 1;
+    const textoQuitar = usuario.esVos ? "Dejar la empresa" : "Quitar acceso";
     return (
-      <li key={usuario.id} className={`${styles.fila} ${invitacion ? styles.filaInvitacion : ""}`}>
+      <li key={usuario.id} className={styles.fila}>
         <span className={styles.avatar} aria-hidden="true">
-          {invitacion ? <FiMail /> : inicialesDeEmail(usuario.email)}
+          {inicialesDeEmail(usuario.email)}
         </span>
 
         <span className={styles.info}>
@@ -228,19 +344,10 @@ export default function UsuariosEmpresa() {
                 {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
                 {usuario.rol === ROL_ADMIN ? "Administrador" : "Usuario"}
               </span>
-              {invitacion && (
-                <span className={`${styles.pill} ${styles.pillInvitacion}`}>
-                  <FiClock aria-hidden="true" /> Pendiente
-                </span>
-              )}
             </span>
           </span>
           <span className={styles.meta}>
-            {invitacion
-              ? `Invitación enviada el ${formatearFecha(usuario.desde)}`
-              : usuario.desde
-                ? `Con acceso desde el ${formatearFecha(usuario.desde)}`
-                : "Con acceso"}
+            {usuario.desde ? `Con acceso desde el ${formatearFecha(usuario.desde)}` : "Con acceso"}
           </span>
         </span>
 
@@ -248,22 +355,21 @@ export default function UsuariosEmpresa() {
           <span className={styles.acciones}>
             {esUltimoAdmin && <span className={styles.unicoAdmin}>Único administrador</span>}
             <span className={styles.accionesEscritorio}>
-              <span className={styles.selectRol}>
-                <select
-                  value={usuario.rol}
-                  onChange={(e) => e.target.value !== usuario.rol && alternarRol(usuario)}
-                  disabled={esUltimoAdmin}
-                  aria-label={`Rol de ${usuario.email}`}
-                >
-                  <option value={ROL_ADMIN}>Administrador</option>
-                  <option value={ROL_USUARIO}>Usuario</option>
-                </select>
-                <FiChevronDown aria-hidden="true" />
-              </span>
+              <SelectSimple
+                label="Rol"
+                options={OPCIONES_ROL}
+                value={usuario.rol}
+                onChange={(valor) => valor && valor !== usuario.rol && alternarRol(usuario)}
+                disabled={esUltimoAdmin || cambiandoRol === usuario.id}
+                variant="client"
+                compact
+                hideErrorSpace
+                className={styles.selectRol}
+              />
               {!esUltimoAdmin && (
                 <button type="button" className={styles.botonQuitar} onClick={() => setAQuitar(usuario)}>
                   <FiUserX aria-hidden="true" />
-                  {invitacion ? "Cancelar invitación" : "Quitar acceso"}
+                  {textoQuitar}
                 </button>
               )}
             </span>
@@ -285,6 +391,7 @@ export default function UsuariosEmpresa() {
                       type="button"
                       role="menuitem"
                       className={styles.menuItem}
+                      disabled={cambiandoRol === usuario.id}
                       onClick={() => {
                         setMenuAbierto(null);
                         alternarRol(usuario);
@@ -303,7 +410,7 @@ export default function UsuariosEmpresa() {
                       }}
                     >
                       <FiUserX aria-hidden="true" />
-                      {invitacion ? "Cancelar invitación" : "Quitar acceso"}
+                      {textoQuitar}
                     </button>
                   </span>
                 )}
@@ -315,6 +422,28 @@ export default function UsuariosEmpresa() {
     );
   };
 
+  if (soyAsistente) {
+    return (
+      <section className={styles.pagina}>
+        <header className={styles.cabecera}>
+          <div className={styles.cabeceraIzq}>
+            <span className={styles.cabeceraIcono} aria-hidden="true">
+              <FiUsers />
+            </span>
+            <div>
+              <h1 className={styles.titulo}>Usuarios</h1>
+              <p className={styles.subtitulo}>Quiénes pueden operar en {nombreEmpresa || "esta empresa"}.</p>
+            </div>
+          </div>
+        </header>
+        <p className={styles.avisoComun}>
+          <FiInfo aria-hidden="true" />
+          Estás ingresando como asistencia: la gestión de usuarios queda a cargo de la empresa.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className={styles.pagina}>
       <header className={styles.cabecera}>
@@ -324,9 +453,7 @@ export default function UsuariosEmpresa() {
           </span>
           <div>
             <h1 className={styles.titulo}>Usuarios</h1>
-            <p className={styles.subtitulo}>
-              Quiénes pueden operar en {nombreEmpresa || "esta empresa"}.
-            </p>
+            <p className={styles.subtitulo}>Quiénes pueden operar en {nombreEmpresa || "esta empresa"}.</p>
           </div>
         </div>
         {soyAdmin && (
@@ -335,32 +462,6 @@ export default function UsuariosEmpresa() {
           </Button>
         )}
       </header>
-
-      {esDemo && (
-        <div className={styles.demo}>
-          <span className={styles.demoTexto}>
-            <FiEye aria-hidden="true" />
-            Vista previa: los usuarios vinculados son reales; roles, invitaciones y asistencia todavía son de prueba y
-            no se guardan.
-          </span>
-          <div className={styles.demoControles}>
-            <Switch
-              checked={verComoUsuario}
-              onChange={setVerComoUsuario}
-              variant="client"
-              size="md"
-              label="Ver como usuario común"
-            />
-            <Switch
-              checked={mostrarAsistenciaDemo}
-              onChange={setMostrarAsistenciaDemo}
-              variant="client"
-              size="md"
-              label="Simular canal con asistencia"
-            />
-          </div>
-        </div>
-      )}
 
       {!soyAdmin && !cargando && (
         <p className={styles.avisoComun}>
@@ -388,38 +489,43 @@ export default function UsuariosEmpresa() {
                   <Skeleton height="3.25rem" radius="0.85rem" />
                 </li>
               ))
-            : vinculados.map(renderFila)}
+            : vinculados.map(renderVinculado)}
         </ul>
       </section>
 
-      {!cargando && invitaciones.length > 0 && (
+      {soyAdmin && !cargando && invitaciones.length > 0 && (
         <section className={styles.seccion} aria-labelledby="usuarios-invitaciones">
           <div className={styles.seccionCabecera}>
             <h2 id="usuarios-invitaciones" className={styles.seccionTitulo}>
               Invitaciones pendientes <span className={styles.cuenta}>{invitaciones.length}</span>
             </h2>
           </div>
-          <ul className={styles.lista}>{invitaciones.map(renderFila)}</ul>
+          <ul className={styles.lista}>{invitaciones.map(renderInvitacion)}</ul>
         </section>
       )}
 
-      {asistenciaVisible && (
+      {(asistenciaDisponible || asistencia) && (
         <section className={styles.asistencia} aria-labelledby="usuarios-asistencia">
           <span className={styles.asistenciaIcono} aria-hidden="true">
             <FiLifeBuoy />
           </span>
           <div className={styles.asistenciaTexto}>
             <h2 id="usuarios-asistencia" className={styles.asistenciaTitulo}>
-              Asistencia de BIND Garantías
+              Asistencia de tu entidad
             </h2>
-            {asistencia ? (
+            {asistencia?.estado === ASISTENCIA_ACTIVA ? (
               <p className={styles.asistenciaDescripcion}>
-                Pediste asistencia el {formatearFechaHora(new Date(asistencia.solicitadaEl))}. Una persona de BIND
-                Garantías va a poder ingresar durante {asistencia.horas} horas desde su primer ingreso.
+                Una persona de tu entidad está asistiendo a la empresa
+                {asistencia.vencimiento ? ` hasta el ${formatearFechaHora(asistencia.vencimiento)}` : ""}.
+              </p>
+            ) : asistencia ? (
+              <p className={styles.asistenciaDescripcion}>
+                Pediste asistencia el {formatearFechaHora(asistencia.solicitadaEl)}. Cuando la persona ingrese, va a
+                tener acceso por un tiempo limitado.
               </p>
             ) : (
               <p className={styles.asistenciaDescripcion}>
-                Si algo no se puede resolver, una persona de BIND Garantías puede ingresar como usuario, por un tiempo
+                Si algo no se puede resolver, una persona de tu entidad puede ingresar como usuario, por un tiempo
                 limitado, para ayudarte.
               </p>
             )}
@@ -441,14 +547,16 @@ export default function UsuariosEmpresa() {
         isLoading={quitando}
         tone="danger"
         icono={<FiUserX />}
-        titulo={aQuitar?.estado === ESTADO_INVITACION ? "¿Cancelar la invitación?" : "¿Quitarle el acceso?"}
+        titulo={aQuitar?.esVos ? "¿Dejar la empresa?" : "¿Quitarle el acceso?"}
         mensaje={
-          aQuitar?.estado === ESTADO_INVITACION
-            ? "El enlace de la invitación deja de funcionar."
-            : "Ya no va a poder ver ni operar esta empresa. Podés volver a invitarla cuando quieras."
+          aQuitar?.esVos
+            ? "Vas a dejar de ver y operar esta empresa. Para volver, otro administrador tiene que invitarte."
+            : "Ya no va a poder ver ni operar esta empresa. Los datos que cargó quedan en el legajo."
         }
-        detalle={aQuitar ? { titulo: aQuitar.email, subtitulo: aQuitar.rol === ROL_ADMIN ? "Administrador" : "Usuario" } : undefined}
-        confirmText={aQuitar?.estado === ESTADO_INVITACION ? "Cancelar invitación" : "Quitar acceso"}
+        detalle={
+          aQuitar ? { titulo: aQuitar.email, subtitulo: aQuitar.rol === ROL_ADMIN ? "Administrador" : "Usuario" } : undefined
+        }
+        confirmText={aQuitar?.esVos ? "Dejar la empresa" : "Quitar acceso"}
         cancelText="Volver"
       />
 
@@ -459,8 +567,8 @@ export default function UsuariosEmpresa() {
         isLoading={solicitando}
         tone="warning"
         icono={<FiLifeBuoy />}
-        titulo="¿Solicitar asistencia interna?"
-        mensaje="Una persona de BIND Garantías va a poder ingresar a tu empresa con el mismo acceso que un usuario, por un tiempo limitado. No se puede cancelar antes de que venza."
+        titulo="¿Solicitar asistencia?"
+        mensaje="Una persona de tu entidad va a poder ingresar a la empresa con el mismo acceso que un usuario, por un tiempo limitado desde su primer ingreso. No se puede cortar antes de que venza."
         confirmText="Solicitar asistencia"
         cancelText="Volver"
       />

@@ -97,6 +97,14 @@ export const esRespuestaBloqueoAdmin = (error) =>
 export const avisarCuentaNoActiva = (descripcion) =>
   toast.error("Tu cuenta no está activa", { description: descripcion });
 
+export const avisarBloqueoPorSeguridad = () =>
+  toast.error("Bloqueamos tu cuenta por seguridad", {
+    id: "cuenta-bloqueada-seguridad",
+    description:
+      "La empresa que ingresaste ya está registrada con otro correo. Si formás parte de ella o es un error, escribinos a soporte@bind.com.ar.",
+    duration: 20000,
+  });
+
 export const avisarBloqueoAdmin = () =>
   toast.error("Tu cuenta fue bloqueada por un administrador", {
     description: "Contactá a soporte.",

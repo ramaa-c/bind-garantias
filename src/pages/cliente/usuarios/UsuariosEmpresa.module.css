@@ -52,39 +52,6 @@
   font-size: 0.875rem;
 }
 
-.demo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1.25rem;
-  padding: 0.75rem 1rem;
-  border: 1px dashed rgba(138, 159, 255, 0.4);
-  border-radius: 0.9rem;
-  background: rgba(76, 101, 230, 0.06);
-}
-
-.demoTexto {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  color: #c9d2ff;
-  font-size: 0.78rem;
-  line-height: 1.45;
-  flex: 1 1 22rem;
-}
-
-.demoTexto svg {
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-.demoControles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-}
-
 .avisoComun {
   display: flex;
   align-items: center;
@@ -274,59 +241,16 @@
   display: inline-flex;
 }
 
-.selectRol {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.selectRol select {
-  width: 9.75rem;
-  height: 2.1rem;
-  padding: 0 2rem 0 0.75rem;
-  border: 1px solid rgba(var(--overlay-rgb), 0.14);
-  border-radius: 0.6rem;
-  background: rgba(var(--overlay-rgb), 0.035);
-  color: var(--white);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
-  appearance: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
-}
-
-.selectRol select option {
-  background: var(--bg-elevado);
-  color: var(--white);
-}
-
-.selectRol svg {
-  position: absolute;
-  right: 0.65rem;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.selectRol select:hover:not(:disabled) {
-  border-color: rgba(var(--overlay-rgb), 0.28);
-}
-
-.selectRol select:focus-visible {
-  outline: 2px solid var(--color-amarillo-bind);
-  outline-offset: 1px;
-}
-
-.selectRol select:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.accionesEscritorio .selectRol {
+  width: 10.5rem;
+  flex-shrink: 0;
 }
 
 .botonQuitar {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  min-height: 2.1rem;
+  min-height: 2.35rem;
   padding: 0 0.75rem;
   border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 0.6rem;
@@ -347,6 +271,48 @@
   border-color: var(--error-red, #ef4444);
 }
 
+.botonReenviar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(var(--overlay-rgb), 0.16);
+  border-radius: 0.6rem;
+  background: transparent;
+  color: var(--white);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.botonReenviar:hover:not(:disabled) {
+  background: rgba(var(--overlay-rgb), 0.06);
+  border-color: rgba(var(--overlay-rgb), 0.3);
+}
+
+.botonReenviar:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.errorGeneral {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ff8a8a;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.botonReenviar:focus-visible,
 .botonQuitar:focus-visible,
 .botonMenu:focus-visible,
 .menuItem:focus-visible {
@@ -586,34 +552,6 @@
   font-size: 0.75rem;
 }
 
-.opcionAdmin {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 0.95rem;
-  border-radius: 0.8rem;
-  background: rgba(var(--overlay-rgb), 0.03);
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
-}
-
-.opcionAdminTexto {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.opcionAdminTitulo {
-  color: var(--white);
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.opcionAdminAyuda {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-}
-
 .notaInvitar {
   display: flex;
   align-items: flex-start;
@@ -636,6 +574,16 @@
 }
 
 @media (max-width: 47.99rem) {
+  .botonReenviar {
+    width: 2.35rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .botonReenviarTexto {
+    display: none;
+  }
+
   .modalAcciones {
     flex-direction: column-reverse;
   }
@@ -647,7 +595,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .botonQuitar,
-  .selectRol select,
+  .botonReenviar,
   .asistenciaBoton {
     transition: none;
   }

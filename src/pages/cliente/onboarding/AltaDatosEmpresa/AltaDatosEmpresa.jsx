@@ -9,6 +9,8 @@ import { LoadingScreen } from "../../../../components/ui";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
+import { usuarioService } from "../../../../services/usuarioService";
+import { borrarTokenApi } from "../../../../api/tokenApi";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { requisitosService } from "../../../../services/requisitosService";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
@@ -529,7 +531,7 @@ export const AltaDatosEmpresa = () => {
           onSocioExistente={(socioData, reason) => {
             if (reason === "email_mismatch" && !isVendor) {
               guardarAltaBloqueada(cadenaSlug, user?.email);
-              setAltaBloqueada(true);
+              bloquearCuentaPorSeguridad();
               return;
             }
             setSocioExistenteModal({ isOpen: true, socioData, reason });
@@ -598,6 +600,20 @@ export const AltaDatosEmpresa = () => {
   const entendidoSocioExistente = () => {
     cerrarSocioExistente();
     reset();
+  };
+
+  const bloquearCuentaPorSeguridad = async () => {
+    try {
+      if (!usuariowebidReal) throw new Error("Sin usuario");
+      await usuarioService.bloquearUsuario(usuariowebidReal);
+    } catch {
+      setAltaBloqueada(true);
+      return;
+    }
+    borrarTokenApi();
+    clearAuth();
+    queryClient.clear();
+    navigate(`${basePath}/login`, { replace: true, state: { cuentaBloqueadaPorSeguridad: true } });
   };
 
   const cerrarSesionAltaBloqueada = () => {

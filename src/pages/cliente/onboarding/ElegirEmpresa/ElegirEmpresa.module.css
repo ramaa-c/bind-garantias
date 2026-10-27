@@ -159,10 +159,6 @@
   transition: background-color 0.15s ease;
 }
 
-.fila:not(:has(.chips)) {
-  grid-template-areas: "avatar info chevron";
-}
-
 .fila:active {
   background: rgba(var(--overlay-rgb), 0.04);
 }
@@ -259,6 +255,21 @@
 .chipEnCurso {
   background: var(--badge-amarillo-bg);
   color: var(--badge-amarillo-text);
+}
+
+.chipAdmin {
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
+}
+
+.chipUsuario {
+  border: 1px solid rgba(var(--overlay-rgb), 0.16);
+  color: var(--white-muted);
+}
+
+.chipAsistencia {
+  background: rgba(76, 101, 230, 0.14);
+  color: #aebcff;
 }
 
 .chipActual {

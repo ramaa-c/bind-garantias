@@ -2,12 +2,22 @@ import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
 import { guardarTokenApi, cerrarSesionApi } from "../api/tokenApi";
 
+const cadenaDelPath = () => {
+  const primerSegmento = window.location.pathname.split("/")[1];
+  return /^\d+$/.test(primerSegmento) ? Number(primerSegmento) : undefined;
+};
+
 const obtenerTokenDeUsuario = async ({ email, password }) => {
-  const { data } = await api.post("api/auth/login", null, {
-    sinToken: true,
-    noRetry: true,
-    headers: { jwtusername: email, jwtpassword: password },
-  });
+  const { data } = await api.post(
+    "api/auth/login",
+    {
+      jwtusername: email,
+      jwtpassword: password,
+      host: window.location.hostname,
+      cadenaId: cadenaDelPath(),
+    },
+    { sinToken: true, noRetry: true },
+  );
   const token = data?.token;
   if (!token) throw new Error("La API no devolvió un token de acceso");
   cerrarSesionApi();
