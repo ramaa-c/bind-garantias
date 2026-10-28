@@ -1,8 +1,27 @@
 import { CABECERAS_BASE_API } from "./cabecerasApi";
 
 export const CLAVE_STORAGE_TOKEN = "tokenApi";
+export const CLAVE_CANDADO_RENOVACION = "tokenApiRenovando";
+const VIGENCIA_CANDADO_RENOVACION_MS = 15 * 1000;
 const CLAVE_STORAGE = CLAVE_STORAGE_TOKEN;
 const CLAVE_GUARDADO_EN = "tokenApiGuardadoEn";
+const INTERVALO_ESPERA_RENOVACION_MS = 250;
+
+export const hayRenovacionEnCurso = () => {
+  try {
+    const ocupadoDesde = Number(localStorage.getItem(CLAVE_CANDADO_RENOVACION)) || 0;
+    return !!ocupadoDesde && Date.now() - ocupadoDesde < VIGENCIA_CANDADO_RENOVACION_MS;
+  } catch {
+    return false;
+  }
+};
+
+export const esperarFinRenovacion = async (maximoMs = 5000) => {
+  const limite = Date.now() + maximoMs;
+  while (hayRenovacionEnCurso() && Date.now() < limite) {
+    await new Promise((resolve) => setTimeout(resolve, INTERVALO_ESPERA_RENOVACION_MS));
+  }
+};
 
 const leerPayload = (token) => {
   try {
@@ -16,6 +35,13 @@ const leerPayload = (token) => {
 const estaVencido = (token) => {
   const payload = leerPayload(token);
   return Boolean(payload?.exp) && Date.now() >= payload.exp * 1000;
+};
+
+export const esRenovacionDeLaMismaSesion = (tokenAnterior, tokenNuevo) => {
+  const anterior = leerPayload(tokenAnterior);
+  const nuevo = leerPayload(tokenNuevo);
+  if (!anterior?.uid || !anterior?.sat || !nuevo) return false;
+  return String(anterior.uid) === String(nuevo.uid) && anterior.sat === nuevo.sat;
 };
 
 export const guardarTokenApi = (token) => {

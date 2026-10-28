@@ -1,8 +1,10 @@
 import api from "./axios";
-import { guardarTokenApi, obtenerTokenApi } from "./tokenApi";
-
-const CLAVE_CANDADO = "tokenApiRenovando";
-const VIGENCIA_CANDADO_MS = 15 * 1000;
+import {
+  guardarTokenApi,
+  obtenerTokenApi,
+  hayRenovacionEnCurso,
+  CLAVE_CANDADO_RENOVACION as CLAVE_CANDADO,
+} from "./tokenApi";
 
 export const RENOVACION_OK = "ok";
 export const RENOVACION_EN_CURSO = "en_curso";
@@ -11,8 +13,7 @@ export const RENOVACION_REINTENTAR = "reintentar";
 
 const tomarCandado = () => {
   try {
-    const ocupadoDesde = Number(localStorage.getItem(CLAVE_CANDADO)) || 0;
-    if (ocupadoDesde && Date.now() - ocupadoDesde < VIGENCIA_CANDADO_MS) return false;
+    if (hayRenovacionEnCurso()) return false;
     localStorage.setItem(CLAVE_CANDADO, String(Date.now()));
     return true;
   } catch {
