@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder, FiEye } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
@@ -180,15 +180,9 @@ export default function Dashboard() {
   const cadenaInfoPorId = useMemo(() => {
     const map = new Map();
     (todasCadenasConEstado || []).forEach((c) => {
-      const logo = c.logo || c.Logo || "";
       map.set(String(c.cadenavalorid ?? c.CadenaValorID), {
         nombre: (c.referencia || c.Referencia || "").trim() || c.denominacion || c.Denominacion || "",
         nombreCompleto: c.denominacion || c.Denominacion || "",
-        logo: !logo
-          ? ""
-          : logo.startsWith("data:") || logo.startsWith("http")
-            ? logo
-            : `data:image/png;base64,${logo}`,
       });
     });
     return map;
@@ -358,10 +352,10 @@ export default function Dashboard() {
         cuit: socio?.cuit || "—",
         usuario: socio?.email || "—",
         socioid: socioId,
+        tipoPersonaId: socio?.tipopersonaid,
         cadenavalorid: cadenaValorId,
         cadenaNombre: cadenaInfoPorId.get(String(cadenaValorId))?.nombre || "",
         cadenaNombreCompleto: cadenaInfoPorId.get(String(cadenaValorId))?.nombreCompleto || "",
-        cadenaLogo: cadenaInfoPorId.get(String(cadenaValorId))?.logo || "",
         lineaNombre: lineaCatalogo?.descripcion || "",
         legajoMigrado: String(socio?.marcavinculacion ?? socio?.MarcaVinculacion ?? "") === "1",
         estado: estadoText,
@@ -944,9 +938,6 @@ export default function Dashboard() {
                   <span className={styles.rowChips}>
                     {item.cadenaNombre && (
                       <span className={styles.rowCadena} title={item.cadenaNombreCompleto || item.cadenaNombre}>
-                        <span className={styles.rowCadenaLogo} aria-hidden="true">
-                          {item.cadenaLogo ? <img src={item.cadenaLogo} alt="" /> : item.cadenaNombre.charAt(0)}
-                        </span>
                         {item.cadenaNombre}
                       </span>
                     )}
@@ -957,7 +948,7 @@ export default function Dashboard() {
                       className={`${styles.rowChip} ${item.legajoMigrado ? styles.rowChipOk : styles.rowChipPendiente}`}
                     >
                       {item.legajoMigrado ? <FiCheck aria-hidden="true" /> : <FiFolder aria-hidden="true" />}
-                      {item.legajoMigrado ? "Legajo migrado a SGR+" : "Legajo en curso"}
+                      {item.legajoMigrado ? "Migrado a SGR+" : "Sin migrar a SGR+"}
                     </span>
                   </span>
                 </div>
@@ -1007,29 +998,6 @@ export default function Dashboard() {
                     </Button>
                   ) : (
                     <>
-                      {isPendiente && (
-                        <>
-                          <Button
-                            onClick={() => handleAceptar(item)}
-                            variant="success"
-                            size="sm"
-                            title="Aprobar Solicitud"
-                            disabled={actualizarEstadoMutation.isPending}
-                          >
-                            <FiCheck /> ACEPTAR
-                          </Button>
-                          <Button
-                            onClick={() => handleRechazar(item)}
-                            variant="danger"
-                            size="sm"
-                            title="Rechazar Solicitud"
-                            disabled={actualizarEstadoMutation.isPending}
-                          >
-                            <FiX /> RECHAZAR
-                          </Button>
-                        </>
-                      )}
-
                       {isAprobada && (
                         <Button
                           onClick={() => handleReintentarMigracion(item)}
@@ -1041,6 +1009,15 @@ export default function Dashboard() {
                           <FiRefreshCw /> MIGRAR
                         </Button>
                       )}
+
+                      <Button
+                        onClick={() => setSolicitudDetalle(item)}
+                        variant="outlineBlue"
+                        size="sm"
+                        title={isPendiente ? "Revisar el legajo y decidir la solicitud" : "Ver el detalle de la solicitud"}
+                      >
+                        <FiEye /> REVISAR
+                      </Button>
                     </>
                   )}
                 </div>
