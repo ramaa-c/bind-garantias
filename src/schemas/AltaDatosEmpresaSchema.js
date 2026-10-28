@@ -28,7 +28,7 @@ export const AltaDatosEmpresaSchema = z.object({
   ciudadid: z.coerce.number().min(1, "La ciudad es requerida"),
   provincia: z.string().min(1, "La provincia es requerida").optional(),
   provinciaid: z.coerce.number().optional(),
-  celular: z.string().min(8, "El número de contacto es inválido"),
+  celular: z.string().min(8, "El número de contacto es inválido").or(z.literal("")),
   // Paso2Datos.jsx ya no tiene ningún campo/modal para cargar esto (sacado
   // en el rediseño de flujo del 2026-09-14, SGRPLUSPLA-192 - la idea es
   // pedirlo más adelante, en el legajo) - onSubmitFinal (AltaDatosEmpresa.jsx)

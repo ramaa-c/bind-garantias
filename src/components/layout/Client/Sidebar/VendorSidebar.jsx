@@ -99,7 +99,7 @@ function Buscador({ valor, onCambiar }) {
 //   "Ver las N en Mis empresas"), haya 4 o 400.
 // - Con una empresa elegida: "flotante". "Cambiar de empresa" abre un panel
 //   que flota al lado del sidebar (en mobile, una hoja desde abajo) con
-//   buscador, recientes y la lista completa con scroll propio: el sidebar
+//   buscador y una sola lista (las recientes primero) con scroll propio: el sidebar
 //   nunca se mueve.
 // En el sidebar compacto (rail) el primer click lo expande (onExpandir).
 export function SelectorEmpresaVendor({ empresas, socioIdActivo, empresaActiva, onElegir, compacto, onExpandir, onVerTodas }) {
@@ -128,14 +128,19 @@ export function SelectorEmpresaVendor({ empresas, socioIdActivo, empresaActiva, 
     return ids;
   }, [porEmpresa]);
 
-  const ordenadas = useMemo(
-    () => [...empresas].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
-    [empresas],
-  );
+  const ordenadas = useMemo(() => {
+    const posicionReciente = (e) => {
+      const i = recientes.indexOf(String(e.socioId));
+      return i === -1 ? Infinity : i;
+    };
+    return [...empresas].sort(
+      (a, b) => posicionReciente(a) - posicionReciente(b) || a.nombre.localeCompare(b.nombre, "es"),
+    );
+  }, [empresas, recientes]);
   const texto = busqueda.trim().toLowerCase();
   const filtradas = useMemo(() => ordenadas.filter((e) => coincide(e, texto)), [ordenadas, texto]);
-  const empresasRecientes = useMemo(
-    () => recientes.map((id) => empresas.find((e) => String(e.socioId) === id)).filter(Boolean),
+  const hayRecientes = useMemo(
+    () => empresas.some((e) => recientes.includes(String(e.socioId))),
     [recientes, empresas],
   );
 
@@ -205,41 +210,23 @@ export function SelectorEmpresaVendor({ empresas, socioIdActivo, empresaActiva, 
   };
 
   /* — modo acotado: siempre 3 lugares — */
-  const acotadas = (texto ? filtradas : empresasRecientes.length ? empresasRecientes : ordenadas).slice(
-    0,
-    CANTIDAD_RECIENTES,
-  );
+  const acotadas = filtradas.slice(0, CANTIDAD_RECIENTES);
   const tituloAcotado = texto
     ? `${filtradas.length} ${filtradas.length === 1 ? "resultado" : "resultados"}`
-    : empresasRecientes.length
+    : hayRecientes
       ? "Recientes"
       : "Empresas";
 
   /* — modo flotante — */
-  const recientesFlotante = empresasRecientes.slice(0, CANTIDAD_RECIENTES);
 
   const contenidoFlotante = (
     <>
       {!posicion && <strong className={styles.hojaTitulo}>Cambiar de empresa</strong>}
       <Buscador valor={busqueda} onCambiar={setBusqueda} />
       <div className={`${styles.flotanteLista} scroll-visible`}>
-        {!texto && recientesFlotante.length > 0 && (
-          <>
-            <p className={styles.cap}>Recientes</p>
-            <ul className={styles.lista} role="listbox" aria-label="Empresas recientes">
-              {recientesFlotante.map((e) => (
-                <OpcionEmpresa
-                  key={`r-${e.socioId}`}
-                  empresa={e}
-                  activa={String(e.socioId) === String(socioIdActivo)}
-                  enCurso={conCurso.has(String(e.socioId))}
-                  onElegir={elegir}
-                />
-              ))}
-            </ul>
-          </>
-        )}
-        <p className={styles.cap}>{texto ? `Resultados (${filtradas.length})` : `Todas (${empresas.length})`}</p>
+        <p className={styles.cap}>
+          {texto ? `Resultados (${filtradas.length})` : hayRecientes ? "Más recientes primero" : `Todas (${empresas.length})`}
+        </p>
         <ul className={styles.lista} role="listbox" aria-label="Empresas">
           {filtradas.map((e) => (
             <OpcionEmpresa

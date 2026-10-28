@@ -34,6 +34,12 @@ export const useEmpresaActiva = (skip = false) => {
     socioId = socioUsuarios[0].socioid || socioUsuarios[0].SocioID;
   }
 
+  const vinculoActivo = Array.isArray(socioUsuarios)
+    ? socioUsuarios.find((v) => String(v.socioid ?? v.SocioID) === String(socioId ?? ""))
+    : null;
+  const esAdminEmpresa =
+    String(vinculoActivo?.esadministradorcuit ?? vinculoActivo?.EsAdministradorCuit ?? "") === "1";
+
   const { data: socioWeb, isPending: isPendingSocioWeb } =
     useSocioWebPorId(skip ? undefined : socioId);
 
@@ -89,14 +95,7 @@ export const useEmpresaActiva = (skip = false) => {
     (usuarioWebId && isPendingSocios) ||
     (socioId && isPendingSocioWeb);
 
-  // El socio ya tiene denominación real desde que cruza el "umbral" en
-  // Paso1Cuit (POST antes del CDA), aunque todavía le falte completar el
-  // Paso 2 (el teléfono es el campo que marca eso). Por eso nombreEmpresa
-  // truthy ya NO alcanza para decidir si mostrar navegación plena — hace
-  // falta este flag aparte, para no romper a los demás consumidores de
-  // nombreEmpresa/cuitActivo que sí necesitan mostrarlos aunque el
-  // onboarding no esté 100% terminado.
-  const onboardingCompleto = !!nombreEmpresa && !!telefono;
+  const onboardingCompleto = !!nombreEmpresa;
 
   return {
     cuitActivo,
@@ -120,6 +119,8 @@ export const useEmpresaActiva = (skip = false) => {
     socioEstadoId,
     tipoPersonaId,
     onboardingCompleto,
+    esAdminEmpresa,
+    isVendor,
     isLoading,
   };
 };

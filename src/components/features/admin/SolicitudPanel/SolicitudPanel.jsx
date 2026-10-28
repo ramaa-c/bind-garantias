@@ -23,6 +23,7 @@ import { BotonIcono } from "../../../ui/BotonIcono/BotonIcono";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { useHistorialCdaLinea } from "../../../../hooks/useLinea";
 import { useObtenerTodosCdas } from "../../../../hooks/useCda";
+import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { formatearMomentoControl, ultimaEjecucionPorCda, ordenarEjecucionesCda } from "../../../../utils/executeCda";
 import {
   ESTADO_APROBADA,
@@ -137,6 +138,18 @@ export const SolicitudPanel = ({
     isOpen,
   );
   const { data: catalogoCdas } = useObtenerTodosCdas({ enabled: isOpen });
+  const {
+    isValid: legajoValido,
+    totalRequisitos,
+    requisitosCompletados,
+    isLoading: cargandoLegajo,
+  } = useValidacionLegajo({
+    adminMode: true,
+    socioIdActivo: isOpen ? solicitud?.socioid : null,
+    tipoPersonaId: solicitud?.tipoPersonaId,
+    nombreEmpresa: solicitud?.cliente,
+    cadenaId: solicitud?.cadenavalorid,
+  });
 
   const descripcionPorCda = useMemo(() => {
     const mapa = new Map();
@@ -193,6 +206,37 @@ export const SolicitudPanel = ({
 
   const decisionDetalle = solicitud.accionPendiente;
 
+  const legajoCompleto = solicitud.legajoMigrado || (!cargandoLegajo && legajoValido);
+  const faltantesContacto = solicitud.faltantesContacto || [];
+  const faltaContacto = faltantesContacto.length > 0;
+  const textoFaltantesContacto = `La empresa todavía no tiene ${faltantesContacto.join(" ni ")}`;
+  const puedeAceptar = legajoCompleto && !faltaContacto;
+
+  const tonoLegajo = puedeAceptar ? "ok" : cargandoLegajo ? "neutro" : "pendiente";
+
+  const detalleRequisitos = solicitud.legajoMigrado
+    ? "Legajo completo"
+    : cargandoLegajo
+      ? "Revisando el legajo…"
+      : legajoValido
+        ? totalRequisitos === 0
+          ? "La cadena no pide requisitos adicionales"
+          : `Completo · ${totalRequisitos} de ${totalRequisitos} requisitos`
+        : `${requisitosCompletados} de ${totalRequisitos} requisitos completos`;
+
+  const detalleLegajo =
+    faltaContacto && !cargandoLegajo
+      ? `${detalleRequisitos} · Falta ${faltantesContacto.join(" y ")} de la empresa`
+      : detalleRequisitos;
+
+  const avisoAceptar = puedeAceptar
+    ? null
+    : cargandoLegajo
+      ? "Revisando el legajo de la empresa…"
+      : !legajoCompleto
+        ? "El legajo de la empresa está incompleto"
+        : textoFaltantesContacto;
+
   const contenidoResumen = (
     <>
       <section className={styles.seccion}>
@@ -211,18 +255,26 @@ export const SolicitudPanel = ({
             tono={tonoCriterios}
           />
           <PasoAvance
+            icono={<FiFolder />}
+            titulo="Legajo de la empresa"
+            detalle={detalleLegajo}
+            tono={tonoLegajo}
+          />
+          <PasoAvance
             icono={<FiUserCheck />}
             titulo="Decisión del administrador"
             detalle={decisionDetalle}
             tono={tonoEstado(estadoId)}
           />
           <PasoAvance
-            icono={<FiFolder />}
-            titulo="Legajo validado y migrado a SGR+"
+            icono={<FiRefreshCw />}
+            titulo="Migración a SGR+"
             detalle={
               solicitud.legajoMigrado
-                ? "Legajo completo y empresa migrada a SGR+"
-                : "Legajo o documentación todavía incompletos"
+                ? "Empresa migrada a SGR+"
+                : faltaContacto
+                  ? `Requiere ${faltantesContacto.join(" y ")} de la empresa`
+                  : "Se migra al aceptar la solicitud"
             }
             tono={solicitud.legajoMigrado ? "ok" : "pendiente"}
           />
@@ -424,9 +476,6 @@ export const SolicitudPanel = ({
           <div className={styles.subtituloFila}>
             {solicitud.cadenaNombre && (
               <span className={styles.cadena} title={solicitud.cadenaNombreCompleto || solicitud.cadenaNombre}>
-                <span className={styles.cadenaLogo} aria-hidden="true">
-                  {solicitud.cadenaLogo ? <img src={solicitud.cadenaLogo} alt="" /> : solicitud.cadenaNombre.charAt(0)}
-                </span>
                 {solicitud.cadenaNombre}
               </span>
             )}
@@ -473,18 +522,37 @@ export const SolicitudPanel = ({
                 isLoading={cargandoDocumento}
                 className={modeloDocumento?.disponible ? "" : styles.documentoNoDisponible}
               />
-              <span className={styles.pieEspacio} />
+              <span className={styles.pieEspacio}>
+                {avisoAceptar && <span className={styles.pieAviso}>{avisoAceptar}</span>}
+              </span>
               <Button type="button" variant="danger" size="md" onClick={onRechazar} disabled={decidiendo}>
                 <FiX /> Rechazar
               </Button>
-              <Button type="button" variant="success" size="md" onClick={onAceptar} disabled={decidiendo}>
+              <Button
+                type="button"
+                variant="success"
+                size="md"
+                onClick={onAceptar}
+                disabled={decidiendo || !puedeAceptar}
+                title={avisoAceptar || "Aceptar solicitud"}
+              >
                 <FiCheck /> Aceptar
               </Button>
             </>
           ) : !soloLectura && esAprobada ? (
             <>
-              <span className={styles.pieEspacio} />
-              <Button type="button" variant="outlineBlue" size="md" onClick={onMigrar} disabled={migrando}>
+              <span className={styles.pieEspacio}>
+                {faltaContacto && !solicitud.legajoMigrado && (
+                  <span className={styles.pieAviso}>{textoFaltantesContacto}</span>
+                )}
+              </span>
+              <Button
+                type="button"
+                variant="outlineBlue"
+                size="md"
+                onClick={onMigrar}
+                disabled={migrando || (faltaContacto && !solicitud.legajoMigrado)}
+              >
                 <FiRefreshCw /> Migrar a SGR+
               </Button>
             </>

@@ -18,7 +18,7 @@ import { mensajeDeApi } from "../../../../utils/mensajesError";
 const COOLDOWN_SEGUNDOS = 60;
 const LONGITUD_CODIGO_DEFECTO = 6;
 
-export default function ContactoModal({ isOpen, onClose, onGuardar }) {
+export default function ContactoModal({ isOpen, onClose, onGuardar, textoCancelar = "Cancelar", descripcion }) {
   const { getValues, setValue, control } = useFormContext();
   const { mutate: validarNumero, isPending: enviandoSms } = useValidarNumero();
 
@@ -203,7 +203,7 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
           disabled={enviandoSms}
           className={styles.footerBtn}
         >
-          Cancelar
+          {textoCancelar}
         </Button>
         <Button
           type="button"
@@ -292,7 +292,7 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
         {fase === "ingresar" && (
           <>
             <p className={styles.description}>
-              Ingresá tu número y te enviamos un SMS con un código de validación.
+              {descripcion || "Ingresá tu número y te enviamos un SMS con un código de validación."}
             </p>
             <div className={styles.formSection}>
               <InputSocioMasked

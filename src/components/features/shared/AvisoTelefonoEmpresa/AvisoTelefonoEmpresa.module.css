@@ -1,0 +1,81 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
+}
+
+.icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+  font-size: 1rem;
+}
+
+.texto {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--white);
+}
+
+.accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-radius: 0.65rem;
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+.accion:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.accion:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.accion:focus-visible {
+  outline: 2px solid var(--color-amarillo-bind);
+  outline-offset: 2px;
+}
+
+@media (max-width: 40rem) {
+  .aviso {
+    flex-wrap: wrap;
+  }
+
+  .accion {
+    width: 100%;
+    justify-content: center;
+  }
+}
