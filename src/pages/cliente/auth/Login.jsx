@@ -26,7 +26,6 @@ import {
   avisarCuentaNoActiva,
   avisarCuentaVencida,
   avisarBloqueoAdmin,
-  avisarBloqueoPorSeguridad,
   VIGENCIA_CODIGO_LOGIN_MS,
   mensajeCodigoLoginRechazado,
   esDemasiadosIntentos,
@@ -386,9 +385,6 @@ const Login = () => {
       setValue("email", location.state.emailIngresado);
       window.history.replaceState({}, document.title);
     } else if (location.state?.faseInicial) {
-      window.history.replaceState({}, document.title);
-    } else if (location.state?.cuentaBloqueadaPorSeguridad) {
-      avisarBloqueoPorSeguridad();
       window.history.replaceState({}, document.title);
     }
   }, [location, setValue]);
