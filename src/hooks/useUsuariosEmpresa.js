@@ -10,6 +10,7 @@ import { useAsistenciaInterna, CLAVE_ASISTENCIAS } from "./useAsistenciaInterna"
 import { sociosService } from "../services/sociosService";
 import { usuarioVinculacionService } from "../services/usuarioVinculacionService";
 import { mensajeNegocio } from "../utils/mensajesError";
+import { obtenerDatosTokenApi } from "../api/tokenApi";
 
 export const ROL_ADMIN = "admin";
 export const ROL_USUARIO = "usuario";
@@ -38,7 +39,8 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
   const emailPropio = String(useAuthStore((state) => state.user?.email) || "").toLowerCase();
   const { basePath } = useChannel();
   const { cadenaId } = useCadenaActiva();
-  const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId);
+  const miUsuarioWebId = obtenerDatosTokenApi()?.usuarioWebId ?? null;
+  const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId, { conDetalle: false });
   const { data: canales } = useTipoCanalComercializacion();
   const { data: cadenaWeb } = useObtenerCadenaPublicaWeb(cadenaId);
   const { asistenciaQueAtiendo, asistenciaPedida } = useAsistenciaInterna();
@@ -46,18 +48,18 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
   const vinculados = useMemo(
     () =>
       usuariosVinculados.map((u) => {
-        const esVos = mismoEmail(u.email, emailPropio) && !!emailPropio;
+        const esVos = !!miUsuarioWebId && String(u.usuarioWebId) === String(miUsuarioWebId);
         return {
           id: String(u.usuarioWebId),
           usuarioWebId: u.usuarioWebId,
-          email: u.email || `Usuario #${u.usuarioWebId}`,
+          email: (esVos && emailPropio) || u.email || `Usuario #${u.usuarioWebId}`,
           rol: u.esAdministradorCuit ? ROL_ADMIN : ROL_USUARIO,
           estado: ESTADO_VINCULADO,
           desde: u.momentoCreacion || null,
           esVos,
         };
       }),
-    [usuariosVinculados, emailPropio],
+    [usuariosVinculados, emailPropio, miUsuarioWebId],
   );
 
   const yo = vinculados.find((u) => u.esVos);
@@ -77,8 +79,8 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
       .filter((inv) => String(inv.vinculado ?? "") !== "1")
       .filter((inv) => !vinculados.some((u) => mismoEmail(u.email, inv.email)))
       .map((inv) => ({
-        id: `inv-${inv.usuariowebid ?? inv.email}`,
-        usuarioWebId: inv.usuariowebid ?? null,
+        id: `inv-${String(inv.email || "").toLowerCase()}`,
+        usuarioWebId: null,
         email: inv.email || "",
         nombre: inv.denominacion || "",
         rol: ROL_USUARIO,

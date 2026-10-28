@@ -411,6 +411,28 @@
   font-size: 1rem;
 }
 
+.asistenciaActiva {
+  border-color: rgba(138, 159, 255, 0.28);
+  background: rgba(76, 101, 230, 0.1);
+}
+
+.asistenciaActiva .asistenciaIcono {
+  background: rgba(76, 101, 230, 0.18);
+  color: #aebcff;
+}
+
+.asistenciaActiva .asistenciaDescripcion {
+  color: #c9d2ff;
+}
+
+:global(:root[data-theme="light"]) .asistenciaActiva .asistenciaIcono {
+  color: var(--color-azul-bind-600);
+}
+
+:global(:root[data-theme="light"]) .asistenciaActiva .asistenciaDescripcion {
+  color: var(--color-azul-bind-800);
+}
+
 .asistenciaTexto {
   display: flex;
   flex-direction: column;

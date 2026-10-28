@@ -505,7 +505,10 @@ export default function UsuariosEmpresa() {
       )}
 
       {(asistenciaDisponible || asistencia) && (
-        <section className={styles.asistencia} aria-labelledby="usuarios-asistencia">
+        <section
+          className={`${styles.asistencia} ${asistencia?.estado === ASISTENCIA_ACTIVA ? styles.asistenciaActiva : ""}`}
+          aria-labelledby="usuarios-asistencia"
+        >
           <span className={styles.asistenciaIcono} aria-hidden="true">
             <FiLifeBuoy />
           </span>

@@ -98,6 +98,7 @@ export const obtenerDatosTokenApi = () => {
     vencimientoMs: payload.exp ? payload.exp * 1000 : null,
     emitidoMs: payload.iat ? payload.iat * 1000 : guardadoEn,
     inicioSesionMs: payload.sat ? payload.sat * 1000 : null,
+    usuarioWebId: payload.uid ?? null,
   };
 };
 
