@@ -218,11 +218,11 @@ export default function Terminos() {
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSave}
-        titulo="Publicar Nueva Versión"
+        titulo="Publicar nueva versión"
         mensaje={`¿Estás seguro de que deseas publicar una nueva versión de "${TITULO_TERMINOS}"? Esto requerirá que todos los usuarios vuelvan a aceptar los términos y condiciones en su próximo inicio de sesión.`}
         variant="blue"
-        confirmText="PUBLICAR"
-        cancelText="CANCELAR"
+        confirmText="Publicar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isPublicando}

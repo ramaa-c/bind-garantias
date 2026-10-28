@@ -1,100 +1,131 @@
 .modalBody {
-  padding: 0;
-  overflow: visible;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .identityCard {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem 1.25rem;
-  background: rgba(76, 101, 230, 0.06);
-  border: 1px solid rgba(76, 101, 230, 0.18);
-  border-radius: 0.75rem;
+  gap: 0.8rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.875rem;
+  background: #161b22;
+  border: 1px solid #262c36;
 }
 
 .identityAvatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
   width: 2.5rem;
   height: 2.5rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: rgba(76, 101, 230, 0.15);
-  color: var(--color-azul-bind, #4c65e6);
-  border: 1px solid rgba(76, 101, 230, 0.3);
-  font-size: 1.25rem;
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, #5b72f0, #3b4ed1);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.identityTextos {
+  flex: 1;
+  min-width: 0;
 }
 
 .identityEmail {
   margin: 0;
-  color: #ffffff;
+  color: var(--white);
   font-size: 0.875rem;
-  font-weight: 700;
-  word-break: break-all;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .identityRole {
-  margin: 0.1rem 0 0 0;
-  color: var(--color-azul-bind-400, #8a9fff);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin: 0.1rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.identityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(76, 101, 230, 0.16);
+  color: #a5b4ff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.selectorMovil {
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  border-radius: 0.625rem;
+  background: #161b22;
+  border: 1px solid #262c36;
+}
+
+.selectorMovil button {
+  flex: 1;
+  padding: 0.45rem 0.65rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: none;
+  color: #8b949e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.selectorMovil .selectorActivo {
+  background: #262c36;
+  color: var(--white);
 }
 
 .columnsGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid rgba(59, 78, 209, 0.14);
-  border-radius: 0.85rem;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.012);
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 .sectionGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 1.25rem;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  background: #111620;
+  border: 1px solid #21262d;
 }
 
-.sectionGroup + .sectionGroup {
-  border-left: 1px solid rgba(59, 78, 209, 0.14);
+.ocultoMovil {
+  display: none;
 }
 
 .sectionTitle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #ffffff;
   margin: 0;
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .sectionTitle svg {
-  color: var(--color-azul-bind, #4c65e6);
-  font-size: 0.95rem;
+  color: var(--color-azul-bind-300);
 }
 
 .sectionHint {
-  margin: -0.35rem 0 0.15rem 0;
-  color: #8b949e;
+  margin: -0.4rem 0 0;
+  color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.4;
-  min-height: 2.1rem;
-}
-
-.sectionActions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: auto;
-  padding-top: 0.65rem;
 }
 
 .sectionBody {
@@ -104,22 +135,25 @@
   flex: 1;
 }
 
-@media (max-width: 720px) {
-  .columnsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .sectionGroup + .sectionGroup {
-    border-left: none;
-    border-top: 1px solid rgba(59, 78, 209, 0.14);
-  }
+.sectionActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
 }
 
-.loadingWrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 10rem;
+@media (min-width: 45rem) {
+  .selectorMovil {
+    display: none;
+  }
+
+  .ocultoMovil {
+    display: flex;
+  }
+
+  .columnsGrid {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
 }
 
 .avisoNoDisponible {
@@ -134,21 +168,11 @@
 
 .avisoNoDisponible svg {
   font-size: 2rem;
-  color: #ea4a5a;
+  color: #ff7b72;
 }
 
 .avisoNoDisponible p {
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.5;
-}
-
-.modalFoot {
-  margin: 1.25rem -1.5rem -1.5rem -1.5rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(59, 78, 209, 0.12);
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  background: rgba(0, 0, 0, 0.2);
 }

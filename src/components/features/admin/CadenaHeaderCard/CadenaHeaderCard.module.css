@@ -117,3 +117,61 @@
   font-size: 0.75rem;
   margin: 0;
 }
+
+.ficha {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  background: #161b22;
+  border: 1px solid #262c36;
+}
+
+.fichaAvatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: rgba(76, 101, 230, 0.16);
+  color: var(--color-azul-bind-300);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.fichaLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 0.2rem;
+}
+
+.fichaTextos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.fichaNombre {
+  color: var(--white);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fichaDetalle {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

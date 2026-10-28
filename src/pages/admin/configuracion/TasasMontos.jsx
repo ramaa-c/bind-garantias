@@ -373,11 +373,11 @@ export default function TasasMontos() {
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSave}
-        titulo="Guardar Tasas y Límites"
+        titulo="Guardar tasas y límites"
         mensaje={`¿Estás seguro de que deseas actualizar las tasas y límites operativos para ${activeTab === 'lineas' ? 'Líneas de Crédito' : activeTab === 'cheques' ? 'Cheques Avalados' : activeTab === 'pagares' ? 'Pagarés Bursátiles' : 'Préstamos'}? Estos cambios impactarán en tiempo real.`}
         variant="blue"
-        confirmText="GUARDAR"
-        cancelText="CANCELAR"
+        confirmText="Guardar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
       />

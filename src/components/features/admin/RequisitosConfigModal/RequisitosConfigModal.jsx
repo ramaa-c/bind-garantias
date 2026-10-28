@@ -9,7 +9,7 @@ import {
   TABS_TIPO_PERSONA,
   esRelacionVisible,
 } from "../../../../utils/relacionesTercerosUtils";
-import { FiSave, FiHelpCircle, FiRotateCcw } from "react-icons/fi";
+import { FiSave, FiHelpCircle, FiRotateCcw, FiList } from "react-icons/fi";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./RequisitosConfigModal.module.css";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
@@ -45,6 +45,7 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
   // Solapa activa actual
   const [activeTab, setActiveTab] = useState("sa");
+  const [seccion, setSeccion] = useState("documentos");
   // Estado local de configuraciones agrupadas: arranca como copia de lo que
   // haya en caché al montar (el padre remonta este modal en cada apertura,
   // ver key en CadenasValor.jsx) y se resincroniza durante el render cuando
@@ -141,240 +142,183 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
   if (!isOpen || !localConfig) return null;
 
+  const ESTADOS = [
+    { valor: 0, texto: "No mostrar", clase: styles.activeNone },
+    { valor: 2, texto: "Opcional", clase: styles.activeOptional },
+    { valor: 1, texto: "Obligatorio", clase: styles.activeRequired },
+  ];
+
+  const AYUDAS = {
+    documentos: {
+      0: "No se mostrará esta carga en el legajo del cliente",
+      2: "Se mostrará la carga pero el cliente puede continuar sin adjuntarlo",
+      1: "El cliente debe subir obligatoriamente el documento para finalizar",
+    },
+    relaciones: {
+      0: "Se ocultará esta pestaña/paso completamente",
+      2: "Se mostrará pero el cliente puede no declarar registros",
+      1: "El cliente debe obligatoriamente declarar al menos un registro para continuar",
+    },
+  };
+
+  const filasDe = (tipo) =>
+    tipo === "documentos"
+      ? DOCUMENT_METADATA
+      : relationMetadata.filter(
+          ({ key }) => !(activeTab === "fisica" && (key === "accionistas" || key === "representanteLegal")),
+        );
+
+  const valorDe = (tipo, key) => localConfig?.[activeTab]?.[tipo]?.[key] ?? 0;
+
+  const filas = filasDe(seccion);
+  const valores = filas.map(({ key }) => valorDe(seccion, key));
+  const valorComun = valores.length > 0 && valores.every((v) => v === valores[0]) ? valores[0] : null;
+  const cantidad = (valor) => valores.filter((v) => v === valor).length;
+
+  const controlTriple = (valorActual, onElegir, ayudas, etiqueta) => (
+    <div className={styles.segmentedControl} role="radiogroup" aria-label={etiqueta}>
+      {ESTADOS.map(({ valor, texto, clase }) => (
+        <button
+          key={valor}
+          type="button"
+          role="radio"
+          aria-checked={valorActual === valor}
+          className={`${styles.segmentBtn} ${valorActual === valor ? clase : ""}`}
+          onClick={() => onElegir(valor)}
+          title={ayudas?.[valor]}
+        >
+          {texto}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="PARAMETRIZACIÓN DE REQUISITOS"
-      maxWidth="750px"
+      title="Requisitos de la cadena"
+      subtitle="Qué se le pide al cliente en el alta, según el tipo de persona."
+      icono={<FiList />}
+      maxWidth="860px"
       variant="blue"
+      preventClose={isUpdating}
       headerActions={
         <button
           type="button"
           className={styles.helpButton}
           onClick={() => toast.info("Configurá de forma independiente los requisitos para Persona Física y los diferentes tipos societarios de Persona Jurídica.")}
           title="Ayuda"
+          aria-label="Ayuda"
         >
-          <FiHelpCircle size={20} />
+          <FiHelpCircle size={17} />
         </button>
       }
+      footer={
+        <>
+          <Button
+            variant="adminNeutro"
+            onClick={handleReset}
+            disabled={isUpdating || sinCambios}
+            title={sinCambios ? "No hay cambios para restablecer" : undefined}
+          >
+            <FiRotateCcw aria-hidden="true" />
+            Restablecer
+          </Button>
+          <Button
+            variant="blue"
+            onClick={handleSave}
+            isLoading={isUpdating}
+            disabled={isUpdating || sinCambios}
+            title={sinCambios ? "No hay cambios para guardar" : undefined}
+          >
+            <FiSave aria-hidden="true" />
+            Guardar
+          </Button>
+        </>
+      }
     >
-      {/* Solapas de selección de perfil */}
-      <div className={styles.tabContainer}>
-        {TABS.map((tab) => {
-          const IconComponent = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabActive : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <IconComponent style={{ marginRight: "0.4rem" }} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
       <div className={styles.modalBody}>
-        <CadenaHeaderCard
-          denominacion={activeItem?.denominacion}
-          logo={activeItem?.logo}
-          referencia={activeItem?.referencia}
-          cadenavalorid={activeItem?.cadenavalorid}
-          cuittercero={activeItem?.cuittercero}
-        />
-
-        <p className={styles.introText}>
-          Configurá cómo se solicitarán los requisitos para el alta de operaciones y legajos en la zona de usuarios para{" "}
-          <strong>{TABS.find(t => t.id === activeTab)?.label}</strong>:
-        </p>
-
-        {/* SECTION 1: DOCUMENTACION */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>Documentación Requerida</h3>
-            <div className={styles.bulkActions}>
-              <button
-                type="button"
-                className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
-                onClick={() => handleSetTodos("documentos", 0)}
-              >
-                Todo No mostrar
-              </button>
-              <button
-                type="button"
-                className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
-                onClick={() => handleSetTodos("documentos", 2)}
-              >
-                Todo Opcional
-              </button>
-              <button
-                type="button"
-                className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
-                onClick={() => handleSetTodos("documentos", 1)}
-              >
-                Todo Obligatorio
-              </button>
+        <div className={styles.cabecera}>
+          <CadenaHeaderCard
+            compacta
+            denominacion={activeItem?.denominacion}
+            logo={activeItem?.logo}
+            referencia={activeItem?.referencia}
+            cadenavalorid={activeItem?.cadenavalorid}
+            cuittercero={activeItem?.cuittercero}
+          />
+          <div className={styles.tipoPersona}>
+            <span className={styles.tipoPersonaEtiqueta}>Tipo de persona</span>
+            <div className={styles.tipos} role="tablist" aria-label="Tipo de persona">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabActive : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-          </div>
-          <div className={styles.list}>
-            {DOCUMENT_METADATA.map(({ key, title, desc }) => {
-              const val = localConfig[activeTab]?.documentos?.[key] !== undefined
-                ? localConfig[activeTab].documentos[key]
-                : 0;
-
-              return (
-                <div key={key} className={styles.row}>
-                  <div className={styles.info}>
-                    <strong className={styles.rowTitle}>{title}</strong>
-                    <span className={styles.rowDesc}>{desc}</span>
-                  </div>
-                  <div className={styles.segmentedControl}>
-                    <button
-                      type="button"
-                      className={`${styles.segmentBtn} ${val === 0 ? styles.activeNone : ""}`}
-                      onClick={() => handleUpdate("documentos", key, 0)}
-                      title="No se mostrará esta carga en el legajo del cliente"
-                    >
-                      No mostrar
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.segmentBtn} ${val === 2 ? styles.activeOptional : ""}`}
-                      onClick={() => handleUpdate("documentos", key, 2)}
-                      title="Se mostrará la carga pero el cliente puede continuar sin adjuntarlo"
-                    >
-                      Opcional
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.segmentBtn} ${val === 1 ? styles.activeRequired : ""}`}
-                      onClick={() => handleUpdate("documentos", key, 1)}
-                      title="El cliente debe subir obligatoriamente el documento para finalizar"
-                    >
-                      Obligatorio
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
 
-        {/* SECTION 2: RELACIONES */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>Relaciones y Secciones</h3>
-            <div className={styles.bulkActions}>
-              <button
-                type="button"
-                className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
-                onClick={() => handleSetTodos("relaciones", 0)}
-              >
-                Todo No mostrar
-              </button>
-              <button
-                type="button"
-                className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
-                onClick={() => handleSetTodos("relaciones", 2)}
-              >
-                Todo Opcional
-              </button>
-              <button
-                type="button"
-                className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
-                onClick={() => handleSetTodos("relaciones", 1)}
-              >
-                Todo Obligatorio
-              </button>
-            </div>
-          </div>
-          <div className={styles.list}>
-            {relationMetadata.map(({ key, title, desc }) => {
-              if (activeTab === "fisica" && key === "accionistas") return null;
-              // Persona Física no tiene Representante Legal (230) - solo
-              // Apoderado (210), que sí aplica a ambos tipos de persona.
-              if (activeTab === "fisica" && key === "representanteLegal") return null;
-
-              const val = localConfig[activeTab]?.relaciones?.[key] !== undefined
-                ? localConfig[activeTab].relaciones[key]
-                : 0;
-
-              return (
-                <div key={key} className={styles.row}>
-                  <div className={styles.info}>
-                    <strong className={styles.rowTitle}>{title}</strong>
-                    <span className={styles.rowDesc}>{desc}</span>
-                  </div>
-                  <div className={styles.segmentedControl}>
-                    <button
-                      type="button"
-                      className={`${styles.segmentBtn} ${val === 0 ? styles.activeNone : ""}`}
-                      onClick={() => handleUpdate("relaciones", key, 0)}
-                      title="Se ocultará esta pestaña/paso completamente"
-                    >
-                      No mostrar
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.segmentBtn} ${val === 2 ? styles.activeOptional : ""}`}
-                      onClick={() => handleUpdate("relaciones", key, 2)}
-                      title="Se mostrará pero el cliente puede no declarar registros"
-                    >
-                      Opcional
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.segmentBtn} ${val === 1 ? styles.activeRequired : ""}`}
-                      onClick={() => handleUpdate("relaciones", key, 1)}
-                      title="El cliente debe obligatoriamente declarar al menos un registro para continuar"
-                    >
-                      Obligatorio
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className={styles.solapas} role="tablist">
+          {[
+            ["documentos", "Documentación"],
+            ["relaciones", "Relaciones y secciones"],
+          ].map(([id, texto]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={seccion === id}
+              className={`${styles.solapa} ${seccion === id ? styles.solapaActiva : ""}`}
+              onClick={() => setSeccion(id)}
+            >
+              {texto}
+              <span className={styles.solapaContador}>{filasDe(id).length}</span>
+            </button>
+          ))}
         </div>
-      </div>
 
-      <div className={styles.modalFooter}>
-        <Button
-          variant="outlineBlue"
-          size="sm"
-          onClick={handleReset}
-          disabled={isUpdating || sinCambios}
-          title={sinCambios ? "No hay cambios para restablecer" : undefined}
-        >
-          <FiRotateCcw style={{ marginRight: "0.5rem" }} />
-          REESTABLECER
-        </Button>
-        <Button
-          variant="blue"
-          size="sm"
-          onClick={handleSave}
-          className={styles.saveBtn}
-          isLoading={isUpdating}
-          disabled={isUpdating || sinCambios}
-          title={sinCambios ? "No hay cambios para guardar" : undefined}
-        >
-          <FiSave style={{ marginRight: "0.5rem" }} />
-          GUARDAR CONFIGURACIÓN
-        </Button>
+        <div className={styles.todos}>
+          <span className={styles.todosTexto}>Aplicar a todos</span>
+          {controlTriple(valorComun, (valor) => handleSetTodos(seccion, valor), AYUDAS[seccion], "Aplicar a todos")}
+        </div>
+
+        <div className={styles.list}>
+          {filas.map(({ key, title, desc }) => (
+            <div key={key} className={styles.row}>
+              <div className={styles.info}>
+                <strong className={styles.rowTitle}>{title}</strong>
+                <span className={styles.rowDesc}>{desc}</span>
+              </div>
+              {controlTriple(valorDe(seccion, key), (valor) => handleUpdate(seccion, key, valor), AYUDAS[seccion], title)}
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.resumen}>
+          <span><i className={styles.puntoObligatorio} />{cantidad(1)} obligatorios</span>
+          <span><i className={styles.puntoOpcional} />{cantidad(2)} opcionales</span>
+          <span><i className={styles.puntoOculto} />{cantidad(0)} ocultos</span>
+        </div>
       </div>
 
       <ConfirmacionModal
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSave}
-        titulo="Guardar Configuración"
+        titulo="Guardar configuración"
         mensaje="¿Estás seguro de que deseas guardar la nueva parametrización de requisitos (para todos los tipos de personas/sociedades) en esta cadena de valor?"
         variant="blue"
-        confirmText="GUARDAR"
-        cancelText="CANCELAR"
+        confirmText="Guardar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isUpdating}

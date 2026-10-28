@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { FiUser, FiLock, FiAlertCircle } from "react-icons/fi";
-import { FaRegUserCircle } from "react-icons/fa";
+import { FiUser, FiLock, FiAlertCircle, FiShield } from "react-icons/fi";
 import {
   Modal,
   Button,
@@ -67,6 +66,7 @@ const extraerRegistroUsuario = (db) => {
 export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const [seccionMovil, setSeccionMovil] = useState("usuario");
 
   const { data: usuarioDb, isPending: isLoadingUsuario } =
     useObtenerPorNombreOEmail(isOpen ? user?.email || "" : "");
@@ -215,10 +215,16 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="MI CUENTA"
-      subtitle="Gestioná tu nombre de usuario y tu contraseña de acceso."
-      maxWidth="760px"
+      title="Mi cuenta"
+      subtitle="Tu nombre de usuario y tu contraseña de acceso."
+      icono={<FiUser />}
+      maxWidth="780px"
       variant="blue"
+      footer={
+        <Button variant="adminNeutro" onClick={onClose}>
+          Cerrar
+        </Button>
+      }
     >
       {isLoadingUsuario ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -251,18 +257,42 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
       ) : (
         <div className={styles.modalBody}>
           <div className={styles.identityCard}>
-            <div className={styles.identityAvatar}>
-              <FaRegUserCircle />
+            <div className={styles.identityAvatar} aria-hidden="true">
+              {(user?.email || "?").slice(0, 2).toUpperCase()}
             </div>
-            <div>
+            <div className={styles.identityTextos}>
               <p className={styles.identityEmail}>{user?.email}</p>
               <p className={styles.identityRole}>Administrador</p>
             </div>
+            <span className={styles.identityChip}>
+              <FiShield aria-hidden="true" /> Admin
+            </span>
+          </div>
+
+          <div className={styles.selectorMovil} role="tablist" aria-label="Qué querés cambiar">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={seccionMovil === "usuario"}
+              className={seccionMovil === "usuario" ? styles.selectorActivo : ""}
+              onClick={() => setSeccionMovil("usuario")}
+            >
+              Usuario
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={seccionMovil === "password"}
+              className={seccionMovil === "password" ? styles.selectorActivo : ""}
+              onClick={() => setSeccionMovil("password")}
+            >
+              Contraseña
+            </button>
           </div>
 
           <div className={styles.columnsGrid}>
             <form
-              className={styles.sectionGroup}
+              className={`${styles.sectionGroup} ${seccionMovil !== "usuario" ? styles.ocultoMovil : ""}`}
               onSubmit={handleUsernameSubmit(onSubmitUsername)}
               noValidate
             >
@@ -284,22 +314,23 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
               <div className={styles.sectionActions}>
                 <Button
                   type="submit"
-                  variant="blue"
+                  variant="adminSuave"
+                  size="sm"
                   isLoading={actualizarUsuarioMutation.isPending}
                   disabled={!usernameIsDirty}
                 >
-                  GUARDAR NOMBRE
+                  Guardar nombre
                 </Button>
               </div>
             </form>
 
             <form
-              className={styles.sectionGroup}
+              className={`${styles.sectionGroup} ${seccionMovil !== "password" ? styles.ocultoMovil : ""}`}
               onSubmit={handlePasswordSubmit(onSubmitPassword)}
               noValidate
             >
               <h4 className={styles.sectionTitle}>
-                <FiLock /> Cambiar contraseña
+                <FiLock /> Contraseña
               </h4>
               <p className={styles.sectionHint}>
                 Usá una contraseña que no utilices en otros sitios.
@@ -349,23 +380,18 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
               <div className={styles.sectionActions}>
                 <Button
                   type="submit"
-                  variant="blue"
+                  variant="adminSuave"
+                  size="sm"
                   isLoading={cambiarPasswordMutation.isPending}
                   disabled={!isPasswordValid}
                 >
-                  ACTUALIZAR CONTRASEÑA
+                  Cambiar contraseña
                 </Button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      <div className={styles.modalFoot}>
-        <Button variant="outlineBlue" onClick={onClose}>
-          CERRAR
-        </Button>
-      </div>
     </Modal>
   );
 };

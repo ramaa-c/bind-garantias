@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { FiSearch, FiArrowLeft, FiUploadCloud, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiArrowLeft, FiChevronRight, FiPower, FiHash, FiBriefcase, FiFileText, FiDollarSign } from "react-icons/fi";
 import { toast } from "sonner";
 import { useObtenerCadenasCursanPlataforma, useCrearCadenaValor } from "../../../../hooks/useCadenaValor";
 import { esCadenaAprobadaYVigente } from "../../../../utils/cadenaValorUtils";
@@ -13,6 +13,9 @@ import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
 import { MontoEnPalabras } from "../../../ui/MontoEnPalabras/MontoEnPalabras";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
+import { SeccionCadena, PasosActivacion, CargaLogoCadena } from "../FormularioCadena/FormularioCadena";
+import f from "../FormularioCadena/FormularioCadena.module.css";
+import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import {
   requisitosService,
@@ -22,7 +25,6 @@ import {
   DEFAULT_SH_CONFIG,
   DEFAULT_OTRAS_CONFIG,
 } from "../../../../services/requisitosService";
-import styles from "./ActivarCadenaModal.module.css";
 import { FORMATOS_ARCHIVO, validarTipoArchivo } from "../../../../utils/fileUtils";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 
@@ -299,180 +301,161 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     return `data:image/png;base64,${logo}`;
   };
 
+  const enFormulario = !isLoadingTodas && step !== "select";
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="ACTIVAR CADENA DE VALOR"
-      maxWidth="700px"
+      title="Activar cadena de valor"
+      subtitle={enFormulario ? undefined : "Habilitá una cadena de SGR+ en la plataforma web."}
+      icono={<FiPower />}
+      maxWidth={enFormulario ? "780px" : "620px"}
       variant="blue"
+      preventClose={crearMutation.isPending}
+      footer={
+        enFormulario ? (
+          <>
+            <span className={f.pieAyuda}>Los campos con * son obligatorios</span>
+            <Button variant="adminNeutro" onClick={() => setStep("select")} disabled={crearMutation.isPending}>
+              <FiArrowLeft aria-hidden="true" /> Volver
+            </Button>
+            <Button variant="blue" onClick={handleSave} isLoading={crearMutation.isPending}>
+              <FiPower aria-hidden="true" /> Activar cadena
+            </Button>
+          </>
+        ) : (
+          <Button variant="adminNeutro" onClick={onClose}>
+            Cancelar
+          </Button>
+        )
+      }
     >
-      <div className={styles.modalBody}>
+      <div className={f.cuerpo}>
         {isLoadingTodas ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            <Skeleton width="85%" height="0.85rem" />
-            <Skeleton width="100%" height="2.5rem" radius="0.6rem" style={{ margin: "0.5rem 0" }} />
+          <div className={f.lista}>
+            <Skeleton width="100%" height="2.5rem" radius="0.6rem" />
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", padding: "0.75rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.65rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1 }}>
-                  <Skeleton width="2.4rem" height="2.4rem" radius="0.6rem" />
-                  <div style={{ flex: 1 }}>
-                    <Skeleton width="55%" height="0.9rem" />
-                    <Skeleton width="35%" height="0.7rem" style={{ marginTop: "0.4rem" }} />
-                  </div>
+              <div key={i} className={f.opcion}>
+                <Skeleton width="2.25rem" height="2.25rem" radius="0.6rem" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton width="55%" height="0.9rem" />
+                  <Skeleton width="35%" height="0.7rem" style={{ marginTop: "0.4rem" }} />
                 </div>
-                <Skeleton width="4.5rem" height="1.3rem" radius="pill" />
               </div>
             ))}
           </div>
         ) : step === "select" ? (
-          <div>
-            <p style={{ fontSize: "0.875rem", color: "#8b949e", marginBottom: "1rem" }}>
-              Seleccioná una cadena de valor del listado del sistema para activarla en la plataforma web.
-            </p>
-            <div className={styles.searchWrap} style={{ marginBottom: "1rem" }}>
-              <FiSearch className={styles.iconSearch} />
+          <>
+            <PasosActivacion paso={1} />
+            <label className={f.buscador}>
+              <FiSearch aria-hidden="true" />
               <input
                 type="text"
-                placeholder="Buscar cadena por denominación o ID..."
+                placeholder="Buscar cadena por denominación o ID"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Buscar cadena"
               />
-            </div>
-            <div className={styles.chainSearchList}>
-              {filteredInactive.map(chain => {
-                const getInitials = (name) => {
-                  if (!name) return "CV";
-                  return name
-                    .split(" ")
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((w) => w[0].toUpperCase())
-                    .join("");
-                };
-
-                return (
-                  <div
-                    key={chain.cadenavalorid}
-                    className={styles.chainSearchItem}
-                    onClick={() => handleSelectChain(chain)}
-                  >
-                    <div className={styles.itemLeft}>
-                      <div className={styles.itemAvatar}>
-                        {getInitials(chain.denominacion)}
-                      </div>
-                      <div className={styles.itemDetails}>
-                        <strong className={styles.itemName}>{chain.denominacion}</strong>
-                        <span className={styles.itemCuit}>
-                          CUIT: {chain.cuittercero || "No disponible"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.itemRight}>
-                      <span className={styles.itemIdBadge}>
-                        ID: #{chain.cadenavalorid}
-                      </span>
-                      <FiChevronRight className={styles.itemChevron} />
-                    </div>
-                  </div>
-                );
-              })}
+            </label>
+            <div className={f.lista}>
+              {filteredInactive.map((chain) => (
+                <button
+                  type="button"
+                  key={chain.cadenavalorid}
+                  className={f.opcion}
+                  onClick={() => handleSelectChain(chain)}
+                >
+                  <span className={f.opcionAvatar} aria-hidden="true">
+                    {obtenerInicialesEmpresa(chain.denominacion || "CV")}
+                  </span>
+                  <span className={f.opcionTextos}>
+                    <strong>{chain.denominacion}</strong>
+                    <span>CUIT {chain.cuittercero || "no disponible"}</span>
+                  </span>
+                  <span className={f.opcionId}>ID {chain.cadenavalorid}</span>
+                  <FiChevronRight className={f.opcionChevron} aria-hidden="true" />
+                </button>
+              ))}
               {filteredInactive.length === 0 && (
-                <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "#8b949e", fontSize: "0.875rem" }}>
-                  No se encontraron cadenas de valor vigentes para activar.
-                </div>
+                <p className={f.vacio}>No se encontraron cadenas de valor vigentes para activar.</p>
               )}
             </div>
-          </div>
+            <p className={f.ayuda}>Solo se listan las cadenas de SGR+ que todavía no están activas en la web.</p>
+          </>
         ) : (
           <>
+            <PasosActivacion paso={2} />
             <CadenaHeaderCard
+              compacta
               denominacion={selectedChain?.denominacion || formState.denominacion}
               logo={formState.logo || selectedChain?.logo}
               referencia={formState.referencia || selectedChain?.referencia}
               cadenavalorid={selectedChain?.cadenavalorid || formState.cadenavalorid}
               cuittercero={selectedChain?.cuittercero}
             />
-            <div className={styles.sectionGroup}>
-              <h4 className={styles.sectionTitle}>Identificación de la Cadena</h4>
-              <div className={styles.inputsGrid}>
-                <div className={styles.row}>
-                  <div style={{ flex: 1 }}>
-                    <InputSimple
-                      label="ID de Cadena"
-                      value={formState.cadenavalorid}
-                      disabled
-                    />
-                  </div>
-                  <div style={{ flex: 2 }}>
-                    <InputSimple
-                      label="Denominación"
-                      value={formState.denominacion}
-                      disabled
-                    />
-                  </div>
-                </div>
-                <div className={styles.row}>
-                  <div style={{ flex: 1 }}>
-                    <InputSimple
-                      label="Referencia"
-                      value={formState.referencia}
-                      onChange={val => setFormState({ ...formState, referencia: val })}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className={styles.sectionGroup}>
-              <h4 className={styles.sectionTitle}>Configuración Comercial</h4>
-              <div className={styles.row}>
-                <div style={{ flex: 1 }}>
-                  <SelectSimple
-                    label="Canal Comercialización *"
-                    placeholder="Seleccione canal comercial..."
-                    options={canalesOpciones}
-                    value={formState.tipocanalcomercializacionid}
-                    onChange={val => handleInputChange("tipocanalcomercializacionid", val)}
-                    error={formErrors.tipocanalcomercializacionid}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <SelectSimple
-                    label="Equipo Comercial *"
-                    placeholder="Seleccione equipo comercial..."
-                    options={equiposOpciones}
-                    value={formState.equipocomercialid}
-                    onChange={val => handleInputChange("equipocomercialid", val)}
-                    error={formErrors.equipocomercialid}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <SelectSimple
-                    label="Tipo de Contrato *"
-                    placeholder="Seleccione tipo de contrato..."
-                    options={contratosOpciones}
-                    value={formState.tipocontratoid}
-                    onChange={val => handleInputChange("tipocontratoid", val)}
-                    error={formErrors.tipocontratoid}
-                  />
-                </div>
+            <SeccionCadena icono={<FiHash />} titulo="Identificación">
+              <div className={`${f.grilla} ${f.grilla3}`}>
+                <InputSimple label="ID de Cadena" value={formState.cadenavalorid} disabled hideErrorSpace />
+                <InputSimple label="Denominación" value={formState.denominacion} disabled hideErrorSpace />
+                <InputSimple
+                  label="Referencia"
+                  value={formState.referencia}
+                  onChange={(val) => setFormState({ ...formState, referencia: val })}
+                  hideErrorSpace
+                />
               </div>
-            </div>
+              <CargaLogoCadena
+                logoSrc={getLogoSrc(formState.logo)}
+                onElegir={triggerFileSelect}
+                onQuitar={() => setFormState({ ...formState, logo: "" })}
+              />
+            </SeccionCadena>
 
-            <div className={styles.sectionGroup}>
-              <h4 className={styles.sectionTitle}>Modelo de Documento</h4>
-              <div className={styles.row}>
-                <div style={{ flex: 1 }}>
-                  <SelectSimple
-                    label="Tipo de Modelo"
-                    placeholder="Seleccione tipo de modelo..."
-                    options={tiposModeloDocumentoOpciones}
-                    value={tipoModeloDocumentoIdUI}
-                    onChange={handleTipoModeloDocumentoChange}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
+            <SeccionCadena icono={<FiBriefcase />} titulo="Configuración comercial">
+              <div className={`${f.grilla} ${f.grilla3}`}>
+                <SelectSimple
+                  label="Canal Comercialización *"
+                  placeholder="Seleccione canal comercial..."
+                  options={canalesOpciones}
+                  value={formState.tipocanalcomercializacionid}
+                  onChange={(val) => handleInputChange("tipocanalcomercializacionid", val)}
+                  error={formErrors.tipocanalcomercializacionid}
+                  hideErrorSpace={!formErrors.tipocanalcomercializacionid}
+                />
+                <SelectSimple
+                  label="Equipo Comercial *"
+                  placeholder="Seleccione equipo comercial..."
+                  options={equiposOpciones}
+                  value={formState.equipocomercialid}
+                  onChange={(val) => handleInputChange("equipocomercialid", val)}
+                  error={formErrors.equipocomercialid}
+                  hideErrorSpace={!formErrors.equipocomercialid}
+                />
+                <SelectSimple
+                  label="Tipo de Contrato *"
+                  placeholder="Seleccione tipo de contrato..."
+                  options={contratosOpciones}
+                  value={formState.tipocontratoid}
+                  onChange={(val) => handleInputChange("tipocontratoid", val)}
+                  error={formErrors.tipocontratoid}
+                  hideErrorSpace={!formErrors.tipocontratoid}
+                />
+              </div>
+            </SeccionCadena>
+
+            <SeccionCadena icono={<FiFileText />} titulo="Modelo de documento">
+              <div className={`${f.grilla} ${f.grilla2}`}>
+                <SelectSimple
+                  label="Tipo de Modelo"
+                  placeholder="Seleccione tipo de modelo..."
+                  options={tiposModeloDocumentoOpciones}
+                  value={tipoModeloDocumentoIdUI}
+                  onChange={handleTipoModeloDocumentoChange}
+                  hideErrorSpace
+                />
+                <div className={f.campo}>
                   <SelectSimple
                     label="Modelo de Documento"
                     placeholder={
@@ -484,11 +467,12 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     }
                     options={modelosDocumentoOpciones}
                     value={formState.modelodocumentoid !== "0" ? formState.modelodocumentoid : ""}
-                    onChange={val => handleInputChange("modelodocumentoid", val)}
+                    onChange={(val) => handleInputChange("modelodocumentoid", val)}
                     disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
+                    hideErrorSpace
                   />
                   {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
-                    <span className={styles.selectHint}>
+                    <span className={f.ayuda}>
                       {modelosDocumentoOpciones.length === 0
                         ? "Ningún modelo de este tipo se puede generar desde una solicitud."
                         : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
@@ -496,26 +480,24 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   )}
                 </div>
               </div>
-            </div>
+            </SeccionCadena>
 
-            <div className={styles.sectionGroup}>
-              <h4 className={styles.sectionTitle}>Límites Financieros</h4>
-              <div className={styles.row}>
-                <div style={{ flex: 1 }}>
-                  <SelectSimple
-                    label="Moneda *"
-                    placeholder="Seleccione moneda..."
-                    options={monedasOpciones}
-                    value={formState.monedaid}
-                    onChange={val => handleInputChange("monedaid", val)}
-                    error={formErrors.monedaid}
-                  />
-                </div>
-                <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+            <SeccionCadena icono={<FiDollarSign />} titulo="Límites financieros">
+              <div className={`${f.grilla} ${f.grilla3}`}>
+                <SelectSimple
+                  label="Moneda *"
+                  placeholder="Seleccione moneda..."
+                  options={monedasOpciones}
+                  value={formState.monedaid}
+                  onChange={(val) => handleInputChange("monedaid", val)}
+                  error={formErrors.monedaid}
+                  hideErrorSpace={!formErrors.monedaid}
+                />
+                <div className={f.campo}>
                   <InputSimple
                     label="Monto Máximo Utilizado *"
                     value={formState.montomaximoutilizado}
-                    onChange={val => handleInputChange("montomaximoutilizado", val)}
+                    onChange={(val) => handleInputChange("montomaximoutilizado", val)}
                     mask="$ num"
                     blocks={{ num: bloqueNumerico() }}
                     lazy={false}
@@ -523,57 +505,23 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     disabled={!formState.monedaid}
                     error={formErrors.montomaximoutilizado}
                   />
-                  {!formState.monedaid && (
-                    <span className={styles.fieldHint}>Elegí primero una moneda</span>
-                  )}
+                  {!formState.monedaid && <span className={f.ayudaEnCampo}>Elegí primero una moneda</span>}
                   {formState.monedaid && !formErrors.montomaximoutilizado && (
                     <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
                   )}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <InputSimple
-                    label="Porcentaje Máximo Utilizado (%) *"
-                    value={formState.porcentajemaximoutilizado}
-                    onChange={val => handleInputChange("porcentajemaximoutilizado", val)}
-                    mask="% num"
-                    blocks={{ num: bloqueNumerico(100) }}
-                    lazy={false}
-                    error={formErrors.porcentajemaximoutilizado}
-                  />
-                </div>
+                <InputSimple
+                  label="Porcentaje Máximo Utilizado (%) *"
+                  value={formState.porcentajemaximoutilizado}
+                  onChange={(val) => handleInputChange("porcentajemaximoutilizado", val)}
+                  mask="% num"
+                  blocks={{ num: bloqueNumerico(100) }}
+                  lazy={false}
+                  error={formErrors.porcentajemaximoutilizado}
+                  hideErrorSpace={!formErrors.porcentajemaximoutilizado}
+                />
               </div>
-            </div>
-
-            <div className={styles.logoSection}>
-              {formState.logo ? (
-                <div className={styles.modalLogoPreviewWrap}>
-                  <img
-                    src={getLogoSrc(formState.logo)}
-                    alt="Preview Logo"
-                    style={{ maxHeight: "60px", maxWidth: "180px", objectFit: "contain", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(43, 113, 200, 0.15)", padding: "0.25rem", borderRadius: "0.5rem" }}
-                  />
-                  <button
-                    type="button"
-                    className={styles.btnRemoveLogo}
-                    onClick={() => setFormState({ ...formState, logo: "" })}
-                  >
-                    Quitar Imagen
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.uploadZone} onClick={triggerFileSelect}>
-                  <FiUploadCloud className={styles.uploadIcon} />
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontSize: "0.8125rem", fontWeight: "600", color: "#ffffff" }}>
-                      Cargar Logo de la Cadena (Opcional)
-                    </div>
-                    <div style={{ fontSize: "0.7rem", color: "#8b949e", marginTop: "0.15rem" }}>
-                      Arrastrá o hacé click aquí. JPG o PNG con fondo transparente, máx. 500 KB.
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            </SeccionCadena>
 
             <input
               type="file"
@@ -586,51 +534,15 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
         )}
       </div>
 
-      <div
-        className={styles.modalFoot}
-        style={{
-          margin: "1.5rem -1.5rem -1.5rem -1.5rem",
-          padding: "1.25rem 1.5rem",
-          borderTop: "1px solid #30363d",
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: "0.75rem",
-          background: "rgba(0, 0, 0, 0.2)",
-        }}
-      >
-        {step === "form" ? (
-          <>
-            <Button
-              variant="outlineBlue"
-              onClick={() => setStep("select")}
-              disabled={crearMutation.isPending}
-            >
-              <FiArrowLeft style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> ATRÁS
-            </Button>
-            <Button
-              variant="blue"
-              onClick={handleSave}
-              isLoading={crearMutation.isPending}
-            >
-              ACTIVAR
-            </Button>
-          </>
-        ) : (
-          <Button variant="outlineBlue" onClick={onClose}>
-            CANCELAR
-          </Button>
-        )}
-      </div>
-
       <ConfirmacionModal
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSave}
-        titulo="Confirmar Activación"
+        titulo="Confirmar activación"
         mensaje="¿Estás seguro de que deseas activar esta cadena de valor en la plataforma web?"
         variant="blue"
-        confirmText="ACTIVAR"
-        cancelText="CANCELAR"
+        confirmText="Activar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={crearMutation.isPending}

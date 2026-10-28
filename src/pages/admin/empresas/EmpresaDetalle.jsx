@@ -27,6 +27,10 @@ import {
   FiBell,
   FiUserCheck,
   FiChevronDown,
+  FiZap,
+  FiPlay,
+  FiCode,
+  FiSearch,
 } from "react-icons/fi";
 import {
   useSocioPorId,
@@ -544,8 +548,8 @@ function DatosTab({ socio }) {
         titulo="Confirmar modificación"
         mensaje="¿Estás seguro de que deseas guardar los cambios en los datos de esta empresa?"
         variant="blue"
-        confirmText="GUARDAR"
-        cancelText="CANCELAR"
+        confirmText="Guardar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={actualizarMutation.isPending}
@@ -1206,8 +1210,8 @@ function CdasTercerosSection({ socio, cadenaValorId, descripcionPorCda, reglaGlo
         titulo="Reejecutar CDAs de todos los terceros"
         mensaje={`Se van a volver a evaluar los CDAs de las ${personas.length} personas relacionadas, una por una, con los criterios activos de la cadena. Cada evaluación vuelve a consultar las integraciones (Nosis, ARCA). ¿Confirmás que querés continuar?`}
         variant="blue"
-        confirmText="REEJECUTAR TODOS"
-        cancelText="CANCELAR"
+        confirmText="Reejecutar todos"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={reejecutandoTodos}
@@ -1783,8 +1787,8 @@ function CdasEmpresaPanel({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
         }
         variant="blue"
         tone="danger"
-        confirmText="REEJECUTAR GRUPO"
-        cancelText="CANCELAR"
+        confirmText="Reejecutar grupo"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isReejecutandoGrupo}
@@ -1923,92 +1927,105 @@ function CdasEmpresaPanel({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
       <Modal
         isOpen={!!forzarItem}
         onClose={cerrarForzarExpresion}
-        title="Forzar evaluación con expresión personalizada"
+        title="Forzar evaluación"
         subtitle={forzarItem ? descripcionPorCda.get(Number(forzarItem.cdaid)) : ""}
+        icono={<FiZap />}
+        tono="advertencia"
         variant="blue"
-        maxWidth="580px"
+        maxWidth="620px"
         preventClose={isReejecutando}
+        footer={
+          <>
+            <span className={styles.forzarPieAyuda}>
+              {resultadoPrueba ? "" : "Se habilita al probar la expresión"}
+            </span>
+            <Button variant="adminNeutro" onClick={cerrarForzarExpresion} disabled={isReejecutando}>
+              Cancelar
+            </Button>
+            <Button
+              variant="adminAdvertencia"
+              onClick={() => setConfirmForzarOpen(true)}
+              disabled={!expresionForzada.trim() || !resultadoPrueba || isReejecutando}
+            >
+              <FiZap aria-hidden="true" />
+              Forzar evaluación
+            </Button>
+          </>
+        }
       >
         {forzarItem && (
           <div className={styles.forzarModalBody}>
             <div className={styles.warnCallout}>
-              <span className={styles.warnIconWrap}>
-                <FiAlertTriangle size={14} />
-              </span>
+              <FiAlertTriangle className={styles.warnIcono} aria-hidden="true" />
               <p className={styles.warnText}>
-                Esto evalúa <strong>solo este CDA</strong> con la expresión que
-                definas acá en vez de la definida en CDAs Globales. Usalo solo
-                cuando el rechazo se deba a un valor límite que consideres{" "}
-                <strong>salvable</strong> para este socio en particular — queda
-                registrado en el historial con la expresión utilizada y el
-                resultado combinado de la pantalla ya lo refleja. Es
-                temporal: si más adelante se reejecuta el grupo completo, este
-                CDA vuelve a evaluarse con su regla real (sin este forzado) y
-                puede volver a fallar.
+                Evalúa <strong>solo este criterio</strong> con la expresión que
+                escribas, en vez de la definida en CDAs Globales. Usalo cuando el
+                rechazo se deba a un valor límite que consideres{" "}
+                <strong>salvable</strong> para este socio: queda registrado en el
+                historial. Es temporal: si se reejecuta el grupo completo, vuelve
+                a evaluarse con su regla real y puede volver a fallar.
               </p>
             </div>
 
-            <div className={styles.forzarSection}>
-              <h4 className={styles.forzarSectionLabel}>Regla definida en CDAs Globales</h4>
-              <code className={styles.forzarReglaGlobal}>
-                {reglaGlobalPorCda.get(Number(forzarItem.cdaid)) || "—"}
-              </code>
+            <div className={styles.forzarPaso}>
+              <span className={`${styles.forzarPasoNumero} ${styles.forzarPasoActivo}`}>1</span>
+              <div className={styles.forzarPasoCuerpo}>
+                <h4 className={styles.forzarSectionLabel}>Regla global</h4>
+                <code className={styles.forzarReglaGlobal}>
+                  {reglaGlobalPorCda.get(Number(forzarItem.cdaid)) || "—"}
+                </code>
+              </div>
             </div>
 
-            <div className={styles.forzarSection}>
-              <h4 className={styles.forzarSectionLabel}>Expresión a forzar</h4>
-              <InputSimple
-                type="textarea"
-                label="Expresión"
-                value={expresionForzada}
-                onChange={(val) => {
-                  setExpresionForzada(val);
-                  setResultadoPrueba(null);
-                }}
-                variant="admin"
-                rows={3}
-                hideErrorSpace
-              />
-              <p className={styles.forzarHelperText}>
-                Los valores de texto van entre comillas simples (ej. 'REINA');
-                los numéricos y las fechas (AAAA-MM-DD) van sin comillas.
-              </p>
+            <div className={styles.forzarPaso}>
+              <span className={`${styles.forzarPasoNumero} ${styles.forzarPasoActivo}`}>2</span>
+              <div className={styles.forzarPasoCuerpo}>
+                <h4 className={styles.forzarSectionLabel}>Expresión a forzar</h4>
+                <InputSimple
+                  type="textarea"
+                  label="Expresión"
+                  value={expresionForzada}
+                  onChange={(val) => {
+                    setExpresionForzada(val);
+                    setResultadoPrueba(null);
+                  }}
+                  variant="admin"
+                  rows={3}
+                  hideErrorSpace
+                />
+                <p className={styles.forzarHelperText}>
+                  Los valores de texto van entre comillas simples (ej. 'REINA');
+                  los numéricos y las fechas (AAAA-MM-DD) van sin comillas.
+                </p>
+              </div>
             </div>
 
-            <div className={styles.sandboxContainer}>
-              <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas</h3>
-
-              <div className={styles.sandboxBody}>
-                {expresionForzada.trim() ? (
-                  <p className={styles.sandboxRulePreview}>
-                    La expresión que vas a forzar es: <code>{expresionForzada}</code>
-                  </p>
-                ) : (
-                  <p className={styles.sandboxRulePreview}>
-                    Escribí una expresión arriba para poder probarla acá.
-                  </p>
-                )}
-
-                <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", justifyContent: "space-between" }}>
-                  <span className={styles.sandboxCuitLabel}>CUIT: {formatCuit(socio.cuit)}</span>
+            <div className={styles.forzarPaso}>
+              <span className={`${styles.forzarPasoNumero} ${expresionForzada.trim() ? styles.forzarPasoActivo : ""}`}>3</span>
+              <div className={styles.forzarPasoCuerpo}>
+                <h4 className={styles.forzarSectionLabel}>Probar antes de forzar</h4>
+                <div className={styles.sandboxFila}>
+                  <span className={styles.sandboxCuitLabel}>
+                    {expresionForzada.trim()
+                      ? `Se prueba contra ${socio.denominacion || "el socio"} · CUIT ${formatCuit(socio.cuit)}`
+                      : "Escribí una expresión arriba para poder probarla."}
+                  </span>
                   <Button
                     type="button"
-                    variant="outlineBlue"
-                    size="md"
+                    variant="adminSuave"
+                    size="sm"
                     onClick={handleProbarExpresion}
                     isLoading={isProbando}
                     disabled={!expresionForzada.trim() || isProbando}
                   >
+                    <FiPlay aria-hidden="true" />
                     Probar
                   </Button>
                 </div>
-              </div>
 
-              {resultadoPrueba && (
-                <div className={styles.testResultBox}>
-                  <div className={styles.testResultHeader}>
-                    <span>Resultado:</span>
-                    <div className={styles.testResultHeaderRight}>
+                {resultadoPrueba && (
+                  <div className={`${styles.testResultBox} ${styles[`testResult-${resultadoPrueba.tono}`] || ""}`}>
+                    <div className={styles.testResultHeader}>
                       <span className={styles[`testBadge${resultadoPrueba.tono.charAt(0).toUpperCase()}${resultadoPrueba.tono.slice(1)}`]}>
                         {resultadoPrueba.label}
                       </span>
@@ -2022,35 +2039,24 @@ function CdasEmpresaPanel({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
                         <FiX size={14} />
                       </button>
                     </div>
+                    <div className={styles.testResultMessage}>{resultadoPrueba.descripcion}</div>
+                    {(resultadoPrueba.valorResuelto || resultadoPrueba.mensaje) && (
+                      <div className={styles.testResultDatos}>
+                        {resultadoPrueba.valorResuelto && (
+                          <span>
+                            Valor resuelto <code>{resultadoPrueba.valorResuelto}</code>
+                          </span>
+                        )}
+                        {resultadoPrueba.mensaje && (
+                          <span>
+                            Mensaje del backend <code>{resultadoPrueba.mensaje}</code>
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className={styles.testResultMessage}>{resultadoPrueba.descripcion}</div>
-                  {resultadoPrueba.mensaje && (
-                    <div className={styles.testResultLog}>
-                      <span className={styles.testResultLogLabel}>Mensaje devuelto por el backend</span>
-                      <code className={styles.testResultLogValue}>{resultadoPrueba.mensaje}</code>
-                    </div>
-                  )}
-                  {resultadoPrueba.valorResuelto && (
-                    <div className={styles.testResultLog}>
-                      <span className={styles.testResultLogLabel}>Valor resuelto</span>
-                      <code className={styles.testResultLogValue}>{resultadoPrueba.valorResuelto}</code>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className={styles.forzarModalFooter}>
-              <Button variant="ghost" onClick={cerrarForzarExpresion} disabled={isReejecutando}>
-                CANCELAR
-              </Button>
-              <Button
-                variant="blue"
-                onClick={() => setConfirmForzarOpen(true)}
-                disabled={!expresionForzada.trim() || isReejecutando}
-              >
-                CONTINUAR
-              </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -2076,9 +2082,9 @@ function CdasEmpresaPanel({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
           </>
         }
         variant="blue"
-        tone="danger"
-        confirmText="FORZAR Y REEJECUTAR"
-        cancelText="CANCELAR"
+        tone="warning"
+        confirmText="Forzar y reejecutar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isReejecutando && cdaEnCurso === forzarItem?.cdaid}
@@ -2112,8 +2118,14 @@ function VerExpresionModal({ item, onClose, descripcion, reglaGlobal }) {
       onClose={onClose}
       title="Expresión evaluada"
       subtitle={descripcion}
+      icono={<FiCode />}
       variant="blue"
-      maxWidth="560px"
+      maxWidth="580px"
+      footer={
+        <Button variant="adminNeutro" onClick={onClose}>
+          Cerrar
+        </Button>
+      }
     >
       {item && (
         <div className={styles.forzarModalBody}>
@@ -2168,6 +2180,9 @@ function VerExpresionModal({ item, onClose, descripcion, reglaGlobal }) {
 // que puede crecer indefinidamente. Reutiliza la misma query que CdasTab
 // (misma queryKey de react-query), así que no pega otra request de red.
 function HistorialCdaModal({ isOpen, onClose, socio }) {
+  const [busqueda, setBusqueda] = useState("");
+  const [filtro, setFiltro] = useState("todos");
+  const [abiertas, setAbiertas] = useState({});
   const { data: ejecucionesData, isLoading, isError } = useObtenerExecuteCda(socio.socioid);
   const { data: estadosExecuteCda } = useEstadoExecuteCda();
   const { data: todosCdas } = useObtenerTodosCdas();
@@ -2211,52 +2226,82 @@ function HistorialCdaModal({ isOpen, onClose, socio }) {
     return { sueltos: sueltosList, corridas: corridasList };
   }, [historialCompleto]);
 
-  const renderFila = (item, key) => {
+  const datosDe = (item) => {
     const estadoLabel =
       resolverLabel(estadosExecuteCda?.opciones, item.estadoexecutecdaid) || "Desconocido";
-    const tono = getEstadoTono(estadoLabel);
+    const estadoId = Number(item.estadoexecutecdaid);
+    const tono = estadoId === 3 ? "success" : estadoId === 2 ? "danger" : getEstadoTono(estadoLabel);
     const descripcion =
       descripcionPorCda.get(Number(item.cdaid)) || item.expresion || `CDA #${item.cdaid}`;
+    return { estadoLabel, tono, descripcion };
+  };
 
+  const coincide = (item) => {
+    const { tono, descripcion } = datosDe(item);
+    if (filtro === "cumple" && tono !== "success") return false;
+    if (filtro === "noCumple" && tono !== "danger") return false;
+    if (filtro === "forzados" && !item.valorparticularexpresion) return false;
+    const q = busqueda.trim().toLowerCase();
+    return !q || descripcion.toLowerCase().includes(q);
+  };
+
+  const hayFiltro = filtro !== "todos" || !!busqueda.trim();
+  const cantidadForzados = historialCompleto.filter((i) => i.valorparticularexpresion).length;
+  const sueltosVisibles = sueltos.filter(coincide);
+  const corridasVisibles = corridas
+    .map((c) => ({ ...c, items: hayFiltro ? c.items.filter(coincide) : c.items }))
+    .filter((c) => !hayFiltro || c.items.length > 0);
+
+  const alternar = (id) => setAbiertas((prev) => ({ ...prev, [id]: !estaAbierta(id) }));
+  const estaAbierta = (id) => (id in abiertas ? abiertas[id] : hayFiltro || id === corridas[0]?.grupo.socioexecutecdaid);
+
+  const renderFila = (item) => {
+    const { estadoLabel, tono, descripcion } = datosDe(item);
     return (
-      <div key={key} className={styles.cdaHistorialItem}>
+      <div key={item.socioexecutecdaid} className={styles.historialFila}>
         <span className={`${styles.dot} ${styles[`dot-${tono}`]}`} />
-        <div className={styles.cdaHistorialInfo}>
-          <span className={styles.cdaHistorialTitulo}>
-            {descripcion} · <strong>{estadoLabel}</strong>
-          </span>
-          {item.valorparticularexpresion && (
-            <span className={styles.cdaRowForzado} title={item.valorparticularexpresion}>
-              <FiEdit3 size={11} /> Forzado con: {item.valorparticularexpresion}
-            </span>
-          )}
+        <span className={styles.historialFilaTexto}>
+          <span className={styles.historialFilaNombre}>{descripcion}</span>
           <span className={styles.cdaHistorialMeta}>
             {formatearMomentoControl(item.momentocontrol)} · <NombreUsuario usuarioId={item.usuariowebid} />
           </span>
-        </div>
+        </span>
+        {item.valorparticularexpresion && (
+          <span className={styles.historialForzado} title={item.valorparticularexpresion}>
+            <FiEdit3 size={11} /> Forzado con: {item.valorparticularexpresion}
+          </span>
+        )}
+        <span className={`${styles.historialEstado} ${styles[`historialEstado-${tono}`]}`}>{estadoLabel}</span>
       </div>
     );
   };
 
-  const renderFilaGrupo = (item) => {
-    const estadoLabel =
-      resolverLabel(estadosExecuteCda?.opciones, item.estadoexecutecdaid) || "Desconocido";
-    const tono = getEstadoTono(estadoLabel);
-
+  const renderCorrida = ({ grupo, items }) => {
+    const { estadoLabel, tono } = datosDe(grupo);
+    const id = grupo.socioexecutecdaid;
+    const abierta = estaAbierta(id);
     return (
-      <div className={`${styles.cdaHistorialItem} ${styles.cdaHistorialItemGrupo}`}>
-        <span className={`${styles.dot} ${styles[`dot-${tono}`]}`} />
-        <div className={styles.cdaHistorialInfo}>
-          <span className={styles.cdaHistorialTitulo}>
-            Resultado general de la pantalla · <strong>{estadoLabel}</strong>
+      <div key={id} className={styles.historialCorrida}>
+        <button type="button" className={styles.historialCorridaCabecera} onClick={() => alternar(id)} aria-expanded={abierta}>
+          <span className={`${styles.historialCorridaIcono} ${styles[`historialCorridaIcono-${tono}`]}`} aria-hidden="true">
+            {tono === "success" ? <FiCheckCircle /> : tono === "danger" ? <FiX /> : <FiClock />}
           </span>
-          {item.expresion && (
-            <span className={styles.cdaHistorialExpresion}>{item.expresion}</span>
-          )}
-          <span className={styles.cdaHistorialMeta}>
-            {formatearMomentoControl(item.momentocontrol)}
+          <span className={styles.historialFilaTexto}>
+            <span className={styles.historialFilaNombre}>Evaluación del {formatearMomentoControl(grupo.momentocontrol)}</span>
+            <span className={styles.cdaHistorialMeta}>
+              Resultado general:{" "}
+              <strong className={styles[`historialTexto-${tono}`]}>{estadoLabel}</strong>
+              {items.length > 0 && ` · ${items.length} ${items.length === 1 ? "criterio" : "criterios"}`}
+            </span>
           </span>
-        </div>
+          <FiChevronDown className={`${styles.historialChevron} ${abierta ? styles.historialChevronAbierto : ""}`} aria-hidden="true" />
+        </button>
+        {abierta && (
+          <div className={styles.historialCorridaItems}>
+            {items.map(renderFila)}
+            {grupo.expresion && <code className={styles.historialExpresion}>{grupo.expresion}</code>}
+          </div>
+        )}
       </div>
     );
   };
@@ -2265,21 +2310,36 @@ function HistorialCdaModal({ isOpen, onClose, socio }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Historial completo de CDAs"
+      title="Historial de criterios"
       subtitle={socio?.denominacion}
+      icono={<FiClock />}
       variant="blue"
-      maxWidth="640px"
+      maxWidth="700px"
+      footer={
+        <>
+          {historialCompleto.length > 0 && (
+            <span className={styles.forzarPieAyuda}>
+              {corridas.length + sueltos.length} evaluaciones
+              {cantidadForzados > 0 && ` · ${cantidadForzados} ${cantidadForzados === 1 ? "forzada" : "forzadas"}`}
+            </span>
+          )}
+          <Button variant="adminNeutro" onClick={onClose}>
+            Cerrar
+          </Button>
+        </>
+      }
     >
       {isLoading ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className={styles.cdaRow}>
-              <div style={{ flex: 1 }}>
-                <Skeleton width="60%" height="0.85rem" />
-                <Skeleton width="35%" height="0.7rem" style={{ marginTop: "0.4rem" }} />
+        <div className={styles.historialModalList}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className={styles.historialCorrida}>
+              <div className={styles.historialCorridaCabecera}>
+                <Skeleton width="2rem" height="2rem" radius="0.55rem" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton width="45%" height="0.85rem" />
+                  <Skeleton width="30%" height="0.7rem" style={{ marginTop: "0.4rem" }} />
+                </div>
               </div>
-              <Skeleton width="5.5rem" height="1.3rem" radius="pill" />
-              <Skeleton width="6.5rem" height="0.75rem" />
             </div>
           ))}
         </div>
@@ -2293,21 +2353,46 @@ function HistorialCdaModal({ isOpen, onClose, socio }) {
         </p>
       ) : (
         <div className={styles.historialModalList}>
-          {sueltos.length > 0 && (
-            <div className={styles.historialSueltos}>
-              {sueltos.map((item) => renderFila(item, item.socioexecutecdaid))}
+          <div className={styles.historialFiltros}>
+            <label className={styles.historialBuscador}>
+              <FiSearch aria-hidden="true" />
+              <input
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar criterio"
+                aria-label="Buscar criterio"
+              />
+            </label>
+            <div className={styles.historialSegmento} role="group" aria-label="Filtrar por resultado">
+              {[
+                ["todos", "Todos"],
+                ["cumple", "Cumple"],
+                ["noCumple", "No cumple"],
+                ["forzados", "Forzados"],
+              ].map(([valor, etiqueta]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  className={filtro === valor ? styles.historialSegmentoActivo : ""}
+                  aria-pressed={filtro === valor}
+                  onClick={() => setFiltro(valor)}
+                >
+                  {etiqueta}
+                </button>
+              ))}
             </div>
-          )}
-          {corridas.map(({ grupo, items }) => (
-            <div key={grupo.socioexecutecdaid} className={styles.historialCorrida}>
-              {renderFilaGrupo(grupo)}
-              {items.length > 0 && (
-                <div className={styles.historialCorridaItems}>
-                  {items.map((item) => renderFila(item, item.socioexecutecdaid))}
-                </div>
-              )}
+          </div>
+
+          {corridasVisibles.map(renderCorrida)}
+          {sueltosVisibles.map((item) => (
+            <div key={item.socioexecutecdaid} className={`${styles.historialCorrida} ${styles.historialSuelto}`}>
+              {renderFila(item)}
             </div>
           ))}
+          {corridasVisibles.length === 0 && sueltosVisibles.length === 0 && (
+            <p className={styles.historialModalMsg}>Ningún registro coincide con el filtro.</p>
+          )}
         </div>
       )}
     </Modal>

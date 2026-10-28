@@ -336,8 +336,8 @@ export default function ModoOffline() {
         }
         variant="blue"
         tone={offline ? "neutral" : "danger"}
-        confirmText={offline ? "VOLVER A ONLINE" : "ACTIVAR OFFLINE"}
-        cancelText="CANCELAR"
+        confirmText={offline ? "Volver a online" : "Activar offline"}
+        cancelText="Cancelar"
         isLoading={isPending}
       />
     </div>

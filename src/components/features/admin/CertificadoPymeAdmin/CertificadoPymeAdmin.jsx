@@ -280,7 +280,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Tamaño</span>
-                <span className={styles.factValue}>{etiquetaDe(OPCIONES_TAMANIO, tamanioActual) || "â€”"}</span>
+                <span className={styles.factValue}>{etiquetaDe(OPCIONES_TAMANIO, tamanioActual) || "—"}</span>
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Observaciones</span>
@@ -338,27 +338,22 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         onClose={() => setModalAbierto(false)}
         title={certificadoEditando ? "Editar Certificado PyME" : "Cargar Certificado PyME"}
         subtitle="Carga manual, sin depender de CASFOG/LUFE."
+        icono={<FiAward />}
         variant="blue"
-        maxWidth="480px"
+        maxWidth="540px"
+        preventClose={guardando}
+        footer={
+          <>
+            <Button type="button" variant="adminNeutro" onClick={() => setModalAbierto(false)} disabled={guardando}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="form-certificado-pyme" variant="blue" isLoading={guardando}>
+              {certificadoEditando ? "Guardar" : "Cargar certificado"}
+            </Button>
+          </>
+        }
       >
-        <form onSubmit={handleGuardar} className={styles.form}>
-          <div className={styles.formRow}>
-            <SelectFechaSimple
-              label="Vigente desde"
-              value={form.fchDesde}
-              onChange={(val) => setForm((f) => ({ ...f, fchDesde: val }))}
-              variant="admin"
-              hideErrorSpace
-              disableFuture
-            />
-            <SelectFechaSimple
-              label="Vigente hasta"
-              value={form.fchHasta}
-              onChange={(val) => setForm((f) => ({ ...f, fchHasta: val }))}
-              variant="admin"
-              hideErrorSpace
-            />
-          </div>
+        <form id="form-certificado-pyme" onSubmit={handleGuardar} className={styles.form}>
           <InputSimple
             label="Número de certificado *"
             value={form.numero}
@@ -392,6 +387,23 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               variant="admin"
             />
           </div>
+          <div className={styles.formRow}>
+            <SelectFechaSimple
+              label="Vigente desde"
+              value={form.fchDesde}
+              onChange={(val) => setForm((f) => ({ ...f, fchDesde: val }))}
+              variant="admin"
+              hideErrorSpace
+              disableFuture
+            />
+            <SelectFechaSimple
+              label="Vigente hasta"
+              value={form.fchHasta}
+              onChange={(val) => setForm((f) => ({ ...f, fchHasta: val }))}
+              variant="admin"
+              hideErrorSpace
+            />
+          </div>
           <InputSimple
             label="Observaciones"
             value={form.observaciones}
@@ -399,14 +411,6 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
             variant="admin"
             hideErrorSpace
           />
-          <div className={styles.formActions}>
-            <Button type="button" variant="outlineBlue" size="sm" onClick={() => setModalAbierto(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="blue" size="sm" isLoading={guardando}>
-              Guardar
-            </Button>
-          </div>
         </form>
       </Modal>
 
@@ -416,6 +420,16 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         onConfirm={handleEliminar}
         titulo="Eliminar Certificado PyME"
         mensaje="¿Confirmás eliminar el Certificado PyME de este socio? A partir de ahí, no va a poder migrar a SGR+ hasta que se cargue uno nuevo."
+        icono={<FiTrash2 />}
+        detalle={
+          numeroActual
+            ? {
+                badge: "PY",
+                titulo: `Certificado N° ${numeroActual}`,
+                subtitulo: `Vigencia ${formatearFecha(fchDesdeActual)} — ${formatearFecha(fchHastaActual)}`,
+              }
+            : undefined
+        }
         confirmText="Eliminar"
         cancelText="Cancelar"
         variant="blue"

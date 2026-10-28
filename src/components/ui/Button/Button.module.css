@@ -553,3 +553,69 @@
   background: rgba(76, 101, 230, 0.15);
 }
 
+
+/* ── ADMIN: variantes de los modales ───────────────────── */
+.adminNeutro {
+  composes: base;
+  background-color: transparent;
+  color: var(--white-muted);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
+}
+
+.adminNeutro:not(:disabled):hover {
+  color: var(--white);
+  border-color: rgba(var(--overlay-rgb), 0.26);
+  background-color: rgba(var(--overlay-rgb), 0.04);
+}
+
+.adminSuave {
+  composes: base;
+  background-color: rgba(76, 101, 230, 0.1);
+  color: var(--color-azul-bind-300);
+  border: 1px solid rgba(138, 159, 255, 0.3);
+}
+
+.adminSuave:not(:disabled):hover {
+  background-color: rgba(76, 101, 230, 0.18);
+  border-color: rgba(138, 159, 255, 0.5);
+}
+
+.adminPeligro {
+  composes: base;
+  background-color: #da3633;
+  color: #ffffff;
+  border: 1px solid #da3633;
+}
+
+.adminPeligro:not(:disabled):hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 18px rgba(218, 54, 51, 0.3);
+}
+
+.adminAdvertencia {
+  composes: base;
+  background-color: #bb8009;
+  color: #ffffff;
+  border: 1px solid #bb8009;
+}
+
+.adminAdvertencia:not(:disabled):hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 18px rgba(187, 128, 9, 0.3);
+}
+
+.adminNeutro:not(:disabled):focus-visible,
+.adminSuave:not(:disabled):focus-visible,
+.adminPeligro:not(:disabled):focus-visible,
+.adminAdvertencia:not(:disabled):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.4);
+}
+
+.adminNeutro:disabled,
+.adminSuave:disabled,
+.adminPeligro:disabled,
+.adminAdvertencia:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

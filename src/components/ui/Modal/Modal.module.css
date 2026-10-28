@@ -189,43 +189,140 @@
   background: rgba(245, 244, 0, 0.25);
 }
 
-/* ── BLUE VARIANT ───────────────────────────────────────────────────────────── */
+/* ── BLUE VARIANT (admin) ───────────────────────────────────────────────────── */
 
 .blueVariant {
   /* El modal se porta a document.body (createPortal), fuera del árbol donde
      .admin-theme define --scrollbar-thumb en azul. Se redefinen acá para que
      cualquier scroll dentro del modal (el propio .body y los de componentes
      hijos, ej. CdaPanel) hereden el azul en vez de caer al amarillo default. */
-  --scrollbar-thumb: rgba(59, 78, 209, 0.25);
-  --scrollbar-thumb-hover: rgba(59, 78, 209, 0.5);
+  --scrollbar-thumb: rgba(76, 101, 230, 0.3);
+  --scrollbar-thumb-hover: rgba(76, 101, 230, 0.55);
   background-color: var(--bg-surface);
-  border-color: rgba(59, 78, 209, 0.2);
+  border-color: rgba(var(--overlay-rgb), 0.08);
   box-shadow:
-    inset 3px 0 0 rgba(59, 78, 209, 0.5),
-    0 0 0 1px rgba(59, 78, 209, 0.08),
+    0 0 0 1px rgba(76, 101, 230, 0.05),
     0 24px 64px rgba(0, 0, 0, 0.6),
     0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .blueVariant .header {
-  background: linear-gradient(180deg,
-      rgba(59, 78, 209, 0.06) 0%,
-      transparent 100%);
-  border-bottom-color: rgba(59, 78, 209, 0.12);
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.125rem 1.25rem 1rem;
+  background: none;
+  border-bottom-color: rgba(var(--overlay-rgb), 0.06);
+}
+
+.blueVariant .headerText {
+  flex: 1;
+}
+
+.blueVariant .title {
+  font-size: 1.03rem;
+  letter-spacing: -0.01em;
+}
+
+.headerIcono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.7rem;
+  font-size: 1.1rem;
+  color: var(--color-azul-bind-300);
+  background: rgba(76, 101, 230, 0.15);
+}
+
+.tono-peligro {
+  color: #ff7b72;
+  background: rgba(248, 81, 73, 0.13);
+}
+
+.tono-advertencia {
+  color: #e3b341;
+  background: rgba(210, 153, 34, 0.15);
+}
+
+.tono-exito {
+  color: #56d364;
+  background: rgba(63, 185, 80, 0.14);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
 .blueVariant .closeButton:hover {
-  background: rgba(59, 78, 209, 0.1);
-  border-color: rgba(59, 78, 209, 0.35);
-  color: var(--color-azul-bind-400);
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.35);
+  color: var(--color-azul-bind-300);
+}
+
+.blueVariant .body {
+  padding: 1.125rem 1.25rem;
+}
+
+.blueVariant .footer {
+  gap: 0.6rem;
+  padding: 0.875rem 1.25rem;
+  border-top-color: rgba(var(--overlay-rgb), 0.06);
+  background: var(--bg-surface);
 }
 
 .blueVariant .body::-webkit-scrollbar-thumb {
-  background: rgba(59, 78, 209, 0.25);
+  background: rgba(76, 101, 230, 0.3);
 }
 
 .blueVariant .body::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 78, 209, 0.5);
+  background: rgba(76, 101, 230, 0.55);
+}
+
+/* Mobile: hoja desde abajo y botones del pie a todo el ancho. */
+@media (max-width: 35.99rem) {
+  .overlay:has(> .blueVariant) {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .blueVariant {
+    max-height: 92dvh;
+    border-radius: 1.25rem 1.25rem 0 0;
+    border-bottom: 0;
+    animation: hojaIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .blueVariant .header {
+    padding: 1rem;
+  }
+
+  .blueVariant .body {
+    padding: 1rem;
+  }
+
+  .blueVariant .footer {
+    padding: 0.75rem 1rem 1.25rem;
+  }
+
+  .blueVariant .footer > * {
+    flex: 1 1 auto;
+    padding-inline: 1rem;
+    white-space: nowrap;
+  }
+}
+
+@keyframes hojaIn {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 /* ── CONFIRM VARIANT (usada por ConfirmacionModal) ─────────────────────────────

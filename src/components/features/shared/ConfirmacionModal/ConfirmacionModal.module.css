@@ -1,111 +1,3 @@
-/* "Sello de Aval": el color de marca lo aporta el sello, las líneas
-   punteadas y el botón de confirmar — no el contenedor del modal. */
-
-.dialog {
-  --tone-color: var(--color-amarillo-bind);
-  position: relative;
-}
-
-.dialog.yellow {
-  --tone-color: var(--color-amarillo-bind);
-}
-
-.dialog.blue {
-  --tone-color: var(--color-azul-bind, #4c65e6);
-}
-
-.dialog.danger {
-  --tone-color: var(--error-red, #ef4444);
-}
-
-.dialog.warning {
-  --tone-color: var(--warning);
-}
-
-.sealRow {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding-right: 1.5rem;
-}
-
-.seal {
-  position: relative;
-  width: 2.75rem;
-  height: 2.75rem;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--tone-color);
-  animation: stamp 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
-}
-
-.seal::before,
-.seal::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1.5px solid var(--tone-color);
-}
-
-.seal::after {
-  inset: 6px;
-  opacity: 0.55;
-}
-
-.seal svg {
-  position: relative;
-  width: 1.15rem;
-  height: 1.15rem;
-}
-
-@keyframes stamp {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-
-  60% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .seal {
-    animation: none;
-  }
-}
-
-.title {
-  color: var(--white, #fffefe);
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  margin: 0;
-  line-height: 1.3;
-}
-
-/* Líneas punteadas tipo comprobante: sangran de punta a punta pese al
-   padding del body del Modal (1.5rem). */
-.perforation {
-  height: 1px;
-  margin: 1.15rem -1.5rem;
-  background-image: repeating-linear-gradient(90deg,
-      color-mix(in srgb, var(--tone-color) 45%, transparent) 0,
-      color-mix(in srgb, var(--tone-color) 45%, transparent) 5px,
-      transparent 5px,
-      transparent 11px);
-  opacity: 0.55;
-}
-
 /* ── MENSAJE ─────────────────────────────────────────────────────────────── */
 
 .mensaje {
@@ -119,15 +11,6 @@
 .mensaje b {
   color: var(--white, #fffefe);
   font-weight: 600;
-}
-
-/* ── ACCIONES ────────────────────────────────────────────────────────────── */
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
 }
 
 /* ── VERSIÓN CLIENTE ─────────────────────────────────────────────────────────
@@ -273,4 +156,35 @@
   .cAcciones > * {
     flex: 0 0 auto;
   }
+}
+
+/* ── ADMIN ───────────────────────────────────────────────────────────────── */
+
+div.modalAdmin {
+  background-color: var(--bg-surface);
+}
+
+.admin {
+  --tone-color: var(--color-azul-bind-300);
+  --tone-bg: rgba(76, 101, 230, 0.15);
+}
+
+.admin.cDanger {
+  --tone-color: #ff7b72;
+  --tone-bg: rgba(248, 81, 73, 0.13);
+}
+
+.admin.cWarning {
+  --tone-color: #e3b341;
+  --tone-bg: rgba(210, 153, 34, 0.15);
+}
+
+.admin .cTitulo {
+  font-size: 1.08rem;
+  letter-spacing: -0.01em;
+}
+
+.admin .cDetalle {
+  background: #161b22;
+  border-color: #262c36;
 }

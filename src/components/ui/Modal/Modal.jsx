@@ -38,6 +38,11 @@ export const Modal = ({
   // el botón flotante quedaría visible pero inerte bajo preventClose, lo
   // cual confunde más que no tener botón.
   hideCloseButton = false,
+  // Solo variant="blue" (admin): ícono del encabezado, su tono y acciones
+  // extra junto a la X (ej. botón de ayuda).
+  icono,
+  tono = "azul",
+  headerActions,
 }) => {
   const handleClose = () => {
     if (preventClose) return;
@@ -75,6 +80,11 @@ export const Modal = ({
         {/* ── HEADER ── */}
         {title || subtitle ? (
           <div className={styles.header}>
+            {icono && (
+              <span className={`${styles.headerIcono} ${styles[`tono-${tono}`] || ""}`} aria-hidden="true">
+                {icono}
+              </span>
+            )}
             <div className={styles.headerText}>
               {title && (
                 <h2 id="modal-title" className={styles.title}>
@@ -83,6 +93,7 @@ export const Modal = ({
               )}
               {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
             </div>
+            {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
             {!hideCloseButton && (
               <button
                 type="button"
@@ -116,4 +127,4 @@ export const Modal = ({
     </div>,
     document.body,
   );
-};
+};

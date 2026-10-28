@@ -434,8 +434,8 @@ export default function TiposRelacionSocio() {
         titulo="Guardar configuración"
         mensaje="¿Estás seguro de que deseás guardar la nueva parametrización de terceros (para todos los tipos de persona/sociedad) en esta cadena de valor?"
         variant="blue"
-        confirmText="GUARDAR"
-        cancelText="CANCELAR"
+        confirmText="Guardar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isUpdating}

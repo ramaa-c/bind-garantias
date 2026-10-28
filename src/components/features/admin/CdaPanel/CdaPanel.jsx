@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch, FiInfo } from "react-icons/fi";
 import { toast } from "sonner";
@@ -36,7 +37,7 @@ function encontrarContenedorScrolleable(el) {
 // lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
 // combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
 // decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
-export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description }) => {
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description, enModal = false, contenedorPie }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -508,8 +509,33 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
     );
   }
 
+  const botonesPie = (
+    <>
+      <Button
+        type="button"
+        variant={enModal ? "adminNeutro" : "outlineBlue"}
+        size={enModal ? "md" : "sm"}
+        onClick={handleReset}
+      >
+        <FiRotateCcw aria-hidden="true" />
+        Restablecer
+      </Button>
+      <Button
+        type="button"
+        variant="blue"
+        size={enModal ? "md" : "sm"}
+        onClick={handleSaveVinculacion}
+        disabled={!hasChanges()}
+        isLoading={isSaving}
+      >
+        <FiSave aria-hidden="true" />
+        Guardar vinculación
+      </Button>
+    </>
+  );
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className={`${styles.panel} ${enModal ? styles.enModal : ""}`}>
       <div className={styles.modalBody}>
         {!hideHeader && (
           <CadenaHeaderCard
@@ -858,40 +884,18 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         </div>
       </div>
 
-      {!isReadOnly && (
-        <div className={styles.mainFooter}>
-          <Button
-            type="button"
-            variant="outlineBlue"
-            size="sm"
-            onClick={handleReset}
-          >
-            <FiRotateCcw style={{ marginRight: "0.5rem" }} />
-            REESTABLECER
-          </Button>
-          <Button
-            type="button"
-            variant="blue"
-            size="sm"
-            onClick={handleSaveVinculacion}
-            disabled={!hasChanges()}
-            isLoading={isSaving}
-          >
-            <FiSave style={{ marginRight: "0.5rem" }} />
-            VINCULAR SELECCIÓN
-          </Button>
-        </div>
-      )}
+      {!isReadOnly && contenedorPie && createPortal(<>{botonesPie}</>, contenedorPie)}
+      {!isReadOnly && !contenedorPie && <div className={styles.mainFooter}>{botonesPie}</div>}
 
       <ConfirmacionModal
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSaveVinculacion}
-        titulo="Confirmar Vinculación de CDAs"
+        titulo="Confirmar vinculación de CDAs"
         mensaje="¿Estás seguro de que deseas guardar la vinculación de criterios de aceptación para esta cadena de valor?"
         variant="blue"
-        confirmText="VINCULAR"
-        cancelText="CANCELAR"
+        confirmText="Vincular"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isSaving}

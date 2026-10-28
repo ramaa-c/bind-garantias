@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder, FiLayers } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
+import { obtenerInicialesEmpresa } from "../../../utils/empresaAvatar";
 import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
 import { Modal } from "../../../components/ui/Modal/Modal";
 import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
@@ -1110,87 +1111,112 @@ export default function Dashboard() {
       <Modal
         isOpen={isChainModalOpen}
         onClose={() => setIsChainModalOpen(false)}
-        title="SELECCIONAR CADENA DE VALOR"
-        maxWidth="50rem"
+        title="Elegí una cadena de valor"
+        subtitle="El tablero muestra las solicitudes de la cadena que elijas."
+        icono={<FiLayers />}
+        maxWidth="640px"
         variant="blue"
+        footer={
+          <Button variant="adminNeutro" onClick={() => setIsChainModalOpen(false)}>
+            Cancelar
+          </Button>
+        }
       >
         <div className={styles.modalChainContent}>
           <div className={styles.modalSearchWrap}>
             <FiSearch className={styles.iconSearchModal} />
             <input
               type="text"
-              placeholder="Buscar cadena por denominación o referencia..."
+              placeholder="Buscar por denominación o referencia"
               value={chainSearchQuery}
               onChange={(e) => setChainSearchQuery(e.target.value)}
               className={styles.modalSearchInput}
             />
           </div>
 
-          <div className={styles.chainGridModal}>
-            {/* Option: All Chains */}
-            <div
-              className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
-              onClick={() => {
-                handleSelectCadena("all");
-                setIsChainModalOpen(false);
-              }}
-            >
-              <div className={styles.chainCardLogo}>
-                <FiGlobe size={28} />
-              </div>
-              <div className={styles.chainCardModalInfo}>
-                <h3>Todas las cadenas</h3>
-                <p>Consolidado General de solicitudes</p>
-              </div>
-            </div>
+          <button
+            type="button"
+            className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
+            onClick={() => {
+              handleSelectCadena("all");
+              setIsChainModalOpen(false);
+            }}
+          >
+            <span className={styles.chainCardLogo}>
+              <FiGlobe />
+            </span>
+            <span className={styles.chainCardModalInfo}>
+              <strong>Todas las cadenas</strong>
+              <span>Consolidado general de solicitudes</span>
+            </span>
+            {selectedCadenaId === "all" && (
+              <span className={styles.chainCardActual}>
+                <FiCheck /> Actual
+              </span>
+            )}
+            <FiChevronRight className={styles.chainCardChevron} aria-hidden="true" />
+          </button>
 
-            {/* Filter and map visible chains */}
-            {visibleCadenas
-              .filter((c) => {
-                const denom = (c.denominacion || "").toLowerCase();
-                const ref = (c.referencia || "").toLowerCase();
-                const q = chainSearchQuery.toLowerCase();
-                return denom.includes(q) || ref.includes(q);
-              })
-              .map((c) => {
-                const id = String(c.cadenavalorid || c.CadenaValorID);
-                const isSelected = String(selectedCadenaId) === id;
-                return (
-                  <div
-                    key={id}
-                    className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
-                    onClick={() => {
-                      handleSelectCadena(id);
-                      setIsChainModalOpen(false);
-                    }}
-                  >
-                    <div className={styles.chainCardLogo}>
-                      {c.logo ? (
-                        <img
-                          src={
-                            c.logo.startsWith("data:") || c.logo.startsWith("http")
-                              ? c.logo
-                              : `data:image/png;base64,${c.logo}`
-                          }
-                          alt={c.denominacion}
-                        />
-                      ) : (
-                        <FiGrid size={28} />
+          {(() => {
+            const filtradas = visibleCadenas.filter((c) => {
+              const denom = (c.denominacion || "").toLowerCase();
+              const ref = (c.referencia || "").toLowerCase();
+              const q = chainSearchQuery.toLowerCase();
+              return denom.includes(q) || ref.includes(q);
+            });
+            return (
+              <>
+                <div className={styles.chainSeccion}>
+                  <span>Cadenas</span>
+                  <span className={styles.chainSeccionContador}>{filtradas.length}</span>
+                  <span className={styles.chainSeccionLinea} aria-hidden="true" />
+                </div>
+                {filtradas.length === 0 && (
+                  <p className={styles.chainVacio}>Ninguna cadena coincide con la búsqueda.</p>
+                )}
+                {filtradas.map((c) => {
+                  const id = String(c.cadenavalorid || c.CadenaValorID);
+                  const isSelected = String(selectedCadenaId) === id;
+                  return (
+                    <button
+                      type="button"
+                      key={id}
+                      className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
+                      onClick={() => {
+                        handleSelectCadena(id);
+                        setIsChainModalOpen(false);
+                      }}
+                    >
+                      <span className={styles.chainCardLogo}>
+                        {c.logo ? (
+                          <img
+                            src={
+                              c.logo.startsWith("data:") || c.logo.startsWith("http")
+                                ? c.logo
+                                : `data:image/png;base64,${c.logo}`
+                            }
+                            alt={c.denominacion}
+                          />
+                        ) : (
+                          obtenerInicialesEmpresa(c.denominacion || "?")
+                        )}
+                      </span>
+                      <span className={styles.chainCardModalInfo}>
+                        <strong>{c.denominacion}</strong>
+                        <span>{c.referencia || `ID: #${id}`}</span>
+                      </span>
+                      {isSelected && (
+                        <span className={styles.chainCardActual}>
+                          <FiCheck /> Actual
+                        </span>
                       )}
-                    </div>
-                    <div className={styles.chainCardModalInfo}>
-                      <h3>{c.denominacion}</h3>
-                      <p>{c.referencia || `ID: #${id}`}</p>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-        <div className={styles.modalFootCustom}>
-          <Button variant="outlineBlue" size="sm" onClick={() => setIsChainModalOpen(false)}>
-            Cancelar
-          </Button>
+                      <FiChevronRight className={styles.chainCardChevron} aria-hidden="true" />
+                    </button>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
       </Modal>
     </div>

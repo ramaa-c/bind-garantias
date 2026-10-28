@@ -405,7 +405,7 @@ export default function CdaFormPage() {
         isOpen={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={confirmEliminarCda}
-        titulo="Eliminar Criterio de Aceptación"
+        titulo="Eliminar criterio de aceptación"
         mensaje={
           <>
             ¿Confirmás eliminar el criterio <strong>"{getCdaProp(cdaEditando, "descripcion")}"</strong>?
@@ -415,8 +415,8 @@ export default function CdaFormPage() {
         }
         variant="blue"
         tone="danger"
-        confirmText="ELIMINAR"
-        cancelText="CANCELAR"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
         cancelVariant="outlineBlue"
         isLoading={isEliminando}
       />
@@ -425,11 +425,11 @@ export default function CdaFormPage() {
         isOpen={postSaveModalOpen}
         onClose={() => setPostSaveModalOpen(false)}
         onConfirm={() => { setPostSaveModalOpen(false); navigate("/admin/cadenas-cda"); }}
-        titulo="Vincular a una Cadena"
+        titulo="Vincular a una cadena"
         mensaje='El criterio se guardó correctamente, pero todavía no está vinculado a ninguna cadena. ¿Querés ir ahora a "CDAs por Cadena" para vincularlo? (Si es para Alta de Línea, se vincula en cambio desde "CDAs Alta de Línea".)'
         variant="blue"
-        confirmText="IR AHORA"
-        cancelText="MÁS TARDE"
+        confirmText="Ir ahora"
+        cancelText="Más tarde"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
       />
