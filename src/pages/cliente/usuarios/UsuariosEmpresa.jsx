@@ -52,7 +52,7 @@ const inicialesDeEmail = (email) => {
   return ((partes[0]?.[0] || "") + (partes[1]?.[0] || partes[0]?.[1] || "")).toUpperCase() || "?";
 };
 
-function InvitarUsuarioModal({ isOpen, onClose, onInvitar }) {
+function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin }) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [errores, setErrores] = useState({});
@@ -158,7 +158,10 @@ function InvitarUsuarioModal({ isOpen, onClose, onInvitar }) {
         <p className={styles.notaInvitar}>
           <FiInfo aria-hidden="true" />
           Si la persona ya tiene una cuenta, le damos acceso directamente. Si no, le enviamos un mail para que se
-          registre. Entra como usuario; una vez vinculada, podés hacerla administradora.
+          registre.{" "}
+          {entraComoAdmin
+            ? "Es el primer usuario de la empresa: entra como administrador y su email queda como el de la empresa."
+            : "Entra como usuario; una vez vinculada, podés hacerla administradora."}
         </p>
       </form>
     </Modal>
@@ -174,13 +177,14 @@ export default function UsuariosEmpresa() {
   const navigate = useNavigate();
   const { basePath } = useChannel();
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
-  const { socioIdActivo, nombreEmpresa, cuitActivo, tipoCanalComercializacionId } = useEmpresaActiva();
+  const { socioIdActivo, nombreEmpresa, cuitActivo, tipoCanalComercializacionId, isVendor } = useEmpresaActiva();
   const {
     usuarios,
     cargando,
     soyAdmin,
     soyAsistente,
     cantidadAdmins,
+    primerUsuarioEsAdmin,
     asistenciaDisponible,
     asistencia,
     invitar,
@@ -192,6 +196,7 @@ export default function UsuariosEmpresa() {
     socioId: socioIdActivo,
     cuit: cuitActivo,
     tipoCanalSocioId: tipoCanalComercializacionId,
+    esVendor: isVendor,
   });
 
   const [invitarAbierto, setInvitarAbierto] = useState(false);
@@ -541,7 +546,12 @@ export default function UsuariosEmpresa() {
         </section>
       )}
 
-      <InvitarUsuarioModal isOpen={invitarAbierto} onClose={() => setInvitarAbierto(false)} onInvitar={invitar} />
+      <InvitarUsuarioModal
+        isOpen={invitarAbierto}
+        onClose={() => setInvitarAbierto(false)}
+        onInvitar={invitar}
+        entraComoAdmin={primerUsuarioEsAdmin}
+      />
 
       <ConfirmacionModal
         isOpen={!!aQuitar}

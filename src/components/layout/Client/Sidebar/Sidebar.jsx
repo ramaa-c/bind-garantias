@@ -189,7 +189,7 @@ export default function Sidebar({ isOpen, onClose }) {
       cambiarEmpresaStore();
       if (socioId) {
         setActiveSocioId(socioId);
-        navigate(`${basePath}/solicitudes`);
+        navigate(`${basePath}${isVendor ? "/legajo" : "/solicitudes"}`);
       } else {
         navigate(rutaPanel);
       }
@@ -252,10 +252,6 @@ export default function Sidebar({ isOpen, onClose }) {
     },
   ].filter(Boolean);
 
-  // Hasta que se complete el Paso 2 del alta (ver AltaDatosEmpresa) y se
-  // confirme el PUT, el socio ya tiene denominación pero no es una empresa
-  // operable todavía — no se muestra navegación ni progreso (ni siquiera
-  // bloqueados): a pedido, durante el alta no se adelanta información.
   const empresaOperable = isVinculado && onboardingCompleto;
 
   // "Tu alta": recorrido de 4 pasos hacia la migración del legajo

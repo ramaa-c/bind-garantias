@@ -119,6 +119,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     socioIdActivo,
     nombreEmpresa,
     cuitActivo,
+    esAdminEmpresa,
     isLoading: isLoadingEmpresa,
   } = useEmpresaActiva(!isOpen);
   // Durante el alta de empresa (paso 1 y paso 2) la empresa todavía no
@@ -139,6 +140,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
   const ocultarIdentityCard = isVendor && !hayEmpresa;
+  const puedeEditarTelefono = esAdminEmpresa && !isVendor;
 
   const { data: socioWeb, isPending: isPendingSocioWeb } = useSocioWebPorId(
     isOpen ? socioIdActivo : undefined,
@@ -597,16 +599,17 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                       </div>
 
                       <div
-                        role="button"
-                        tabIndex={0}
+                        role={puedeEditarTelefono ? "button" : undefined}
+                        tabIndex={puedeEditarTelefono ? 0 : undefined}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
+                          if (puedeEditarTelefono && (e.key === "Enter" || e.key === " ")) {
                             e.preventDefault();
                             setContactoModalOpen(true);
                           }
                         }}
                         className={`${paso2Styles.taskRow} ${contactoOk ? paso2Styles.rowSuccess : ""}`}
-                        onClick={() => setContactoModalOpen(true)}
+                        onClick={() => puedeEditarTelefono && setContactoModalOpen(true)}
+                        style={puedeEditarTelefono ? undefined : { cursor: "default" }}
                       >
                         <span
                           className={`${paso2Styles.taskIcon} ${contactoOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
@@ -616,13 +619,21 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                         <div className={paso2Styles.taskInfo}>
                           <strong className={paso2Styles.taskTitle}>Verificación de contacto</strong>
                           <span className={paso2Styles.taskSub}>
-                            {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
+                            {contactoOk
+                              ? `Cel: ${celular}`
+                              : puedeEditarTelefono
+                                ? "Ingresar teléfono celular"
+                                : "Sin teléfono validado"}
                           </span>
                         </div>
                         <span
                           className={`${paso2Styles.taskAction} ${contactoOk ? paso2Styles.taskActionEdit : ""}`}
                         >
-                          {contactoOk ? (
+                          {!puedeEditarTelefono ? (
+                            <>
+                              <FiLock size={12} /> Solo administradores
+                            </>
+                          ) : contactoOk ? (
                             <>
                               <FiEdit2 size={12} /> Modificar
                             </>

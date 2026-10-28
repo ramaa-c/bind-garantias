@@ -342,6 +342,26 @@ export function LegajoUniversalBar({
   // "confiable") y refresca la consulta a sgrplus/Socios para que
   // migradoEnBackend se actualice sin esperar al próximo reload.
   const sincronizarConSgrPlus = async (silent = false) => {
+    const faltantesContacto = [
+      !String(socioWeb?.telefono ?? "").trim() && "teléfono validado",
+      !String(socioWeb?.emailfacturacion ?? "").trim() && "email de facturación",
+    ].filter(Boolean);
+    if (!migradoEnBackend && faltantesContacto.length > 0) {
+      if (!silent) {
+        toast.warning(`La empresa todavía no tiene ${faltantesContacto.join(" ni ")}`, {
+          description: "No se puede migrar a SGR+ hasta que la empresa complete esos datos.",
+        });
+      }
+      return;
+    }
+    if (!adminMode && empresaActiva.isVendor && !migradoEnBackend) {
+      if (!silent) {
+        toast.info("La migración a SGR+ la hace el administrador de la empresa", {
+          description: "Se dispara cuando el usuario vinculado como administrador ingresa a su cuenta.",
+        });
+      }
+      return;
+    }
     ultimoIntentoAtRef.current = Date.now();
     setIsMigrating(true);
     const toastId = silent ? null : toast.loading("Sincronizando legajo con SGR+...");

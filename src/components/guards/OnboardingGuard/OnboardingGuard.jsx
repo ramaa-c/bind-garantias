@@ -335,28 +335,9 @@ export const OnboardingGuard = ({ children }) => {
         return <Navigate to={`${basePath}/elegir-empresa`} replace />;
       }
       return <>{children}</>;
-    } else if (!telefonoActual && !atiendoEmpresaActual) {
-      // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
-      // "umbral", el Paso 2 es lo que termina de cargar datos como el
-      // teléfono). Lo mandamos directo a completarlo, sin pasar de nuevo
-      // por Paso1Cuit (ese paso bloquearía por "ya existe"). A propósito ya
-      // NO importa el resultado del CDA acá — el socio puede entrar a
-      // operar con su cuenta más allá de si el CDA de ingreso pasó o no; el
-      // aviso de "no pasaste las validaciones" vive en LegajoUniversalBar
-      // (banner permanente) y el bloqueo real está en la migración a SGR+,
-      // no en el acceso (acordado con el equipo el 2026-08-13).
-      if (!isAltaDatosPage && !debeAceptarTerminos && !(esMultiEmpresa && isElegirEmpresaPage)) {
-        return (
-          <Navigate
-            to={`${basePath}/alta-datos-empresa`}
-            state={{ socioParaCompletar: empresaActual }}
-            replace
-          />
-        );
-      }
     } else if (
       (isTerminosPage && !debeAceptarTerminos) ||
-      isAltaDatosPage ||
+      (isAltaDatosPage && (!!telefonoActual || atiendoEmpresaActual)) ||
       isSeleccionarEmpresaPage ||
       isInicioPage ||
       (isElegirEmpresaPage && !esMultiEmpresa)

@@ -12,7 +12,7 @@ import { Button } from "../../../ui";
 import { UbicacionModal, ContactoModal } from "../../../features";
 import styles from "./Paso2Datos.module.css";
 
-export default function Paso2Datos({ onContinuar, isSubmitting }) {
+export default function Paso2Datos({ onContinuar, isSubmitting, pedirTelefono = true }) {
   const { setValue, trigger, control } = useFormContext();
 
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
@@ -30,10 +30,10 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
 
   const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
   const contactoOk = celular.trim().length >= 8;
-  const puedeContinuar = ubicacionOk && contactoOk;
+  const puedeContinuar = ubicacionOk;
 
-  const totalTareas = 2;
-  const tareasCompletas = (ubicacionOk ? 1 : 0) + (contactoOk ? 1 : 0);
+  const totalTareas = pedirTelefono ? 2 : 1;
+  const tareasCompletas = (ubicacionOk ? 1 : 0) + (pedirTelefono && contactoOk ? 1 : 0);
   const progresoPct = (tareasCompletas / totalTareas) * 100;
 
   const inicialEmpresa = razonSocial?.trim()?.charAt(0)?.toUpperCase() || "?";
@@ -62,7 +62,7 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         "direccion",
         "provincia",
         "localidad",
-        "celular",
+        ...(pedirTelefono ? ["celular"] : []),
       ]);
       if (puedeContinuar && esValidoGlobal) {
         await onContinuar();
@@ -171,59 +171,63 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         </div>
 
         {/* CONTACTO */}
-        <div
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (!isSubmitting && (e.key === "Enter" || e.key === " ")) {
-              e.preventDefault();
-              setContactoModalOpen(true);
-            }
-          }}
-          className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : styles.rowPending}`}
-          onClick={() => !isSubmitting && setContactoModalOpen(true)}
-          style={{
-            cursor: isSubmitting ? "not-allowed" : "pointer",
-            opacity: isSubmitting ? 0.7 : 1,
-          }}
-        >
-          <span
-            className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : styles.iconWarn}`}
+        {pedirTelefono && (
+          <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (!isSubmitting && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                setContactoModalOpen(true);
+              }
+            }}
+            className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : styles.rowPending}`}
+            onClick={() => !isSubmitting && setContactoModalOpen(true)}
+            style={{
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              opacity: isSubmitting ? 0.7 : 1,
+            }}
           >
-            {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
-          </span>
-
-          <div className={styles.taskInfo}>
-            <strong className={styles.taskTitle}>
-              Verificación de Contacto
-            </strong>
-            <span className={styles.taskSub}>
-              {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
+            <span
+              className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : styles.iconWarn}`}
+            >
+              {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
             </span>
-          </div>
-
-          <span
-            className={`${styles.taskAction} ${contactoOk ? styles.taskActionEdit : ""}`}
-          >
-            {contactoOk ? (
-              <>
-                <FiEdit2 size={12} /> Modificar
-              </>
-            ) : (
-              <>
-                Verificar <FiChevronRight size={13} />
-              </>
+  
+            <div className={styles.taskInfo}>
+              <strong className={styles.taskTitle}>
+                Verificación de Contacto
+              </strong>
+              <span className={styles.taskSub}>
+                {contactoOk ? `Cel: ${celular}` : "Opcional: podés verificarlo más tarde"}
+              </span>
+            </div>
+  
+            <span
+              className={`${styles.taskAction} ${contactoOk ? styles.taskActionEdit : ""}`}
+            >
+              {contactoOk ? (
+                <>
+                  <FiEdit2 size={12} /> Modificar
+                </>
+              ) : (
+                <>
+                  Verificar <FiChevronRight size={13} />
+                </>
             )}
           </span>
         </div>
+        )}
       </div>
 
       {/* FOOTER ──────────────────────────────────────────────────────────────── */}
       <div className={styles.footer}>
         <span className={styles.footerText}>
-          {puedeContinuar
-            ? "Todo listo. Vamos a crear tu legajo."
-            : "Completá los dos puntos para continuar."}
+          {!puedeContinuar
+            ? "Completá la ubicación para continuar."
+            : pedirTelefono && !contactoOk
+              ? "Podés verificar el celular ahora o más tarde desde Mi perfil."
+              : "Todo listo. Vamos a crear tu legajo."}
         </span>
         <Button
           variant="primary"

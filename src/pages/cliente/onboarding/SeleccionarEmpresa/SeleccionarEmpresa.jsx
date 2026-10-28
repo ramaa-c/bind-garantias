@@ -242,15 +242,19 @@ export const SeleccionarEmpresa = () => {
   const visibles = lista.slice((paginaSegura - 1) * POR_PAGINA, paginaSegura * POR_PAGINA);
 
   /* — acciones — */
-  const entrarAEmpresa = (empresa, estado) => {
+  const entrarAEmpresa = (empresa, { destino, estado } = {}) => {
+    const tieneSolicitudes = (resumenPorEmpresa.get(String(empresa.socioId))?.total || 0) > 0;
+    const ruta = destino || (tieneSolicitudes ? "/legajo" : "/solicitudes");
     cambiarEmpresa();
     setActiveSocioId(empresa.socioId);
-    navigate(`${basePath}/solicitudes`, estado ? { state: estado } : undefined);
+    navigate(`${basePath}${ruta}`, estado ? { state: estado } : undefined);
   };
+  const empresaDeSolicitud = (s) => ({ socioId: s.socioid, nombre: s.empresaNombre, cuit: s.cuit });
   // Las validaciones de "Nueva operación" (solicitud pendiente, borrador,
   // habilitación) viven en Solicitudes: se entra a la empresa y se dispara
   // desde ahí.
-  const iniciarOperacion = (empresa) => entrarAEmpresa(empresa, { iniciarOperacion: true });
+  const iniciarOperacion = (empresa) =>
+    entrarAEmpresa(empresa, { destino: "/solicitudes", estado: { iniciarOperacion: true } });
 
   const actualizarLimiteMutation = useActualizarLimiteSocio();
   const handleConfirmarCancelacion = async () => {
@@ -297,6 +301,7 @@ export const SeleccionarEmpresa = () => {
     <FilaSolicitudVendor
       key={`${s.socioid}-${s.id}`}
       solicitud={s}
+      onEntrar={() => entrarAEmpresa(empresaDeSolicitud(s), { destino: "/legajo" })}
       onVerDetalle={setSolicitudSeleccionada}
       onCancelar={s.enCurso && s.raw ? setSolicitudACancelar : undefined}
     />
@@ -472,6 +477,7 @@ export const SeleccionarEmpresa = () => {
                     cantidadEnCurso={resumen?.enCurso || 0}
                     cantidadTotal={resumen?.total || 0}
                     onAbrir={(emp) => entrarAEmpresa(emp)}
+                    onVerSolicitud={(emp) => entrarAEmpresa(emp, { destino: "/solicitudes" })}
                     onIniciarOperacion={iniciarOperacion}
                   />
                 );

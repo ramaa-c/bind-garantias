@@ -358,13 +358,8 @@
   background: rgba(var(--overlay-rgb), 0.04);
 }
 
-/* Sin "Cancelar" no queda nada visible en la segunda línea. */
-.fila:not(.filaEmpresa) .filaAcciones:not(:has(.btnCancelar)) {
-  display: none;
-}
-
 @media (hover: hover) {
-  .fila:hover .btnDetalle {
+  .btnDetalle:hover {
     background: rgba(245, 244, 0, 0.16);
     border-color: rgba(245, 244, 0, 0.5);
   }
@@ -517,10 +512,7 @@
   border-color: var(--error-red, #ef4444);
 }
 
-/* "Ver detalle" es solo pista visual (la fila entera es el botón): en
-   mobile lo reemplaza el chevron. */
 .btnDetalle {
-  display: none;
   border: 1px solid rgba(245, 244, 0, 0.3);
   background: rgba(245, 244, 0, 0.08);
   color: var(--color-amarillo-bind);
@@ -538,6 +530,7 @@
 }
 
 .btnCancelar:focus-visible,
+.btnDetalle:focus-visible,
 .btnIniciar:focus-visible {
   outline: 2px solid var(--color-amarillo-bind);
   outline-offset: 2px;
@@ -799,10 +792,6 @@
   }
 
   .soloAncho {
-    display: inline-flex;
-  }
-
-  .btnDetalle {
     display: inline-flex;
   }
 

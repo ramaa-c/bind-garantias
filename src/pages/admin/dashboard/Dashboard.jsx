@@ -103,6 +103,12 @@ const getIniciales = (denominacion) => {
 // cubrir 8 filas con ese overhead adicional. En vez de bajar la cantidad,
 // .listWrapper quedó con su propio tope de alto + scroll interno (ver
 // Dashboard.module.css) para no perder densidad.
+const faltantesContactoSocio = (socio) =>
+  [
+    !String(socio?.telefono ?? socio?.Telefono ?? "").trim() && "teléfono validado",
+    !String(socio?.emailfacturacion ?? socio?.EmailFacturacion ?? "").trim() && "email de facturación",
+  ].filter(Boolean);
+
 const ELEMENTOS_POR_PAGINA = 8;
 
 // Misma forma que una fila real, para que el loading no "salte" de tamaño
@@ -353,6 +359,7 @@ export default function Dashboard() {
         usuario: socio?.email || "—",
         socioid: socioId,
         tipoPersonaId: socio?.tipopersonaid,
+        faltantesContacto: faltantesContactoSocio(socio),
         cadenavalorid: cadenaValorId,
         cadenaNombre: cadenaInfoPorId.get(String(cadenaValorId))?.nombre || "",
         cadenaNombreCompleto: cadenaInfoPorId.get(String(cadenaValorId))?.nombreCompleto || "",
@@ -433,6 +440,17 @@ export default function Dashboard() {
     // socio ya migrado es seguro, pero evita un PUT/POST de más en el caso
     // normal de aprobar una segunda línea del mismo socio).
     if (String(socio.marcavinculacion ?? "") === "1") return;
+
+    const faltantes = faltantesContactoSocio(socio);
+    if (faltantes.length > 0) {
+      toast.warning(
+        contexto === "aprobar"
+          ? `La línea N°${item.id} se aprobó, pero la empresa todavía no tiene ${faltantes.join(" ni ")}`
+          : `La empresa de la línea N°${item.id} todavía no tiene ${faltantes.join(" ni ")}`,
+        { description: "El socio va a quedar sin migrar a SGR+ hasta que la empresa complete esos datos." },
+      );
+      return;
+    }
 
     let tieneCertificadoFresco = false;
     try {
@@ -1003,8 +1021,14 @@ export default function Dashboard() {
                           onClick={() => handleReintentarMigracion(item)}
                           variant="outlineBlue"
                           size="sm"
-                          title="Reintentar la migración de esta línea a SGR+"
-                          disabled={migrarLineaMutation.isPending}
+                          title={
+                            item.faltantesContacto.length > 0 && !item.legajoMigrado
+                              ? `La empresa todavía no tiene ${item.faltantesContacto.join(" ni ")}`
+                              : "Reintentar la migración de esta línea a SGR+"
+                          }
+                          disabled={
+                            migrarLineaMutation.isPending || (item.faltantesContacto.length > 0 && !item.legajoMigrado)
+                          }
                         >
                           <FiRefreshCw /> MIGRAR
                         </Button>

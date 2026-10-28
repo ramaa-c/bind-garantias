@@ -24,20 +24,20 @@ const sinPropagar = (accion) => (e) => {
   accion();
 };
 
-// Solicitud de cualquiera de las empresas del vendor. Toda la fila abre el
-// detalle; "Cancelar" (solo en curso) no lo dispara.
-export function FilaSolicitudVendor({ solicitud, onVerDetalle, onCancelar }) {
+// Solicitud de cualquiera de las empresas del vendor. Toda la fila entra a la
+// empresa; "Ver detalle" y "Cancelar" (solo en curso) no lo disparan.
+export function FilaSolicitudVendor({ solicitud, onEntrar, onVerDetalle, onCancelar }) {
   const { tono, Icono } = tonoDesde(solicitud.estado);
-  const verDetalle = () => onVerDetalle(solicitud);
+  const entrar = () => onEntrar(solicitud);
 
   return (
     <article
       className={`${styles.fila} ${tono}`}
       role="button"
       tabIndex={0}
-      aria-label={`Ver detalle de la solicitud N° ${solicitud.id} de ${solicitud.empresaNombre}`}
-      onClick={verDetalle}
-      onKeyDown={alTeclado(verDetalle)}
+      aria-label={`Entrar a ${solicitud.empresaNombre}`}
+      onClick={entrar}
+      onKeyDown={alTeclado(entrar)}
     >
       <span className={styles.avatar} aria-hidden="true">
         {obtenerInicialesEmpresa(solicitud.empresaNombre || "?")}
@@ -73,9 +73,14 @@ export function FilaSolicitudVendor({ solicitud, onVerDetalle, onCancelar }) {
             Cancelar
           </button>
         )}
-        <span className={styles.btnDetalle} aria-hidden="true">
-          Ver detalle <FiChevronRight />
-        </span>
+        <button
+          type="button"
+          className={styles.btnDetalle}
+          onClick={sinPropagar(() => onVerDetalle(solicitud))}
+          aria-label={`Ver detalle de la solicitud N° ${solicitud.id}`}
+        >
+          Ver detalle <FiChevronRight aria-hidden="true" />
+        </button>
       </div>
 
       <FiChevronRight className={styles.filaChevron} aria-hidden="true" />
@@ -85,7 +90,7 @@ export function FilaSolicitudVendor({ solicitud, onVerDetalle, onCancelar }) {
 
 // Empresa vinculada. Toda la fila entra a la empresa; "Iniciar operación"
 // la elige y abre directamente el alta de una operación.
-export function FilaEmpresaVendor({ empresa, cantidadEnCurso, cantidadTotal, onAbrir, onIniciarOperacion }) {
+export function FilaEmpresaVendor({ empresa, cantidadEnCurso, cantidadTotal, onAbrir, onVerSolicitud, onIniciarOperacion }) {
   const abrir = () => onAbrir(empresa);
   const enCurso = cantidadEnCurso > 0;
   const nueva = cantidadTotal === 0;
@@ -132,7 +137,7 @@ export function FilaEmpresaVendor({ empresa, cantidadEnCurso, cantidadTotal, onA
 
       <div className={styles.filaAcciones}>
         {enCurso ? (
-          <button type="button" className={styles.btnVer} onClick={sinPropagar(abrir)}>
+          <button type="button" className={styles.btnVer} onClick={sinPropagar(() => onVerSolicitud(empresa))}>
             <span className={styles.btnIniciarLargo}>Ver solicitud</span>
             <span className={styles.btnIniciarCorto}>Ver</span>
           </button>

@@ -207,10 +207,14 @@ export const SolicitudPanel = ({
   const decisionDetalle = solicitud.accionPendiente;
 
   const legajoCompleto = solicitud.legajoMigrado || (!cargandoLegajo && legajoValido);
+  const faltantesContacto = solicitud.faltantesContacto || [];
+  const faltaContacto = faltantesContacto.length > 0;
+  const textoFaltantesContacto = `La empresa todavía no tiene ${faltantesContacto.join(" ni ")}`;
+  const puedeAceptar = legajoCompleto && !faltaContacto;
 
-  const tonoLegajo = legajoCompleto ? "ok" : cargandoLegajo ? "neutro" : "pendiente";
+  const tonoLegajo = puedeAceptar ? "ok" : cargandoLegajo ? "neutro" : "pendiente";
 
-  const detalleLegajo = solicitud.legajoMigrado
+  const detalleRequisitos = solicitud.legajoMigrado
     ? "Legajo completo"
     : cargandoLegajo
       ? "Revisando el legajo…"
@@ -220,11 +224,18 @@ export const SolicitudPanel = ({
           : `Completo · ${totalRequisitos} de ${totalRequisitos} requisitos`
         : `${requisitosCompletados} de ${totalRequisitos} requisitos completos`;
 
-  const avisoAceptar = legajoCompleto
+  const detalleLegajo =
+    faltaContacto && !cargandoLegajo
+      ? `${detalleRequisitos} · Falta ${faltantesContacto.join(" y ")} de la empresa`
+      : detalleRequisitos;
+
+  const avisoAceptar = puedeAceptar
     ? null
     : cargandoLegajo
       ? "Revisando el legajo de la empresa…"
-      : "El legajo de la empresa está incompleto";
+      : !legajoCompleto
+        ? "El legajo de la empresa está incompleto"
+        : textoFaltantesContacto;
 
   const contenidoResumen = (
     <>
@@ -261,7 +272,9 @@ export const SolicitudPanel = ({
             detalle={
               solicitud.legajoMigrado
                 ? "Empresa migrada a SGR+"
-                : "Se migra al aceptar la solicitud"
+                : faltaContacto
+                  ? `Requiere ${faltantesContacto.join(" y ")} de la empresa`
+                  : "Se migra al aceptar la solicitud"
             }
             tono={solicitud.legajoMigrado ? "ok" : "pendiente"}
           />
@@ -520,7 +533,7 @@ export const SolicitudPanel = ({
                 variant="success"
                 size="md"
                 onClick={onAceptar}
-                disabled={decidiendo || !legajoCompleto}
+                disabled={decidiendo || !puedeAceptar}
                 title={avisoAceptar || "Aceptar solicitud"}
               >
                 <FiCheck /> Aceptar
@@ -528,8 +541,18 @@ export const SolicitudPanel = ({
             </>
           ) : !soloLectura && esAprobada ? (
             <>
-              <span className={styles.pieEspacio} />
-              <Button type="button" variant="outlineBlue" size="md" onClick={onMigrar} disabled={migrando}>
+              <span className={styles.pieEspacio}>
+                {faltaContacto && !solicitud.legajoMigrado && (
+                  <span className={styles.pieAviso}>{textoFaltantesContacto}</span>
+                )}
+              </span>
+              <Button
+                type="button"
+                variant="outlineBlue"
+                size="md"
+                onClick={onMigrar}
+                disabled={migrando || (faltaContacto && !solicitud.legajoMigrado)}
+              >
                 <FiRefreshCw /> Migrar a SGR+
               </Button>
             </>
