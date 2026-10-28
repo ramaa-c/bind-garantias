@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useContext } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiPhone, FiUser, FiMapPin, FiMap } from "react-icons/fi";
@@ -28,6 +28,7 @@ import { buscarRelacionVigente } from "../../../../utils/relacionesTercerosUtils
 
 import styles from "./RepresentanteModal.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+import { CadenaLegajoContext } from "../../../../context/cadenaLegajoContextObject";
 
 // El botón de submit vive en el footer del Modal (ver prop `footer`), fuera
 // del <form> en el DOM - se asocian por este id vía el atributo HTML
@@ -59,7 +60,8 @@ export function RepresentanteModal({
   itemsExistentes = [],   // Resto de los items ya cargados para este mismo tipoRelacionSocioId (ver duplicado de email entre Fiadores, SGRPLUSPLA-137)
 }) {
   const { cadenaSlug } = useCadenaActiva();
-  const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const cadenaLegajo = useContext(CadenaLegajoContext);
+  const cadenaValorIdParam = Number(cadenaLegajo ?? cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);

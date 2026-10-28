@@ -39,6 +39,7 @@ import { RepresentantesSection } from "../DocumentosLegajo/components/Representa
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
+import { CadenaLegajoContext } from "../../../../context/cadenaLegajoContextObject";
 import { TerceroRelacionSection } from "../DocumentosLegajo/components/TerceroRelacionSection/TerceroRelacionSection";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 import { useTiposRelacionSocioActivos } from "../../../../hooks/useTipoRelacionSocio";
@@ -602,6 +603,7 @@ export function SociosLegajo({
   };
 
   return (
+    <CadenaLegajoContext.Provider value={adminMode ? cadenaId : null}>
     <div className={`${styles.workspace} ${adminMode ? "" : styles.workspaceCliente}`}>
       <div className={styles.sidebarBg} />
       {/* Columna de navegación propia de escritorio (ver .sidebarNav en el
@@ -916,5 +918,6 @@ export function SociosLegajo({
         />
       </FormProvider>
     </div>
+    </CadenaLegajoContext.Provider>
   );
 }

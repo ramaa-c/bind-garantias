@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useContext } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle } from "react-icons/fi";
@@ -31,6 +31,7 @@ import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal"
 import styles from "./SocioAccionistaModal.module.css";
 import { obtenerInicialesEmpresa } from "../../../../../../utils/empresaAvatar";
 import { useCadenaActiva } from "../../../../../../hooks/useCadenaActiva";
+import { CadenaLegajoContext } from "../../../../../../context/cadenaLegajoContextObject";
 import { useDescargaConFeedback } from "../../../../../../hooks/useDescargaConFeedback";
 
 // El botón de submit vive en el footer del Modal (ver prop `footer`), fuera
@@ -171,7 +172,8 @@ const DEFAULT_SUGERENCIAS = [];
 
 export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS, sugerencias = DEFAULT_SUGERENCIAS }) {
   const { cadenaSlug } = useCadenaActiva();
-  const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const cadenaLegajo = useContext(CadenaLegajoContext);
+  const cadenaValorIdParam = Number(cadenaLegajo ?? cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
