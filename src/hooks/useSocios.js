@@ -271,7 +271,7 @@ export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
 // resolver cada UsuarioWebID aparte contra api/usuario/{id} (mismo patrón
 // que useEmpresasCompletas, arriba, pero en el sentido socio → usuarios en
 // vez de usuario → socios).
-export const useUsuariosVinculadosASocio = (socioId) => {
+export const useUsuariosVinculadosASocio = (socioId, { conDetalle = true } = {}) => {
   const { data: vinculos, isPending: isPendingVinculos } = useQuery({
     queryKey: ["socioUsuario", "listaPorSocio", socioId],
     queryFn: () => sociosService.obtenerSocioUsuarioPorSocioId(socioId),
@@ -285,7 +285,7 @@ export const useUsuariosVinculadosASocio = (socioId) => {
     .filter((id) => !Number.isNaN(id));
 
   const resultados = useQueries({
-    queries: usuarioIds.map((usuarioWebId) => ({
+    queries: (conDetalle ? usuarioIds : []).map((usuarioWebId) => ({
       queryKey: ["usuarios", "detalle", usuarioWebId],
       queryFn: () => usuarioService.obtenerUsuarioPorId(usuarioWebId),
       staleTime: 1000 * 60 * 5,

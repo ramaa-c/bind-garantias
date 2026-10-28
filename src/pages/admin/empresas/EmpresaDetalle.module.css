@@ -149,6 +149,19 @@
   white-space: nowrap;
 }
 
+.selectorCadena {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #8fa3f3;
+  min-width: 14rem;
+}
+
+.selectorCadena > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+
 .badgeDot {
   width: 0.4rem;
   height: 0.4rem;

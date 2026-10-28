@@ -10,6 +10,7 @@ import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
 import { usuarioService } from "../../../../services/usuarioService";
+import { avisarBloqueoPorSeguridad } from "../../../../utils/usuarioUtils";
 import { borrarTokenApi } from "../../../../api/tokenApi";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { requisitosService } from "../../../../services/requisitosService";
@@ -610,10 +611,11 @@ export const AltaDatosEmpresa = () => {
       setAltaBloqueada(true);
       return;
     }
+    avisarBloqueoPorSeguridad();
     borrarTokenApi();
     clearAuth();
     queryClient.clear();
-    navigate(`${basePath}/login`, { replace: true, state: { cuentaBloqueadaPorSeguridad: true } });
+    navigate(`${basePath}/login`, { replace: true });
   };
 
   const cerrarSesionAltaBloqueada = () => {
@@ -801,7 +803,7 @@ export const AltaDatosEmpresa = () => {
           <p className={styles.modalText}>
             {socioExistenteModal.reason === "email_mismatch"
               ? "El correo con el que ingresaste no es el que tenemos registrado para esta empresa, así que no podemos vincularla a tu usuario."
-              : 'El CUIT ingresado ya se encuentra registrado en la plataforma por otro usuario. Para operar con esta empresa, solicitale al administrador que te brinde acceso desde la sección "Documentación".'}
+              : 'El CUIT ingresado ya se encuentra registrado en la plataforma por otro usuario. Para operar con esta empresa, pedile una invitación a un administrador de la empresa.'}
           </p>
 
           <div className={styles.modalHighlight}>

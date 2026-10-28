@@ -2,7 +2,12 @@ import axios from "axios";
 import { toast } from "sonner";
 import { queryClient } from "./queryClient";
 import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
-import { obtenerTokenApi, borrarTokenApi } from "./tokenApi";
+import {
+  obtenerTokenApi,
+  borrarTokenApi,
+  esperarFinRenovacion,
+  esRenovacionDeLaMismaSesion,
+} from "./tokenApi";
 import { CABECERAS_BASE_API } from "./cabecerasApi";
 import { useAuthStore } from "../store/useAuthStore";
 import { esMensajeUtil } from "../utils/mensajesError";
@@ -47,6 +52,7 @@ const agregarTokenApi = (config) => {
   const token = obtenerTokenApi();
   if (token) {
     config.__conToken = true;
+    config.__tokenUsado = token;
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -105,6 +111,16 @@ const esSesionVencida = (error) => {
   const url = config?.url || "";
   if (RUTAS_CON_401_DE_NEGOCIO.some((ruta) => ruta.test(url))) return false;
   return Boolean(config?.__conToken) || useAuthStore.getState().isAuthenticated;
+};
+
+const reintentarConTokenRenovado = async (config) => {
+  if (!config.__tokenUsado || config.__reintentoPorRenovacion) return false;
+  await esperarFinRenovacion();
+  const tokenActual = obtenerTokenApi();
+  if (!tokenActual || tokenActual === config.__tokenUsado) return false;
+  if (!esRenovacionDeLaMismaSesion(config.__tokenUsado, tokenActual)) return false;
+  config.__reintentoPorRenovacion = true;
+  return true;
 };
 
 const RUTAS_CON_LIMITE_POR_CUIT =
@@ -179,6 +195,7 @@ api.interceptors.response.use(
     if (!config) return Promise.reject(error);
 
     if (esSesionVencida(error)) {
+      if (await reintentarConTokenRenovado(config)) return api(config);
       cerrarSesionLocal();
       return Promise.reject(error);
     }

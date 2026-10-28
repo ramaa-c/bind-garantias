@@ -1,4 +1,6 @@
 .pagina {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 64rem;
   margin: 0 auto;
@@ -6,6 +8,30 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+
+.pagina::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  right: var(--gutter-scroll, 0px);
+  width: auto;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--carbon-black, #1a1a1a);
+  background-image:
+    radial-gradient(100vw 30vh at top, rgba(76, 101, 230, 0.15) 0%, transparent 100%),
+    radial-gradient(100vw 30vh at bottom, rgba(76, 101, 230, 0.15) 0%, transparent 100%);
+}
+
+@media (min-width: 48rem) {
+  .pagina::before {
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(76, 101, 230, 0.15) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(76, 101, 230, 0.15) 0%, transparent 40%);
+  }
 }
 
 .cabecera {
@@ -409,6 +435,28 @@
   background: var(--badge-amarillo-bg);
   color: var(--badge-amarillo-text);
   font-size: 1rem;
+}
+
+.asistenciaActiva {
+  border-color: rgba(138, 159, 255, 0.28);
+  background: rgba(76, 101, 230, 0.1);
+}
+
+.asistenciaActiva .asistenciaIcono {
+  background: rgba(76, 101, 230, 0.18);
+  color: #aebcff;
+}
+
+.asistenciaActiva .asistenciaDescripcion {
+  color: #c9d2ff;
+}
+
+:global(:root[data-theme="light"]) .asistenciaActiva .asistenciaIcono {
+  color: var(--color-azul-bind-600);
+}
+
+:global(:root[data-theme="light"]) .asistenciaActiva .asistenciaDescripcion {
+  color: var(--color-azul-bind-800);
 }
 
 .asistenciaTexto {
