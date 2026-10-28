@@ -59,6 +59,12 @@ import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../ho
 import { useObtenerLimitesPorSocio } from "../../../hooks/useLinea";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
+import { useCadenaDelSocio } from "../../../hooks/useCadenaDelSocio";
+import {
+  ORIGEN_CADENA_ALTA,
+  ORIGEN_CADENA_LINEA,
+  ORIGEN_CADENA_MANUAL,
+} from "../../../utils/cadenaDelSocio";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { esCdaActivo } from "../../../utils/cdaUtils";
@@ -72,7 +78,6 @@ import {
   calcularEstadoEfectivo,
   combinarEstadoCdas,
   obtenerCdasDeLaCorridaActual,
-  detectarCadenaValorId,
   ultimasEjecucionesDeCadena,
 } from "../../../utils/executeCda";
 import {
@@ -551,27 +556,33 @@ function DatosTab({ socio }) {
 
 // Avisa de dónde sale el filtro de requisitos que se aplica en Documentación
 // y Terceros Relacionados en modo admin: no hay un campo CadenaValorID en
-// Socio, así que se infiere de la ejecución más reciente del historial de
-// CDAs que traiga uno (ver detectarCadenaValorId, mismo dato que usa la
-// pestaña CDAs para reejecutar/forzar).
-function CadenaDetectadaAviso({ cadenaValorIdDetectada, nombreCadenaDetectada }) {
+// Socio, así que se resuelve con useCadenaDelSocio (líneas, después alta,
+// después elección del admin) — mismo dato que usa la pestaña CDAs para
+// reejecutar/forzar.
+const ORIGEN_CADENA_TEXTO = {
+  [ORIGEN_CADENA_LINEA]: "la cadena de sus líneas",
+  [ORIGEN_CADENA_ALTA]: "la cadena por la que se dio de alta (todavía no tiene líneas)",
+  [ORIGEN_CADENA_MANUAL]: "elegida a mano",
+};
+
+function CadenaDetectadaAviso({ cadenaValorIdDetectada, nombreCadenaDetectada, origenCadena }) {
   return (
     <p className={styles.cadenaAviso}>
       <FiInfo size={12} />
       {cadenaValorIdDetectada ? (
         <>
           Requisitos configurados para{" "}
-          <span className={styles.cadenaAvisoFuerte}>{nombreCadenaDetectada}</span>,
-          detectada del historial de CDAs de esta empresa.
+          <span className={styles.cadenaAvisoFuerte}>{nombreCadenaDetectada}</span>,{" "}
+          {ORIGEN_CADENA_TEXTO[origenCadena] || "detectada para esta empresa"}.
         </>
       ) : (
-        "No se detectó la cadena de esta empresa en su historial de CDAs: se muestran los requisitos por defecto según su tipo societario."
+        "Esta empresa no tiene líneas ni registro de alta con cadena: elegí una arriba para ver sus requisitos y ejecutar CDAs. Mientras tanto se muestran los requisitos por defecto según su tipo societario."
       )}
     </p>
   );
 }
 
-function DocumentacionTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
+function DocumentacionTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada, origenCadena }) {
   const methods = useForm({ defaultValues: {} });
 
   return (
@@ -579,6 +590,7 @@ function DocumentacionTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
       <CadenaDetectadaAviso
         cadenaValorIdDetectada={cadenaValorIdDetectada}
         nombreCadenaDetectada={nombreCadenaDetectada}
+        origenCadena={origenCadena}
       />
       <FormProvider {...methods}>
         <DocumentosLegajo
@@ -611,12 +623,13 @@ function DocumentacionTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
   );
 }
 
-function TercerosTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
+function TercerosTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada, origenCadena }) {
   return (
     <div className={styles.embeddedLegajo}>
       <CadenaDetectadaAviso
         cadenaValorIdDetectada={cadenaValorIdDetectada}
         nombreCadenaDetectada={nombreCadenaDetectada}
+        origenCadena={origenCadena}
       />
       <SociosLegajo
         adminMode
@@ -632,9 +645,7 @@ function TercerosTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
 // PANTALLA_INGRESO_CUIT es hoy la única pantalla que evalúa CDAs a nivel
 // empresa (la otra, PANTALLA_SOCIOS, es para terceros relacionados) — por
 // eso se puede fijar acá. CadenaValorID no queda guardado en ningún campo de
-// Socio, pero sí viaja en cada fila del historial de CDAs desde que se
-// arregló el bug del INSERT que lo dejaba en 0 — se detecta desde ahí (ver
-// detectarCadenaValorId, arriba en EmpresaDetalle).
+// Socio: se resuelve con useCadenaDelSocio, arriba en EmpresaDetalle.
 const PANTALLA_EMPRESA = "PANTALLA_INGRESO_CUIT";
 
 const ejecutarGrupoAlta = async (socioId, cadenaValorId) => {
@@ -730,8 +741,7 @@ const NombreUsuario = ({ usuarioId }) => {
 
 // cadenaValorIdDetectada/nombreCadenaDetectada llegan ya resueltos desde
 // EmpresaDetalle (se calculan una sola vez ahí porque también los necesitan
-// DocumentacionTab y TercerosTab, ver detectarCadenaValorId en
-// utils/executeCda.js).
+// DocumentacionTab y TercerosTab, ver useCadenaDelSocio).
 const ROL_POR_RELACION = {
   [RELACION_REPRESENTANTE_LEGAL_ID]: "Representante legal",
   [RELACION_APODERADO_ID]: "Apoderado",
@@ -2328,16 +2338,28 @@ export default function EmpresaDetalle() {
   const { usuariosVinculados } = useUsuariosVinculadosASocio(socio?.socioid);
   const { data: estadosSocio } = useEstadoSocio();
 
-  // Se calcula una sola vez acá (no hay CadenaValorID en Socio, se infiere
-  // del historial de CDAs — ver detectarCadenaValorId) porque lo necesitan
-  // tanto CdasTab como Documentación y Terceros Relacionados, para filtrar
-  // por los requisitos configurados en esa cadena.
-  const { data: ejecucionesCda } = useObtenerExecuteCda(socio?.socioid);
-  const cadenaValorIdDetectada = useMemo(
-    () => detectarCadenaValorId(ejecucionesCda),
-    [ejecucionesCda],
-  );
+  const {
+    cadenaValorId: cadenaValorIdDetectada,
+    origen: origenCadena,
+    candidatas: cadenasCandidatas,
+    elegirCadena,
+  } = useCadenaDelSocio(socio?.socioid);
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
+  const opcionesCadena = useMemo(() => {
+    const etiquetaOrigen = new Map(
+      cadenasCandidatas.map((c) => [c.cadenaValorId, c.origen === ORIGEN_CADENA_LINEA ? "línea" : "alta"]),
+    );
+    const nombrePorId = new Map(
+      (cadenasWeb || []).map((c) => [Number(c.cadenavalorid), c.denominacion || `Cadena #${c.cadenavalorid}`]),
+    );
+    const ids = [...new Set([...etiquetaOrigen.keys(), ...nombrePorId.keys()])].filter(Boolean);
+    return ids.map((id) => ({
+      value: String(id),
+      label: etiquetaOrigen.has(id)
+        ? `${nombrePorId.get(id) || `Cadena #${id}`} · ${etiquetaOrigen.get(id)}`
+        : nombrePorId.get(id),
+    }));
+  }, [cadenasCandidatas, cadenasWeb]);
   const nombreCadenaDetectada = useMemo(() => {
     if (!cadenaValorIdDetectada) return null;
     const fila = (cadenasWeb || []).find(
@@ -2514,14 +2536,21 @@ export default function EmpresaDetalle() {
                 <span className={styles.badgeDot} /> Legajo {requisitosCompletados}/{totalRequisitos}
               </span>
             )}
-            {cadenaValorIdDetectada && (
-              <span
-                className={`${styles.badge} ${styles["badge-neutral"]}`}
-                title="Cadena detectada del historial de CDAs de esta empresa. Como el socio no está atado a una única cadena, puede ingresar y verse distinto desde el slug de otra cadena."
-              >
-                <FiLink size={12} /> {nombreCadenaDetectada}
-              </span>
-            )}
+            <span
+              className={styles.selectorCadena}
+              title="Cadena con la que se evalúan requisitos y CDAs. Se toma de sus líneas o, si no tiene, de la cadena por la que se dio de alta; podés elegir otra."
+            >
+              <FiLink size={12} aria-hidden="true" />
+              <SelectSimple
+                options={opcionesCadena}
+                value={cadenaValorIdDetectada ? String(cadenaValorIdDetectada) : ""}
+                onChange={(valor) => valor && elegirCadena(valor)}
+                placeholder="Elegir cadena"
+                variant="admin"
+                compact
+                hideErrorSpace
+              />
+            </span>
             </div>
           </div>
         </div>
@@ -2584,6 +2613,7 @@ export default function EmpresaDetalle() {
             socio={socio}
             cadenaValorIdDetectada={cadenaValorIdDetectada}
             nombreCadenaDetectada={nombreCadenaDetectada}
+            origenCadena={origenCadena}
           />
         )}
         {activeTab === "terceros" && (
@@ -2591,6 +2621,7 @@ export default function EmpresaDetalle() {
             socio={socio}
             cadenaValorIdDetectada={cadenaValorIdDetectada}
             nombreCadenaDetectada={nombreCadenaDetectada}
+            origenCadena={origenCadena}
           />
         )}
         {activeTab === "cdas" && (
