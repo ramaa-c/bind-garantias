@@ -232,6 +232,7 @@ export default function Sidebar({ isOpen, onClose }) {
       icono: <FiUsers />,
       bloqueado: false,
       ayuda: "Quiénes tienen acceso a la empresa",
+      secundario: true,
     },
   ].filter(Boolean);
 
@@ -390,7 +391,7 @@ export default function Sidebar({ isOpen, onClose }) {
         {empresaOperable && (
           <nav className={styles.nav}>
             <ul className={styles.navLista}>
-              {itemsNavegacion.map(({ path, label, icono, bloqueado, motivoBloqueo, ayuda, novedad, textoNovedad }) => {
+              {itemsNavegacion.filter((item) => !item.secundario).map(({ path, label, icono, bloqueado, motivoBloqueo, ayuda, novedad, textoNovedad }) => {
                 const activo = isActive(path);
                 return (
                   <li key={path}>
@@ -424,6 +425,31 @@ export default function Sidebar({ isOpen, onClose }) {
                 );
               })}
             </ul>
+          </nav>
+        )}
+
+        {empresaOperable && itemsNavegacion.some((item) => item.secundario) && (
+          <nav className={styles.navSecundaria} aria-label="Empresa">
+            {itemsNavegacion
+              .filter((item) => item.secundario)
+              .map(({ path, label, icono }) => {
+                const activo = isActive(path);
+                return (
+                  <button
+                    key={path}
+                    type="button"
+                    className={`${styles.navSecundariaItem} ${activo ? styles.navSecundariaActivo : ""}`}
+                    onClick={() => handleNavigate(path)}
+                    aria-current={activo ? "page" : undefined}
+                    title={label}
+                  >
+                    <span className={styles.navSecundariaIcono} aria-hidden="true">
+                      {icono}
+                    </span>
+                    <span className={styles.navSecundariaLabel}>{label}</span>
+                  </button>
+                );
+              })}
           </nav>
         )}
       </div>

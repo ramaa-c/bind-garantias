@@ -377,6 +377,77 @@
   }
 }
 
+.navSecundaria {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.navSecundariaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 0.7rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+  color: var(--white-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.navSecundariaItem:hover {
+  background: rgba(var(--overlay-rgb), 0.045);
+  color: var(--white);
+}
+
+.navSecundariaItem:focus-visible {
+  outline: 2px solid var(--color-azul-bind-300, #8a9fff);
+  outline-offset: 1px;
+}
+
+.navSecundariaIcono {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  transition: color 0.15s ease;
+}
+
+.navSecundariaItem:hover .navSecundariaIcono {
+  color: var(--white);
+}
+
+.navSecundariaLabel {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navSecundariaActivo,
+.navSecundariaActivo:hover {
+  background: var(--color-azul-bind-bg, rgba(76, 101, 230, 0.1));
+  border-color: rgba(76, 101, 230, 0.22);
+  color: var(--white);
+}
+
+.navSecundariaActivo .navSecundariaIcono {
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
 /* ── Pie ── */
 .pie {
   display: flex;
@@ -678,6 +749,16 @@
     box-shadow: none;
   }
 
+  .navSecundariaActivo,
+  .navSecundariaActivo:hover {
+    background: rgba(245, 244, 0, 0.07);
+    border-color: rgba(245, 244, 0, 0.18);
+  }
+
+  .navSecundariaActivo .navSecundariaIcono {
+    color: var(--badge-amarillo-text);
+  }
+
   .toggleCompacto {
     display: flex;
     align-items: center;
@@ -809,6 +890,21 @@
     right: 0.7rem;
   }
 
+  .compacto .navSecundaria {
+    width: 100%;
+  }
+
+  .compacto .navSecundariaItem {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0.2rem;
+  }
+
+  .compacto .navSecundariaLabel {
+    font-size: 0.66rem;
+  }
+
   .compacto .pie {
     align-items: center;
     padding: 0.75rem 0.5rem 0.85rem;
@@ -833,6 +929,8 @@
   .container,
   .navItem,
   .navIcono,
+  .navSecundariaItem,
+  .navSecundariaIcono,
   .cuentaAccion,
   .closeButton {
     transition: none;
