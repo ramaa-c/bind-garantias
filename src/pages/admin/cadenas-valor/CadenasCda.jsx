@@ -53,9 +53,9 @@ export default function CadenasCda() {
     : PANTALLAS[0].value;
 
   const [busqueda, setBusqueda] = useState("");
-  const [selectedCadenaId, setSelectedCadenaId] = useState("");
+  const [selectedCadenaId, setSelectedCadenaId] = useState(() => searchParams.get("cadena") || "");
   const [selectedPantalla, setSelectedPantalla] = useState(pantallaInicial);
-  const [verDetalleMovil, setVerDetalleMovil] = useState(false);
+  const [verDetalleMovil, setVerDetalleMovil] = useState(() => !!searchParams.get("cadena"));
   const [contenedorPie, setContenedorPie] = useState(null);
 
   const { data: activeCadenas, isLoading: isLoadingActive } = useObtenerTodasWebConEstado();

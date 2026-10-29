@@ -545,10 +545,10 @@ export default function CadenasValor() {
       />
 
       <CdaConfigModal
+        key={`cda-${activeItem?.cadenavalorid ?? "none"}-${isModalOpen && modalType === "cda" ? "open" : "closed"}`}
         isOpen={isModalOpen && modalType === "cda"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
-        isReadOnly={true}
       />
     </div>
   );
