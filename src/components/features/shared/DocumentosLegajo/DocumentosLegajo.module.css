@@ -2465,3 +2465,70 @@
 .vincularCompacto .errorContainer:has(.errorMessage) {
   padding-top: 0.4rem;
 }
+
+/* ── Admin (EmpresaDetalle): mismo componente que el cliente, adaptado a la
+   línea visual del panel admin. Los tokens de acento del cliente (amarillo,
+   gris elevado) pasan a los del admin dentro del legajo, y el contenedor y
+   la lista lateral toman el estilo translúcido y compacto de los listados. */
+:global(.legajoAdmin) {
+  --color-amarillo-bind: #8a9fff;
+  --yellow: #8a9fff;
+  --on-amarillo-bind: #ffffff;
+  --badge-amarillo-bg: rgba(76, 101, 230, 0.16);
+  --badge-amarillo-text: #c7d0ff;
+  --badge-amarillo-border: rgba(76, 101, 230, 0.4);
+  --bg-elevado: rgba(255, 255, 255, 0.03);
+}
+
+.workspace:global(.legajoAdmin) {
+  border-color: rgba(255, 255, 255, 0.06);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+:global(.legajoAdmin) .viewer {
+  background: transparent;
+}
+
+:global(.legajoAdmin) .categoryLabel {
+  color: #7d8590;
+}
+
+@media (min-width: 48rem) {
+  .workspace:global(.legajoAdmin) {
+    grid-template-columns: 17rem minmax(0, 1fr);
+  }
+
+  :global(.legajoAdmin) .tabBtn {
+    margin-bottom: 0.15rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  :global(.legajoAdmin) .tabTitleGroup {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  :global(.legajoAdmin) .tabTitle {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+  }
+
+  :global(.legajoAdmin) .badgeRow {
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    margin-top: 0;
+  }
+}
+
+/* En admin la zona para subir el primer archivo no se estira hasta el alto
+   de la lista lateral: queda con su alto natural. */
+:global(.legajoAdmin) .dropzoneContainer {
+  flex: 0 0 auto;
+}

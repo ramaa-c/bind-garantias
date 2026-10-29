@@ -26,6 +26,8 @@ import {
   FiAward,
   FiBell,
   FiUserCheck,
+  FiRotateCcw,
+  FiCheck,
   FiChevronDown,
   FiZap,
   FiPlay,
@@ -537,12 +539,15 @@ function DatosTab({ socio }) {
       </div>
 
       <div className={styles.datosFooter}>
+        <span className={styles.datosFooterEstado}>
+          {hayCambios ? "Hay cambios sin guardar" : "Sin cambios"}
+        </span>
         <Button
-          variant="ghost"
+          variant="adminNeutro"
           onClick={handleRevertir}
           disabled={!hayCambios || actualizarMutation.isPending}
         >
-          REVERTIR CAMBIOS
+          <FiRotateCcw aria-hidden="true" /> Revertir cambios
         </Button>
         <Button
           variant="blue"
@@ -550,7 +555,7 @@ function DatosTab({ socio }) {
           isLoading={actualizarMutation.isPending}
           disabled={!hayCambios}
         >
-          GUARDAR CAMBIOS
+          <FiCheck aria-hidden="true" /> Guardar cambios
         </Button>
       </div>
 
