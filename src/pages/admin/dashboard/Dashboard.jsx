@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder, FiLayers } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder, FiLayers, FiEye } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { obtenerInicialesEmpresa } from "../../../utils/empresaAvatar";
@@ -104,6 +104,12 @@ const getIniciales = (denominacion) => {
 // cubrir 8 filas con ese overhead adicional. En vez de bajar la cantidad,
 // .listWrapper quedó con su propio tope de alto + scroll interno (ver
 // Dashboard.module.css) para no perder densidad.
+const faltantesContactoSocio = (socio) =>
+  [
+    !String(socio?.telefono ?? socio?.Telefono ?? "").trim() && "teléfono validado",
+    !String(socio?.emailfacturacion ?? socio?.EmailFacturacion ?? "").trim() && "email de facturación",
+  ].filter(Boolean);
+
 const ELEMENTOS_POR_PAGINA = 8;
 
 // Misma forma que una fila real, para que el loading no "salte" de tamaño
@@ -181,15 +187,9 @@ export default function Dashboard() {
   const cadenaInfoPorId = useMemo(() => {
     const map = new Map();
     (todasCadenasConEstado || []).forEach((c) => {
-      const logo = c.logo || c.Logo || "";
       map.set(String(c.cadenavalorid ?? c.CadenaValorID), {
         nombre: (c.referencia || c.Referencia || "").trim() || c.denominacion || c.Denominacion || "",
         nombreCompleto: c.denominacion || c.Denominacion || "",
-        logo: !logo
-          ? ""
-          : logo.startsWith("data:") || logo.startsWith("http")
-            ? logo
-            : `data:image/png;base64,${logo}`,
       });
     });
     return map;
@@ -359,10 +359,11 @@ export default function Dashboard() {
         cuit: socio?.cuit || "—",
         usuario: socio?.email || "—",
         socioid: socioId,
+        tipoPersonaId: socio?.tipopersonaid,
+        faltantesContacto: faltantesContactoSocio(socio),
         cadenavalorid: cadenaValorId,
         cadenaNombre: cadenaInfoPorId.get(String(cadenaValorId))?.nombre || "",
         cadenaNombreCompleto: cadenaInfoPorId.get(String(cadenaValorId))?.nombreCompleto || "",
-        cadenaLogo: cadenaInfoPorId.get(String(cadenaValorId))?.logo || "",
         lineaNombre: lineaCatalogo?.descripcion || "",
         legajoMigrado: String(socio?.marcavinculacion ?? socio?.MarcaVinculacion ?? "") === "1",
         estado: estadoText,
@@ -440,6 +441,17 @@ export default function Dashboard() {
     // socio ya migrado es seguro, pero evita un PUT/POST de más en el caso
     // normal de aprobar una segunda línea del mismo socio).
     if (String(socio.marcavinculacion ?? "") === "1") return;
+
+    const faltantes = faltantesContactoSocio(socio);
+    if (faltantes.length > 0) {
+      toast.warning(
+        contexto === "aprobar"
+          ? `La línea N°${item.id} se aprobó, pero la empresa todavía no tiene ${faltantes.join(" ni ")}`
+          : `La empresa de la línea N°${item.id} todavía no tiene ${faltantes.join(" ni ")}`,
+        { description: "El socio va a quedar sin migrar a SGR+ hasta que la empresa complete esos datos." },
+      );
+      return;
+    }
 
     let tieneCertificadoFresco = false;
     try {
@@ -945,9 +957,6 @@ export default function Dashboard() {
                   <span className={styles.rowChips}>
                     {item.cadenaNombre && (
                       <span className={styles.rowCadena} title={item.cadenaNombreCompleto || item.cadenaNombre}>
-                        <span className={styles.rowCadenaLogo} aria-hidden="true">
-                          {item.cadenaLogo ? <img src={item.cadenaLogo} alt="" /> : item.cadenaNombre.charAt(0)}
-                        </span>
                         {item.cadenaNombre}
                       </span>
                     )}
@@ -958,7 +967,7 @@ export default function Dashboard() {
                       className={`${styles.rowChip} ${item.legajoMigrado ? styles.rowChipOk : styles.rowChipPendiente}`}
                     >
                       {item.legajoMigrado ? <FiCheck aria-hidden="true" /> : <FiFolder aria-hidden="true" />}
-                      {item.legajoMigrado ? "Legajo migrado a SGR+" : "Legajo en curso"}
+                      {item.legajoMigrado ? "Migrado a SGR+" : "Sin migrar a SGR+"}
                     </span>
                   </span>
                 </div>
@@ -1008,40 +1017,32 @@ export default function Dashboard() {
                     </Button>
                   ) : (
                     <>
-                      {isPendiente && (
-                        <>
-                          <Button
-                            onClick={() => handleAceptar(item)}
-                            variant="success"
-                            size="sm"
-                            title="Aprobar Solicitud"
-                            disabled={actualizarEstadoMutation.isPending}
-                          >
-                            <FiCheck /> ACEPTAR
-                          </Button>
-                          <Button
-                            onClick={() => handleRechazar(item)}
-                            variant="danger"
-                            size="sm"
-                            title="Rechazar Solicitud"
-                            disabled={actualizarEstadoMutation.isPending}
-                          >
-                            <FiX /> RECHAZAR
-                          </Button>
-                        </>
-                      )}
-
                       {isAprobada && (
                         <Button
                           onClick={() => handleReintentarMigracion(item)}
                           variant="outlineBlue"
                           size="sm"
-                          title="Reintentar la migración de esta línea a SGR+"
-                          disabled={migrarLineaMutation.isPending}
+                          title={
+                            item.faltantesContacto.length > 0 && !item.legajoMigrado
+                              ? `La empresa todavía no tiene ${item.faltantesContacto.join(" ni ")}`
+                              : "Reintentar la migración de esta línea a SGR+"
+                          }
+                          disabled={
+                            migrarLineaMutation.isPending || (item.faltantesContacto.length > 0 && !item.legajoMigrado)
+                          }
                         >
                           <FiRefreshCw /> MIGRAR
                         </Button>
                       )}
+
+                      <Button
+                        onClick={() => setSolicitudDetalle(item)}
+                        variant="outlineBlue"
+                        size="sm"
+                        title={isPendiente ? "Revisar el legajo y decidir la solicitud" : "Ver el detalle de la solicitud"}
+                      >
+                        <FiEye /> REVISAR
+                      </Button>
                     </>
                   )}
                 </div>

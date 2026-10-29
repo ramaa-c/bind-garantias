@@ -309,7 +309,7 @@ export const AltaDatosEmpresa = () => {
         ciudadid: data.ciudadid ? Number(data.ciudadid) : null,
         telefono: data.celular,
         fax: "",
-        email: user?.email,
+        email: isVendor ? "" : user?.email,
         tipopersonaid: data.tipopersonaid,
         tipocarteraid: 2,
         sectorcontableid: 700,
@@ -353,7 +353,7 @@ export const AltaDatosEmpresa = () => {
           cadenaObj?.tipocanalcomercializacionid ||
           cadenaObj?.TipoCanalComercializacionID ||
           0,
-        emailfacturacion: data.emailfacturacion || user?.email || "",
+        emailfacturacion: data.emailfacturacion || (isVendor ? "" : user?.email) || "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,
         jsoncondicionfianza: "",
@@ -552,6 +552,7 @@ export const AltaDatosEmpresa = () => {
             }
           }}
           isSubmitting={enviandoSolicitud}
+          pedirTelefono={!isVendor}
         />
       );
     }

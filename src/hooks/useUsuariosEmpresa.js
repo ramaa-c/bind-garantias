@@ -34,7 +34,7 @@ const errorAmigable = (error, porDefecto, mensaje409) => {
 
 const mismoEmail = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
 
-export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
+export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor = false }) => {
   const queryClient = useQueryClient();
   const emailPropio = String(useAuthStore((state) => state.user?.email) || "").toLowerCase();
   const { basePath } = useChannel();
@@ -97,6 +97,7 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
   }, [vinculados, invitacionesApi]);
 
   const cantidadAdmins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
+  const primerUsuarioEsAdmin = esVendor && !vinculados.some((u) => !u.esVos);
 
   const cadena = Array.isArray(cadenaWeb) ? cadenaWeb[0] : cadenaWeb;
   const canalId = Number(cadena?.tipocanalcomercializacionid) || Number(tipoCanalSocioId) || null;
@@ -131,7 +132,11 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
       }
     }
     try {
-      await sociosService.vincularUsuarioPorEmail({ socioId, email: normalizado, esAdministradorCuit: "0" });
+      await sociosService.vincularUsuarioPorEmail({
+        socioId,
+        email: normalizado,
+        esAdministradorCuit: primerUsuarioEsAdmin ? "1" : "0",
+      });
       await Promise.all([refrescarVinculados(), refrescarInvitaciones()]);
       return RESULTADO_VINCULADA;
     } catch (error) {
@@ -194,6 +199,7 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId }) => {
     soyAdmin,
     soyAsistente,
     cantidadAdmins,
+    primerUsuarioEsAdmin,
     asistenciaDisponible,
     asistencia: asistenciaPedida(socioId),
     invitar,
