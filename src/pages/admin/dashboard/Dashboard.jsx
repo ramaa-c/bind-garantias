@@ -111,21 +111,23 @@ const faltantesContactoSocio = (socio) =>
     !String(socio?.emailfacturacion ?? socio?.EmailFacturacion ?? "").trim() && "email de facturación",
   ].filter(Boolean);
 
-// La migración arma el contrato en SGR+ con datos de la cadena y de su línea:
-// si falta alguno, Linea/Migrar falla recién al final (con la línea ya
-// aprobada). null = todavía no se pudo leer la configuración.
+// Mismas precondiciones que Linea/Migrar en la API (TMigracionManager.MigrarLinea):
+// si falta alguna, la migración falla recién al final, con la línea ya
+// aprobada. null = todavía no se pudo leer la configuración.
 const faltantesConfiguracionMigracion = (cadena, lineasCadena, tipoLimiteId) => {
   if (!cadena || !lineasCadena) return null;
-  const linea = lineasCadena.find((l) => Number(l.tipolimiteid) === Number(tipoLimiteId));
+  const linea = lineasCadena.find(
+    (l) => Number(l.tipolimiteid) === Number(tipoLimiteId) && String(l.activa) === "1",
+  );
   return [
+    !linea && "la línea activa en la cadena",
     !(Number(cadena.tipocontratoid) > 0) && "el tipo de contrato de la cadena",
-    !(Number(cadena.equipocomercialid) > 0) && "el equipo comercial de la cadena",
-    !(Number(cadena.tipocanalcomercializacionid) > 0) && "el canal de comercialización de la cadena",
-    !linea && "la línea en la cadena",
-    linea && !(Number(linea.monedalineaid) > 0) && "la moneda de la línea",
-    linea && !(Number(linea.diasvigencialinea) > 0) && "los días de vigencia de la línea",
     linea && !(Number(linea.monedacontratoid) > 0) && "la moneda del contrato de la línea",
     linea && !(Number(linea.diasvigenciacontrato) > 0) && "los días de vigencia del contrato de la línea",
+    linea &&
+      String(linea.valorespordefecto) === "1" &&
+      !(Number(linea.montocontrato) > 0) &&
+      "el monto del contrato de la línea",
   ].filter(Boolean);
 };
 
