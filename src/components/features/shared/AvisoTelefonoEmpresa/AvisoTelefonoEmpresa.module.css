@@ -1,15 +1,25 @@
 .contenedor {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 0;
+}
+
+@media (min-width: 64rem) {
+  .contenedor {
+    padding: 1.5rem 2rem 0;
+  }
 }
 
 .aviso {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
   border-radius: 14px;
   background: var(--badge-amarillo-bg);
   border: 1px solid var(--badge-amarillo-border);
@@ -20,62 +30,82 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.6rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.55rem;
   background: var(--color-amarillo-bind);
   color: var(--on-amarillo-bind);
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .texto {
-  flex: 1;
-  min-width: 0;
   margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  line-height: 1.4;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3;
   color: var(--white);
 }
 
-.accion {
+.pendientes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.pendiente {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  flex-shrink: 0;
-  padding: 0.5rem 0.9rem;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
   border: none;
-  border-radius: 0.65rem;
+  border-radius: 0.6rem;
   background: var(--color-amarillo-bind);
   color: var(--on-amarillo-bind);
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 800;
+  white-space: nowrap;
   cursor: pointer;
   transition: filter 0.2s ease;
 }
 
-.accion:hover:not(:disabled) {
+.pendiente:hover:not(:disabled) {
   filter: brightness(0.92);
 }
 
-.accion:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.pendiente:disabled {
+  cursor: default;
 }
 
-.accion:focus-visible {
+.pendiente:focus-visible {
   outline: 2px solid var(--color-amarillo-bind);
   outline-offset: 2px;
 }
 
+.pendienteEspera {
+  background: transparent;
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--color-amarillo-bind);
+  cursor: default;
+}
+
+span.pendienteEspera {
+  cursor: help;
+}
+
+button.pendienteEspera:not(:disabled) {
+  cursor: pointer;
+}
+
 @media (max-width: 40rem) {
-  .aviso {
-    flex-wrap: wrap;
+  .pendientes {
+    width: 100%;
+    margin-left: 0;
   }
 
-  .accion {
-    width: 100%;
+  .pendiente {
+    flex: 1 1 auto;
     justify-content: center;
   }
 }
