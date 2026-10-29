@@ -247,24 +247,26 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
             referencia={activeItem?.referencia}
             cadenavalorid={activeItem?.cadenavalorid}
             cuittercero={activeItem?.cuittercero}
+            extra={
+              <div className={styles.tipoPersona}>
+                <span className={styles.tipoPersonaEtiqueta}>Tipo de persona</span>
+                <div className={styles.tipos} role="tablist" aria-label="Tipo de persona">
+                  {TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeTab === tab.id}
+                      className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabActive : ""}`}
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            }
           />
-          <div className={styles.tipoPersona}>
-            <span className={styles.tipoPersonaEtiqueta}>Tipo de persona</span>
-            <div className={styles.tipos} role="tablist" aria-label="Tipo de persona">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabActive : ""}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className={styles.solapas} role="tablist">

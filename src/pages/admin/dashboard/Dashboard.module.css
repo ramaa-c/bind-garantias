@@ -20,25 +20,79 @@
   }
 }
 
+/* ── DISTRIBUCIÓN: panel lateral (cadena, métricas y filtros) + lista ── */
+.layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.panel {
+  display: none;
+}
+
+.principal {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (min-width: 74rem) {
+  .layout {
+    display: grid;
+    grid-template-columns: 14.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .panel {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    padding: 0.75rem;
+    border-radius: 1rem;
+    background: rgba(13, 17, 23, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+@media (min-width: 1441px) and (min-height: 717px) {
+  .layout {
+    grid-template-columns: 17rem minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .panel {
+    position: static;
+    max-height: none;
+    min-height: 0;
+    gap: 0.9rem;
+    padding: 0.9rem;
+  }
+
+  .principal {
+    height: 100%;
+  }
+
+  .principal .listWrapper {
+    flex: 1 1 0;
+  }
+}
+
 /* ── HEADER ─────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-/* Rango 2: aire decorativo entre bloques, sin función de lectura - se
-   achica junto con el resto de los ajustes de densidad (ver el mismo
-   umbral en AdminLayout.module.css). */
-@media (max-width: 1440px), (max-height: 716px) {
-  .header {
-    padding-bottom: 0.65rem;
-    margin-bottom: 0.85rem;
-  }
+  gap: 0.75rem;
+  min-height: 2.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .header h1 {
@@ -49,155 +103,165 @@
   letter-spacing: -0.02em;
 }
 
-.subtitle {
+.headerResumen {
+  font-size: 0.8rem;
   color: #8b949e;
-  margin: 0;
-  font-size: 0.875rem;
+  white-space: nowrap;
 }
 
-/* Rango 2: el subtítulo es texto de onboarding (útil la primera semana,
-   ruido para el uso diario) - se oculta, no se achica, para recuperar el
-   aire vertical completo en vez de dejar un texto ilegible a medio
-   camino. Mismo umbral único que el resto del panel (ver
-   AdminLayout.module.css). */
-@media (max-height: 716px) {
-  .subtitle {
+.paginacionCompacta {
+  display: none;
+  margin-left: auto;
+}
+
+.paginacionCompacta > div {
+  margin-top: 0;
+}
+
+.paginacionCompacta button {
+  min-width: 1.85rem;
+  height: 1.85rem;
+  padding: 0 0.4rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.paginacionPie {
+  display: block;
+}
+
+@media (min-width: 74rem) {
+  .paginacionCompacta {
+    display: block;
+  }
+
+  .paginacionPie {
     display: none;
   }
 }
 
-.toggleFiltersBtn {
+.filtrosBtn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  background: transparent;
+  gap: 0.45rem;
+  margin-left: auto;
+  height: 2.35rem;
+  padding: 0 0.8rem;
+  border-radius: 0.625rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #8b949e;
-  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: #c9d1d9;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding: 0.4rem 0.75rem;
-  border-radius: 0.5rem;
   cursor: pointer;
-  flex-shrink: 0;
   white-space: nowrap;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+  flex-shrink: 0;
 }
 
-.toggleFiltersBtn:hover {
-  background: rgba(76, 101, 230, 0.1);
-  border-color: rgba(76, 101, 230, 0.4);
+.filtrosBtn:hover {
+  border-color: rgba(76, 101, 230, 0.45);
   color: #ffffff;
 }
 
-.toggleFiltersBtn svg {
-  font-size: 0.9rem;
-}
-
-.toggleFiltersActiveDot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 50%;
+.filtrosBadge {
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
   background: var(--color-azul-bind, #4c65e6);
-  flex-shrink: 0;
-}
-
-.collapsiblePanel {
+  color: #ffffff;
+  font-size: 0.68rem;
   display: grid;
-  grid-template-rows: 1fr;
-  margin-bottom: 1.25rem;
-  transition:
-    grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    margin-bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  place-items: center;
 }
 
-.collapsiblePanelClosed {
-  grid-template-rows: 0fr;
-  margin-bottom: 0;
-}
-
-@media (max-width: 1440px), (max-height: 716px) {
-  .collapsiblePanel {
-    margin-bottom: 0.85rem;
+@media (min-width: 74rem) {
+  .filtrosBtn {
+    display: none;
   }
 }
 
-.collapsiblePanelInner {
-  overflow: hidden;
-  min-height: 0;
+@media (max-width: 30rem) {
+  .header h1 {
+    font-size: 1.3rem;
+  }
+
+  .headerResumen {
+    display: none;
+  }
+}
+
+/* ── PANEL: cadena ─────────────────────────────────────── */
+.panelCadenaGrupo {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.35rem;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .collapsiblePanel {
-    transition: none;
-  }
-}
-
-.contextBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 0.875rem;
-  padding: 0.875rem 1.125rem;
-}
-
-.contextChain {
+.panelCadena {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex: 1 1 16rem;
-  min-width: 0;
-}
-
-.contextChainIcon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.625rem;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.6rem 0.65rem;
+  border-radius: 0.75rem;
   border: 1px solid rgba(76, 101, 230, 0.3);
-  background: rgba(76, 101, 230, 0.08);
-  color: var(--color-azul-bind, #4c65e6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(76, 101, 230, 0.07);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.panelCadena:hover:not(:disabled) {
+  border-color: rgba(76, 101, 230, 0.55);
+  background: rgba(76, 101, 230, 0.12);
+}
+
+.panelCadena:disabled {
+  cursor: default;
+}
+
+.panelCadenaIcono,
+.panelCadenaLogo {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.6rem;
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
 }
 
-.contextChainLogo {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.625rem;
+.panelCadenaIcono {
+  background: rgba(76, 101, 230, 0.18);
+  border: 1px solid rgba(76, 101, 230, 0.4);
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
+.panelCadenaLogo {
   background: #ffffff;
-  padding: 0.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.15rem;
 }
 
-.contextChainLogo img {
+.panelCadenaLogo img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 
-.contextChainInfo {
+.panelCadenaTextos {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  flex: 1;
   min-width: 0;
 }
 
-.contextChainName {
-  font-size: 0.9375rem;
+.panelCadenaTextos strong {
+  font-size: 0.82rem;
   font-weight: 700;
   color: #ffffff;
   white-space: nowrap;
@@ -205,101 +269,101 @@
   text-overflow: ellipsis;
 }
 
-.contextChainMeta {
-  font-size: 0.75rem;
+.panelCadenaTextos span {
+  font-size: 0.7rem;
   color: #8b949e;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.contextChainActions {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+.panelCadenaChevron {
+  color: #8b949e;
   flex-shrink: 0;
 }
 
-.contextChainBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: transparent;
-  border: 1px solid rgba(76, 101, 230, 0.3);
+.panelEnlace {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--color-azul-bind-300, #8a9fff);
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.35rem 0.7rem;
-  border-radius: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
   cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
-  white-space: nowrap;
 }
 
-.contextChainBtn:hover {
-  background: rgba(76, 101, 230, 0.1);
-  border-color: rgba(76, 101, 230, 0.5);
+.panelEnlace:hover {
   color: #ffffff;
 }
 
-.contextChainBtnGhost {
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #8b949e;
+/* ── MÉTRICAS ──────────────────────────────────────────── */
+.metricas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
 }
 
-.contextChainBtnGhost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+.metricasMovil {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.contextDivider {
-  width: 1px;
-  align-self: stretch;
-  background: rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
-}
-
-@media (max-width: 56rem) {
-  .contextDivider {
+@media (min-width: 74rem) {
+  .metricasMovil {
     display: none;
   }
 }
 
-/* ── ESTADÍSTICAS COMPACTAS: sin cards, sin blur, solo
-   label/valor separados por un divisor fino ─────────────── */
-.contextStats {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  flex-shrink: 0;
-}
-
-.statBlock {
+.metrica {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  min-width: 3.5rem;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
 }
 
-.statLabel {
-  font-size: 0.65rem;
+.metricas .metrica {
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.metricasMovil .metrica {
+  padding: 0.5rem 0.55rem;
+}
+
+.metricasMovil .metricaEtiqueta {
+  font-size: 0.56rem;
+  letter-spacing: 0.03em;
+}
+
+.metricasMovil .metrica + .metrica {
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.metricaEtiqueta {
+  font-size: 0.6rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.statValue {
-  font-size: 1.15rem;
+.metricaValor {
+  font-size: 0.95rem;
   font-weight: 800;
   color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statValueWarning {
@@ -310,25 +374,7 @@
   color: var(--success-green, #3ddc84);
 }
 
-.statDivider {
-  width: 1px;
-  height: 1.75rem;
-  background: rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
-}
-
-/* ── BARRA DE FILTROS — mismo patrón que Solicitudes.jsx del
-   lado cliente, en tema azul admin ──────────────────────── */
-.filterBar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 0.875rem;
-  padding: 0.875rem 1.125rem;
-}
-
+/* ── FILTROS ───────────────────────────────────────────── */
 .searchBox {
   position: relative;
   display: flex;
@@ -380,72 +426,135 @@
   font-weight: 400;
 }
 
-.filterFieldsRow {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.6rem;
+.panelGrupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.filterField {
-  min-width: 0;
-}
-
-.clearFiltersBtn {
-  display: inline-flex;
+.panelGrupoCabecera {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  align-self: flex-end;
-  flex-shrink: 0;
-  width: 2.35rem;
-  height: 2.35rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.6rem;
-  color: #8b949e;
-  font-size: 1rem;
+  justify-content: space-between;
+}
+
+.panelRotulo {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.estados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.estado {
+  --punto: #6e7681;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  height: 1.85rem;
+  padding: 0 0.55rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: none;
+  color: #c9d1d9;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: left;
   cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    background 0.2s ease;
 }
 
-.clearFiltersBtnVisible {
-  opacity: 1;
-  pointer-events: auto;
+.estado:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.clearFiltersBtn:hover {
-  color: var(--color-azul-bind-300, #8a9fff);
-  border-color: rgba(76, 101, 230, 0.4);
-  background: rgba(76, 101, 230, 0.08);
+.estado_todos {
+  --punto: #30363d;
 }
 
-@media (min-width: 64rem) {
-  .filterBar {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.875rem;
-  }
+.estado_pendiente {
+  --punto: #f5a623;
+}
 
-  .searchBox {
-    flex: 1 1 14rem;
-    min-width: 10rem;
-  }
+.estado_aprobada {
+  --punto: var(--success-green, #3ddc84);
+}
 
-  .filterFieldsRow {
-    grid-template-columns: repeat(4, minmax(9rem, 12rem));
-    flex: 0 1 auto;
-  }
+.estado_rechazada {
+  --punto: #ff7b72;
+}
 
-  .clearFiltersBtn {
-    align-self: center;
-    margin-left: auto;
-  }
+.estadoPunto {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--punto);
+  flex-shrink: 0;
+}
+
+.estadoCantidad {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b949e;
+  font-variant-numeric: tabular-nums;
+}
+
+.estadoActivo,
+.estadoActivo:hover {
+  background: rgba(76, 101, 230, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(76, 101, 230, 0.4);
+  color: #ffffff;
+}
+
+.fechas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.orden {
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ordenOpcion {
+  flex: 1;
+  height: 1.85rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: none;
+  color: #8b949e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ordenOpcion:hover {
+  color: #ffffff;
+}
+
+.ordenOpcionActiva,
+.ordenOpcionActiva:hover {
+  background: rgba(76, 101, 230, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(76, 101, 230, 0.45);
+  color: #ffffff;
+}
+
+.filtrosHoja {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
 
 /* ── LISTA ───────────────────────────────────────────────── */
@@ -544,17 +653,15 @@
 @media (min-width: 64rem) {
   .row {
     display: grid;
-    grid-template-columns: auto minmax(
-        12rem,
-        1fr
-      ) 7.5rem 8rem 2rem 17rem 1.25rem;
+    grid-template-columns: auto minmax(12rem, 1fr) 7.5rem 8rem 14.5rem 1.25rem;
     align-items: center;
     gap: 1rem;
   }
 }
 
+
 .rowSpacer {
-  min-width: 0;
+  display: none;
 }
 
 .rowClickable {
@@ -696,6 +803,28 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (min-width: 74rem) {
+  .row {
+    column-gap: 0.75rem;
+  }
+
+  .rowChips {
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .rowChip {
+    flex-shrink: 0;
+  }
+
+  .rowCadena {
+    display: block;
+    flex-shrink: 1;
+    min-width: 2.5rem;
+    line-height: 1.35;
+  }
 }
 
 .rowChipOk {
@@ -1289,29 +1418,6 @@
   }
 
   .rowActions:empty {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .clearFiltersBtn {
-    display: none;
-  }
-
-  .clearFiltersBtnVisible {
-    display: inline-flex;
-  }
-}
-
-@media (max-width: 480px) {
-  .contextStats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem 1rem;
-    width: 100%;
-  }
-
-  .statDivider {
     display: none;
   }
 }

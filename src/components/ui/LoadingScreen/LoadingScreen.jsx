@@ -54,7 +54,7 @@ function Flor({ className, tamano }) {
   );
 }
 
-export function LoadingScreen({ title, message, absolute = false, variante: varianteForzada }) {
+export function LoadingScreen({ title, message, absolute = false, variante: varianteForzada, children }) {
   const variante = useVarianteCarga(varianteForzada);
 
   const content = (
@@ -92,6 +92,7 @@ export function LoadingScreen({ title, message, absolute = false, variante: vari
 
         {title && <h3 className={styles.titulo}>{title}</h3>}
         {message && <p className={styles.mensaje}>{message}</p>}
+        {children && <div className={styles.acciones}>{children}</div>}
 
         {variante === "ensamble" && (
           <span className={styles.puntos} aria-hidden="true">

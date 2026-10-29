@@ -302,3 +302,14 @@
     width: 0.75rem;
   }
 }
+
+.pieAyudaError {
+  color: #ff7b72;
+}
+
+@media (max-width: 35.99rem) {
+  .pieAyuda.pieAyudaError {
+    display: block;
+    flex: 1 1 100%;
+  }
+}

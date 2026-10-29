@@ -344,7 +344,6 @@ export default function LineasCadena() {
   const [activeLinea, setActiveLinea] = useState(null);
   const [activeLineaProductosId, setActiveLineaProductosId] = useState(null);
   const [togglingLineas, setTogglingLineas] = useState(new Set());
-  const [formErrors, setFormErrors] = useState({});
   // Snapshot del formData al abrir el modal en modo edición: permite
   // deshabilitar "GUARDAR CAMBIOS" si no se modificó nada (estándar de UX
   // para evitar PUTs sin cambios reales). null en modo creación, donde no
@@ -471,12 +470,6 @@ export default function LineasCadena() {
 
   const handleInputChange = (field, val) => {
     setFormData((prev) => ({ ...prev, [field]: val }));
-    setFormErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
   };
 
   const handleToggleStatus = (linea, field, isChecked) => {
@@ -515,7 +508,6 @@ export default function LineasCadena() {
 
   const handleOpenCreateModal = () => {
     setActiveLinea(null);
-    setFormErrors({});
     setFormDataInicial(null);
     setFormData({
       tipolimiteid: "",
@@ -535,7 +527,6 @@ export default function LineasCadena() {
 
   const handleOpenEditModal = (linea) => {
     setActiveLinea(linea);
-    setFormErrors({});
 
     const datosLinea = {
       tipolimiteid: String(linea.tipolimiteid),
@@ -582,31 +573,34 @@ export default function LineasCadena() {
     if (formData.monedaLineaId) {
       if (!formData.montoLinea || montoLineaIngresado <= 0) {
         errores.montoLinea = "Ingresá el monto de la línea";
-      } else if (montoMaximoCV > 0 && montoLineaIngresado > montoMaximoCV) {
-        errores.montoLinea = `Supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
       }
     }
 
     if (formData.monedaContratoId) {
       if (!formData.montoContrato || montoContratoIngresado <= 0) {
         errores.montoContrato = "Ingresá el monto del contrato";
-      } else if (
-        montoLineaIngresado > 0 &&
-        montoLineaIngresado > montoContratoIngresado
-      ) {
-        errores.montoContrato = "El monto de línea no puede ser mayor al del contrato";
       }
     }
 
     return errores;
   };
 
+  const reglaIncumplida = () => {
+    if (montoMaximoCV > 0 && montoLineaIngresado > montoMaximoCV) {
+      return `El monto de la línea supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
+    }
+    if (montoLineaIngresado > 0 && montoContratoIngresado > 0 && montoLineaIngresado > montoContratoIngresado) {
+      return "El monto de la línea no puede ser mayor al del contrato";
+    }
+    return null;
+  };
+
+  const errorRegla = reglaIncumplida();
+  const faltanObligatorios = Object.keys(validarFormulario()).length > 0;
+
   const handleSubmitForm = (e) => {
     e.preventDefault();
-
-    const errores = validarFormulario();
-    setFormErrors(errores);
-    if (Object.keys(errores).length > 0) return;
+    if (faltanObligatorios || errorRegla) return;
 
     const rawMontoLinea = limpiarMonto(formData.montoLinea);
     const rawMontoContrato = limpiarMonto(formData.montoContrato);
@@ -737,7 +731,9 @@ export default function LineasCadena() {
         preventClose={crearMutation.isPending || actualizarMutation.isPending}
         footer={
           <>
-            <span className={styles.pieAyuda}>Los campos con * son obligatorios</span>
+            <span className={`${styles.pieAyuda} ${errorRegla ? styles.pieAyudaError : ""}`}>
+              {errorRegla || "Los campos con * son obligatorios"}
+            </span>
             <Button
               type="button"
               variant="adminNeutro"
@@ -751,8 +747,20 @@ export default function LineasCadena() {
               form="form-linea-credito"
               variant="blue"
               isLoading={crearMutation.isPending || actualizarMutation.isPending}
-              disabled={crearMutation.isPending || actualizarMutation.isPending || sinCambios}
-              title={sinCambios ? "No hay cambios para guardar" : undefined}
+              disabled={
+                crearMutation.isPending ||
+                actualizarMutation.isPending ||
+                sinCambios ||
+                faltanObligatorios ||
+                !!errorRegla
+              }
+              title={
+                sinCambios
+                  ? "No hay cambios para guardar"
+                  : faltanObligatorios
+                    ? "Completá los campos obligatorios"
+                    : errorRegla || undefined
+              }
             >
               {activeLinea ? "Guardar cambios" : "Crear línea"}
             </Button>
@@ -814,8 +822,7 @@ export default function LineasCadena() {
                   }
                 }}
                 disabled={!!activeLinea}
-                error={formErrors.tipolimiteid}
-                hideErrorSpace={!formErrors.tipolimiteid}
+                hideErrorSpace
               />
             </div>
             <div className={styles.formGroup}>
@@ -842,7 +849,7 @@ export default function LineasCadena() {
                   options={currenciesOptions}
                   value={formData.monedaLineaId}
                   onChange={(val) => handleInputChange("monedaLineaId", val)}
-                  error={formErrors.monedaLineaId}
+                  hideErrorSpace
                 />
               </div>
               <div className={styles.formGroup}>
@@ -860,7 +867,6 @@ export default function LineasCadena() {
                     max={3650}
                     thousandsSeparator="."
                     lazy={false}
-                    error={formErrors.diasVigenciaLinea}
                   />
                   <span className={styles.unitSuffix}>días</span>
                 </div>
@@ -890,7 +896,6 @@ export default function LineasCadena() {
                     },
                   }}
                   lazy={false}
-                  error={formErrors.montoLinea}
                   disabled={!formData.monedaLineaId}
                   sinIconos
                 />
@@ -899,7 +904,7 @@ export default function LineasCadena() {
                     Elegí primero la moneda de la línea
                   </span>
                 )}
-                {!formErrors.montoLinea && (
+                {formData.monedaLineaId && (
                   <MontoEnPalabras value={limpiarMonto(formData.montoLinea)} />
                 )}
               </div>
@@ -945,7 +950,7 @@ export default function LineasCadena() {
                   options={currenciesOptions}
                   value={formData.monedaContratoId}
                   onChange={(val) => handleInputChange("monedaContratoId", val)}
-                  error={formErrors.monedaContratoId}
+                  hideErrorSpace
                 />
               </div>
               <div className={styles.formGroup}>
@@ -963,7 +968,6 @@ export default function LineasCadena() {
                     max={3650}
                     thousandsSeparator="."
                     lazy={false}
-                    error={formErrors.diasVigenciaContrato}
                   />
                   <span className={styles.unitSuffix}>días</span>
                 </div>
@@ -993,7 +997,6 @@ export default function LineasCadena() {
                     },
                   }}
                   lazy={false}
-                  error={formErrors.montoContrato}
                   disabled={!formData.monedaContratoId}
                   sinIconos
                 />
@@ -1002,7 +1005,7 @@ export default function LineasCadena() {
                     Elegí primero la moneda del contrato
                   </span>
                 )}
-                {!formErrors.montoContrato && (
+                {formData.monedaContratoId && (
                   <MontoEnPalabras value={limpiarMonto(formData.montoContrato)} />
                 )}
               </div>

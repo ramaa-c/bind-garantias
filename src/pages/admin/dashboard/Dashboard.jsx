@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder, FiLayers, FiEye } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronDown, FiSliders, FiRefreshCw, FiClock, FiFolder, FiLayers, FiEye } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
+import { LoadingScreen } from "../../../components/ui/LoadingScreen/LoadingScreen";
 import { obtenerInicialesEmpresa } from "../../../utils/empresaAvatar";
 import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
 import { Modal } from "../../../components/ui/Modal/Modal";
@@ -142,15 +143,8 @@ export default function Dashboard() {
   const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
     porDefecto: ELEMENTOS_POR_PAGINA,
   });
-  // Colapsado por defecto solo en Rango 2 (pantalla chica/zoom alto, mismo
-  // umbral que AdminLayout.module.css): ahí es donde el espacio es
-  // crítico. En Rango 1 sobra aire, así que arranca abierto - cerrarlo ahí
-  // sería un clic gratis en contra. Es solo el estado INICIAL (no
-  // reacciona en vivo a un cambio de zoom con la pantalla montada): el
-  // operador lo puede abrir/cerrar con el botón en cualquier momento.
-  const [panelesVisibles, setPanelesVisibles] = useState(
-    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
-  );
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
@@ -206,9 +200,9 @@ export default function Dashboard() {
   const { porModelo: parametrosPorModelo } = useParametrosModelosDocumento(modelosDocumentoIds);
 
   const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
-  const { data: limitesData, isLoading: isLoadingLimites } =
+  const { data: limitesData, isLoading: isLoadingLimites, refetch: refetchLimites } =
     useObtenerLimites(targetCadenaId > 0 ? targetCadenaId : undefined);
-  const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
+  const { data: sociosData, isLoading: isLoadingSocios, refetch: refetchSocios } = useObtenerSocios();
   const actualizarEstadoMutation = useActualizarLimiteSocio();
   const migrarLineaMutation = useMigrarLinea();
   const queryClient = useQueryClient();
@@ -230,6 +224,20 @@ export default function Dashboard() {
   );
 
   const loading = isLoadingLimites || isLoadingSocios;
+  const cargaInicial = loading && !limitesData && !sociosData;
+  const [cargaDemorada, setCargaDemorada] = useState(false);
+
+  useEffect(() => {
+    if (!cargaInicial) return undefined;
+    const id = setTimeout(() => setCargaDemorada(true), 15000);
+    return () => clearTimeout(id);
+  }, [cargaInicial]);
+
+  const reintentarCarga = () => {
+    setCargaDemorada(false);
+    refetchLimites();
+    refetchSocios();
+  };
 
   // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
   // porque migrarSocioSiCorresponde necesita leer el MarcaVinculacion del
@@ -696,153 +704,159 @@ export default function Dashboard() {
         })
       : null;
 
-  return (
-    <div className={styles.container} ref={contenedorRef}>
-      <div className={styles.header}>
-        <h1>Gestión de Solicitudes</h1>
-        <button
-          type="button"
-          className={styles.toggleFiltersBtn}
-          onClick={() => setPanelesVisibles((v) => !v)}
-          aria-expanded={panelesVisibles}
-          title={panelesVisibles ? "Ocultar cadena y filtros" : "Mostrar cadena y filtros"}
-        >
-          {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
-          {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
-          {/* Con el panel colapsado, esta es la única señal de que la lista
-              de abajo está filtrada y no es el total real - sin esto el
-              operador puede leerla como completa por error. */}
-          {!panelesVisibles && hayFiltrosActivos && (
-            <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
-          )}
-        </button>
-      </div>
-
-      {/* Colapsable: subtítulo + franja de contexto + filtros. En pantallas
-          chicas (no full HD) este bloque es el que más espacio vertical le
-          come a la lista, así que se puede ocultar entero con un clic y
-          ver más solicitudes sin scrollear. */}
-      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
-        <div className={styles.collapsiblePanelInner}>
-        <p className={styles.subtitle}>Procesá las solicitudes de línea de todas las cadenas de valor activas en el sistema.</p>
-
-        {/* Franja de contexto: cadena seleccionada + métricas, en una sola línea */}
-        <div className={styles.contextBar}>
-        {loading ? (
-          <>
-            <div className={styles.contextChain}>
-              <Skeleton width="2.5rem" height="2.5rem" radius="0.625rem" />
-              <div style={{ flex: 1 }}>
-                <Skeleton height="0.9rem" width="55%" />
-                <Skeleton height="0.7rem" width="35%" style={{ marginTop: "0.3rem" }} />
-              </div>
-            </div>
-            <Skeleton width="9rem" height="1.5rem" />
-          </>
-        ) : (
-          <>
-            <div className={styles.contextChain}>
-              {selectedCadenaId === "all" ? (
-                <div className={styles.contextChainIcon}>
-                  <FiGlobe size={20} />
-                </div>
-              ) : selectedChain?.logo ? (
-                <div className={styles.contextChainLogo}>
-                  <img
-                    src={
-                      selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
-                        ? selectedChain.logo
-                        : `data:image/png;base64,${selectedChain.logo}`
-                    }
-                    alt={selectedChain.denominacion}
-                  />
-                </div>
-              ) : (
-                <div className={styles.contextChainIcon}>
-                  <FiGrid size={20} />
-                </div>
-              )}
-              <div className={styles.contextChainInfo}>
-                <span className={styles.contextChainName}>
-                  {selectedCadenaId === "all"
-                    ? "Consolidado General"
-                    : selectedChain?.denominacion || "Cargando..."}
-                </span>
-                <span className={styles.contextChainMeta}>
-                  {selectedCadenaId === "all"
-                    ? "Todas las cadenas de valor"
-                    : `Ref: ${selectedChain?.referencia || "Sin ref"} · #${selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}`}
-                </span>
-              </div>
-              {/* Con una sola cadena vinculada (unicaCadenaRestringida) no hay
-                  nada para elegir ni para "ver todas" — ambos botones
-                  implican una alternativa que no existe. */}
-              {!unicaCadenaRestringida && (
-                <div className={styles.contextChainActions}>
-                  <button
-                    type="button"
-                    className={styles.contextChainBtn}
-                    onClick={() => {
-                      setChainSearchQuery("");
-                      setIsChainModalOpen(true);
-                    }}
-                  >
-                    {selectedCadenaId === "all" ? "Seleccionar cadena" : "Cambiar"} <FiChevronRight size={13} />
-                  </button>
-                  {selectedCadenaId !== "all" && (
-                    <button
-                      type="button"
-                      className={`${styles.contextChainBtn} ${styles.contextChainBtnGhost}`}
-                      onClick={() => handleSelectCadena("all")}
-                    >
-                      Ver todas
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className={styles.contextDivider} />
-
-            <div className={styles.contextStats}>
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Líneas</span>
-                <span className={styles.statValue}>{solicitudesCanal.length}</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Volumen</span>
-                <span className={styles.statValue}>$ {(totalMonto / 1000000).toFixed(1)}M</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Pendientes</span>
-                <span className={`${styles.statValue} ${styles.statValueWarning}`}>{totalPendientes}</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Aprobadas</span>
-                <span className={`${styles.statValue} ${styles.statValueSuccess}`}>{totalAprobadas}</span>
-              </div>
-            </div>
-          </>
+  if (cargaInicial) {
+    return (
+      <LoadingScreen
+        title={cargaDemorada ? "Está tardando más de lo habitual" : "Preparando el panel"}
+        message={
+          cargaDemorada
+            ? "Seguimos esperando la respuesta del servidor. Podés esperar o volver a intentar."
+            : "Cargando solicitudes y empresas..."
+        }
+      >
+        {cargaDemorada && (
+          <Button variant="adminSuave" onClick={reintentarCarga}>
+            <FiRefreshCw aria-hidden="true" /> Reintentar
+          </Button>
         )}
+      </LoadingScreen>
+    );
+  }
+
+  const contarEstado = (valor) =>
+    valor === "todos"
+      ? solicitudesCanal.length
+      : solicitudesCanal.filter((s) => s.estado.toLowerCase().includes(valor)).length;
+
+  const cantidadFiltrosActivos = [
+    busqueda,
+    filtroEstado !== FILTROS_POR_DEFECTO.filtroEstado,
+    orden !== FILTROS_POR_DEFECTO.orden,
+    fechaDesde,
+    fechaHasta,
+  ].filter(Boolean).length;
+
+  const abrirSelectorCadena = () => {
+    setChainSearchQuery("");
+    setIsChainModalOpen(true);
+  };
+
+  const logoCadena = selectedChain?.logo
+    ? selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
+      ? selectedChain.logo
+      : `data:image/png;base64,${selectedChain.logo}`
+    : null;
+
+  const fichaCadena = loading ? (
+    <div className={styles.panelCadena}>
+      <Skeleton width="2.25rem" height="2.25rem" radius="0.6rem" />
+      <div style={{ flex: 1 }}>
+        <Skeleton height="0.85rem" width="70%" />
+        <Skeleton height="0.7rem" width="50%" style={{ marginTop: "0.3rem" }} />
+      </div>
+    </div>
+  ) : (
+    <div className={styles.panelCadenaGrupo}>
+      <button
+        type="button"
+        className={styles.panelCadena}
+        onClick={abrirSelectorCadena}
+        disabled={unicaCadenaRestringida}
+        title={unicaCadenaRestringida ? undefined : "Cambiar de cadena"}
+      >
+        {selectedCadenaId !== "all" && logoCadena ? (
+          <span className={styles.panelCadenaLogo}>
+            <img src={logoCadena} alt="" />
+          </span>
+        ) : (
+          <span className={styles.panelCadenaIcono}>
+            {selectedCadenaId === "all" ? <FiGlobe /> : <FiGrid />}
+          </span>
+        )}
+        <span className={styles.panelCadenaTextos}>
+          <strong>{selectedCadenaId === "all" ? "Consolidado general" : selectedChain?.denominacion || "Cargando..."}</strong>
+          <span>
+            {selectedCadenaId === "all"
+              ? "Todas las cadenas"
+              : `Ref: ${selectedChain?.referencia || "Sin ref"} · #${selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}`}
+          </span>
+        </span>
+        {!unicaCadenaRestringida && <FiChevronDown className={styles.panelCadenaChevron} aria-hidden="true" />}
+      </button>
+      {selectedCadenaId !== "all" && !unicaCadenaRestringida && (
+        <button type="button" className={styles.panelEnlace} onClick={() => handleSelectCadena("all")}>
+          Ver todas las cadenas
+        </button>
+      )}
+    </div>
+  );
+
+  const metricas = [
+    { etiqueta: "Líneas", valor: solicitudesCanal.length },
+    { etiqueta: "Volumen", valor: `$ ${(totalMonto / 1000000).toFixed(1)}M` },
+    { etiqueta: "Pendientes", valor: totalPendientes, clase: styles.statValueWarning },
+    { etiqueta: "Aprobadas", valor: totalAprobadas, clase: styles.statValueSuccess },
+  ];
+
+  const renderMetricas = (clase) => (
+    <div className={clase}>
+      {metricas.map(({ etiqueta, valor, clase: claseValor }) => (
+        <div key={etiqueta} className={styles.metrica}>
+          <span className={styles.metricaEtiqueta}>{etiqueta}</span>
+          {loading ? (
+            <Skeleton height="1rem" width="60%" />
+          ) : (
+            <span className={`${styles.metricaValor} ${claseValor || ""}`}>{valor}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const filtros = (
+    <>
+      <div className={styles.searchBox}>
+        <FiSearch className={styles.searchIcon} />
+        <input
+          type="text"
+          placeholder="Cliente, CUIT, usuario o N°"
+          value={busqueda}
+          onChange={(e) => handleBusqueda(e.target.value)}
+          className={styles.searchInput}
+          aria-label="Buscar por cliente, CUIT, usuario o N° de solicitud"
+        />
       </div>
 
-      {/* Barra de filtros — mismo patrón que Solicitudes.jsx del cliente */}
-      <div className={styles.filterBar}>
-        <div className={styles.searchBox}>
-          <FiSearch className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Buscar por Cliente, CUIT, Usuario o N° Solicitud..."
-            value={busqueda}
-            onChange={(e) => handleBusqueda(e.target.value)}
-            className={styles.searchInput}
-          />
+      <div className={styles.panelGrupo}>
+        <div className={styles.panelGrupoCabecera}>
+          <span className={styles.panelRotulo}>Estado</span>
+          {hayFiltrosActivos && (
+            <button type="button" className={styles.panelEnlace} onClick={handleLimpiarFiltros}>
+              Limpiar
+            </button>
+          )}
         </div>
+        <div className={styles.estados} role="radiogroup" aria-label="Estado">
+          {opcionesEstado.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={filtroEstado === value}
+              className={`${styles.estado} ${styles[`estado_${value}`]} ${filtroEstado === value ? styles.estadoActivo : ""}`}
+              onClick={() => handleFiltroEstado(value)}
+            >
+              <span className={styles.estadoPunto} aria-hidden="true" />
+              {value === "todos" ? "Todos" : label}
+              <span className={styles.estadoCantidad}>{loading ? "–" : contarEstado(value)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-        <div className={styles.filterFieldsRow}>
+      <div className={styles.panelGrupo}>
+        <span className={styles.panelRotulo}>Fecha de creación</span>
+        <div className={styles.fechas}>
           <SelectFechaSimple
             label="Desde"
             value={fechaDesde}
@@ -852,7 +866,6 @@ export default function Dashboard() {
             variant="admin"
             compact
             hideErrorSpace
-            className={styles.filterField}
           />
           <SelectFechaSimple
             label="Hasta"
@@ -863,209 +876,258 @@ export default function Dashboard() {
             variant="admin"
             compact
             hideErrorSpace
-            className={styles.filterField}
           />
-          <SelectSimple
-            label="Estado"
-            value={filtroEstado}
-            onChange={handleFiltroEstado}
-            options={opcionesEstado}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-          <SelectSimple
-            label="Orden"
-            value={orden}
-            onChange={handleOrden}
-            options={opcionesOrden}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-        </div>
-
-        <button
-          type="button"
-          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
-          onClick={handleLimpiarFiltros}
-          disabled={!hayFiltrosActivos}
-          tabIndex={hayFiltrosActivos ? 0 : -1}
-          title="Limpiar filtros"
-          aria-label="Limpiar filtros"
-        >
-          <FiX />
-        </button>
-        </div>
         </div>
       </div>
 
-      {/* Lista de solicitudes */}
-      <div className={styles.listWrapper} ref={listaRef}>
-        {loading ? (
-          Array.from({ length: 5 }).map((_, i) => <SolicitudRowSkeleton key={i} />)
-        ) : filtradas.length === 0 ? (
-          <SinResultados
-            className={styles.emptyState}
-            message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
-          />
-        ) : (
-          filtradasPagina.map((item) => {
-            const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
-            const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
-            const isCancelada =
-              item.tipoLimiteEstadoId === ESTADO_CANCELADA ||
-              item.tipoLimiteEstadoId === ESTADO_VENCIDA;
-            const isPendiente = Number(item.tipoLimiteEstadoId) === ESTADO_PENDIENTE;
-            const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
+      <div className={styles.panelGrupo}>
+        <span className={styles.panelRotulo}>Orden</span>
+        <div className={styles.orden} role="radiogroup" aria-label="Orden">
+          {opcionesOrden.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={orden === value}
+              className={`${styles.ordenOpcion} ${orden === value ? styles.ordenOpcionActiva : ""}`}
+              onClick={() => handleOrden(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
 
-            // La previsualización del documento es solo para solicitudes
-            // pendientes: en los demás estados la operación ya se resolvió.
-            const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
-            const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
-            const tieneApoderadoFirmante = apoderadoFirmantePorSocio.get(Number(item.socioid));
-            const modeloDocumento = isPendiente
-              ? evaluarModeloDocumento({
-                  solicitud: item,
-                  modeloDocumentoId,
-                  parametrosCatalogo: parametrosModelo,
-                  tieneApoderadoFirmante,
-                })
-              : null;
+  return (
+    <div className={styles.container} ref={contenedorRef} data-ancho-completo>
+      <div className={styles.layout}>
+        <aside className={styles.panel} aria-label="Cadena y filtros">
+          {fichaCadena}
+          {renderMetricas(styles.metricas)}
+          {filtros}
+        </aside>
 
-            return (
-              <div
-                key={item.id}
-                data-fila
-                className={`${styles.row} ${styles.rowClickable} ${styles[`row${estadoKey}`]}`}
-                onClick={() => setSolicitudDetalle(item)}
-                title="Ver detalle de la solicitud"
-              >
-                <div className={`${styles.rowAvatar} ${styles[`avatar${estadoKey}`] || ""}`}>
-                  {getIniciales(item.cliente)}
-                </div>
+        <section className={styles.principal}>
+          <div className={styles.header}>
+            <h1>Gestión de Solicitudes</h1>
+            {!loading && (
+              <span className={styles.headerResumen}>
+                {filtradas.length === solicitudesCanal.length
+                  ? `${solicitudesCanal.length} solicitudes`
+                  : `${filtradas.length} de ${solicitudesCanal.length} solicitudes`}
+              </span>
+            )}
+            {!loading && filtradas.length > 0 && (
+              <div className={styles.paginacionCompacta}>
+                <Paginacion
+                  page={paginaActual}
+                  onPageChange={setPagina}
+                  hasMoreData={paginaActual < totalPaginas}
+                  knownEndPage={totalPaginas}
+                  variant="admin"
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              className={styles.filtrosBtn}
+              onClick={() => setFiltrosAbiertos(true)}
+            >
+              <FiSliders aria-hidden="true" /> Filtros
+              {cantidadFiltrosActivos > 0 && <span className={styles.filtrosBadge}>{cantidadFiltrosActivos}</span>}
+            </button>
+          </div>
 
-                <div className={styles.rowIdentity}>
-                  <span className={styles.rowClientName}>{item.cliente}</span>
-                  <span className={styles.rowMeta}>
-                    N°{item.id} · {item.lineaNombre || item.tipo} · CUIT {item.cuit}
-                  </span>
-                  <span className={styles.rowChips}>
-                    {item.cadenaNombre && (
-                      <span className={styles.rowCadena} title={item.cadenaNombreCompleto || item.cadenaNombre}>
-                        {item.cadenaNombre}
+          {renderMetricas(styles.metricasMovil)}
+
+          {/* Lista de solicitudes */}
+          <div className={styles.listWrapper} ref={listaRef}>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => <SolicitudRowSkeleton key={i} />)
+            ) : filtradas.length === 0 ? (
+              <SinResultados
+                className={styles.emptyState}
+                message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
+              />
+            ) : (
+              filtradasPagina.map((item) => {
+                const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
+                const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
+                const isCancelada =
+                  item.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+                  item.tipoLimiteEstadoId === ESTADO_VENCIDA;
+                const isPendiente = Number(item.tipoLimiteEstadoId) === ESTADO_PENDIENTE;
+                const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
+
+                // La previsualización del documento es solo para solicitudes
+                // pendientes: en los demás estados la operación ya se resolvió.
+                const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
+                const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
+                const tieneApoderadoFirmante = apoderadoFirmantePorSocio.get(Number(item.socioid));
+                const modeloDocumento = isPendiente
+                  ? evaluarModeloDocumento({
+                      solicitud: item,
+                      modeloDocumentoId,
+                      parametrosCatalogo: parametrosModelo,
+                      tieneApoderadoFirmante,
+                    })
+                  : null;
+
+                return (
+                  <div
+                    key={item.id}
+                    data-fila
+                    className={`${styles.row} ${styles.rowClickable} ${styles[`row${estadoKey}`]}`}
+                    onClick={() => setSolicitudDetalle(item)}
+                    title="Ver detalle de la solicitud"
+                  >
+                    <div className={`${styles.rowAvatar} ${styles[`avatar${estadoKey}`] || ""}`}>
+                      {getIniciales(item.cliente)}
+                    </div>
+
+                    <div className={styles.rowIdentity}>
+                      <span className={styles.rowClientName}>{item.cliente}</span>
+                      <span className={styles.rowMeta}>
+                        N°{item.id} · {item.lineaNombre || item.tipo} · CUIT {item.cuit}
                       </span>
-                    )}
-                    <span className={styles.rowChip}>
-                      <FiClock aria-hidden="true" /> Creada {formatearFechaHoraFila(item.creadoISO)}
+                      <span className={styles.rowChips}>
+                        {item.cadenaNombre && (
+                          <span className={styles.rowCadena} title={item.cadenaNombreCompleto || item.cadenaNombre}>
+                            {item.cadenaNombre}
+                          </span>
+                        )}
+                        <span className={styles.rowChip}>
+                          <FiClock aria-hidden="true" /> Creada {formatearFechaHoraFila(item.creadoISO)}
+                        </span>
+                        <span
+                          className={`${styles.rowChip} ${item.legajoMigrado ? styles.rowChipOk : styles.rowChipPendiente}`}
+                        >
+                          {item.legajoMigrado ? <FiCheck aria-hidden="true" /> : <FiFolder aria-hidden="true" />}
+                          {item.legajoMigrado ? "Migrado a SGR+" : "Sin migrar a SGR+"}
+                        </span>
+                      </span>
+                    </div>
+
+                    <span className={`${styles.rowPill} ${styles[`pill${estadoKey}`]}`}>
+                      <span className={styles.statusDot} />
+                      {item.estado}
                     </span>
-                    <span
-                      className={`${styles.rowChip} ${item.legajoMigrado ? styles.rowChipOk : styles.rowChipPendiente}`}
-                    >
-                      {item.legajoMigrado ? <FiCheck aria-hidden="true" /> : <FiFolder aria-hidden="true" />}
-                      {item.legajoMigrado ? "Migrado a SGR+" : "Sin migrar a SGR+"}
-                    </span>
-                  </span>
-                </div>
 
-                <span className={`${styles.rowPill} ${styles[`pill${estadoKey}`]}`}>
-                  <span className={styles.statusDot} />
-                  {item.estado}
-                </span>
+                    <div className={styles.rowAmountBlock}>
+                      <span className={styles.rowAmountLabel}>Monto</span>
+                      <span className={styles.rowAmount}>
+                        {item.moneda || "$"} {item.monto}
+                      </span>
+                    </div>
 
-                <div className={styles.rowAmountBlock}>
-                  <span className={styles.rowAmountLabel}>Monto</span>
-                  <span className={styles.rowAmount}>
-                    {item.moneda || "$"} {item.monto}
-                  </span>
-                </div>
+                    <div className={styles.rowSpacer} />
 
-                <div className={styles.rowSpacer} />
-
-                {/* "Ver detalle" ya no es un botón acá: toda la fila lo abre
-                    (ver onClick arriba) - el chevron solo la señaliza. Los
-                    botones que quedan son decisiones reales, por eso cortan
-                    la propagación del click para no disparar el detalle
-                    encima. */}
-                <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
-                  {/* Siempre seguido de otra acción (CRITERIOS si el admin
-                      está restringido, ACEPTAR/RECHAZAR si no), así que el
-                      divisor va sin condición extra. */}
-                  {isPendiente && (
-                    <>
-                      <BotonIcono
-                        icon={FiFileText}
-                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo, tieneApoderadoFirmante)}
-                        title={modeloDocumento.motivo || "Previsualizar documento"}
-                        isLoading={pendienteModeloDocumentoId === item.id}
-                        className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}
-                      />
-                      <span className={styles.actionsDivider} />
-                    </>
-                  )}
-                  {isRestricted ? (
-                    <Button
-                      onClick={() => setSolicitudCda(item)}
-                      variant="outlineBlue"
-                      size="sm"
-                    >
-                      <FiList /> CRITERIOS
-                    </Button>
-                  ) : (
-                    <>
-                      {isAprobada && (
+                    {/* "Ver detalle" ya no es un botón acá: toda la fila lo abre
+                        (ver onClick arriba) - el chevron solo la señaliza. Los
+                        botones que quedan son decisiones reales, por eso cortan
+                        la propagación del click para no disparar el detalle
+                        encima. */}
+                    <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                      {/* Siempre seguido de otra acción (CRITERIOS si el admin
+                          está restringido, ACEPTAR/RECHAZAR si no), así que el
+                          divisor va sin condición extra. */}
+                      {isPendiente && (
+                        <>
+                          <BotonIcono
+                            icon={FiFileText}
+                            onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo, tieneApoderadoFirmante)}
+                            title={modeloDocumento.motivo || "Previsualizar documento"}
+                            isLoading={pendienteModeloDocumentoId === item.id}
+                            className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}
+                          />
+                          <span className={styles.actionsDivider} />
+                        </>
+                      )}
+                      {isRestricted ? (
                         <Button
-                          onClick={() => handleReintentarMigracion(item)}
+                          onClick={() => setSolicitudCda(item)}
                           variant="outlineBlue"
                           size="sm"
-                          title={
-                            item.faltantesContacto.length > 0 && !item.legajoMigrado
-                              ? `La empresa todavía no tiene ${item.faltantesContacto.join(" ni ")}`
-                              : "Reintentar la migración de esta línea a SGR+"
-                          }
-                          disabled={
-                            migrarLineaMutation.isPending || (item.faltantesContacto.length > 0 && !item.legajoMigrado)
-                          }
                         >
-                          <FiRefreshCw /> MIGRAR
+                          <FiList /> CRITERIOS
                         </Button>
+                      ) : (
+                        <>
+                          {isAprobada && (
+                            <Button
+                              onClick={() => handleReintentarMigracion(item)}
+                              variant="outlineBlue"
+                              size="sm"
+                              title={
+                                item.faltantesContacto.length > 0 && !item.legajoMigrado
+                                  ? `La empresa todavía no tiene ${item.faltantesContacto.join(" ni ")}`
+                                  : "Reintentar la migración de esta línea a SGR+"
+                              }
+                              disabled={
+                                migrarLineaMutation.isPending || (item.faltantesContacto.length > 0 && !item.legajoMigrado)
+                              }
+                            >
+                              <FiRefreshCw /> MIGRAR
+                            </Button>
+                          )}
+
+                          <Button
+                            onClick={() => setSolicitudDetalle(item)}
+                            variant="outlineBlue"
+                            size="sm"
+                            title={isPendiente ? "Revisar el legajo y decidir la solicitud" : "Ver el detalle de la solicitud"}
+                          >
+                            <FiEye /> REVISAR
+                          </Button>
+                        </>
                       )}
+                    </div>
 
-                      <Button
-                        onClick={() => setSolicitudDetalle(item)}
-                        variant="outlineBlue"
-                        size="sm"
-                        title={isPendiente ? "Revisar el legajo y decidir la solicitud" : "Ver el detalle de la solicitud"}
-                      >
-                        <FiEye /> REVISAR
-                      </Button>
-                    </>
-                  )}
-                </div>
+                    <FiChevronRight className={styles.rowChevron} />
+                  </div>
+                );
+              })
+            )}
+          </div>
 
-                <FiChevronRight className={styles.rowChevron} />
-              </div>
-            );
-          })
-        )}
+          {!loading && filtradas.length > 0 && (
+            <div className={styles.paginacionPie}>
+              <Paginacion
+                page={paginaActual}
+                onPageChange={setPagina}
+                hasMoreData={paginaActual < totalPaginas}
+                knownEndPage={totalPaginas}
+                variant="admin"
+                totalItems={filtradas.length}
+                pageSize={filasPorPagina}
+                itemLabel="solicitudes"
+              />
+            </div>
+          )}
+        </section>
       </div>
 
-      {!loading && filtradas.length > 0 && (
-        <Paginacion
-          page={paginaActual}
-          onPageChange={setPagina}
-          hasMoreData={paginaActual < totalPaginas}
-          knownEndPage={totalPaginas}
-          variant="admin"
-          totalItems={filtradas.length}
-          pageSize={filasPorPagina}
-          itemLabel="solicitudes"
-        />
-      )}
+      <Modal
+        isOpen={filtrosAbiertos}
+        onClose={() => setFiltrosAbiertos(false)}
+        title="Filtros"
+        subtitle="Cadena, estado, fechas y orden de la lista."
+        icono={<FiSliders />}
+        maxWidth="480px"
+        variant="blue"
+        footer={
+          <Button variant="blue" onClick={() => setFiltrosAbiertos(false)}>
+            Ver {filtradas.length} solicitudes
+          </Button>
+        }
+      >
+        <div className={styles.filtrosHoja}>
+          {fichaCadena}
+          {filtros}
+        </div>
+      </Modal>
 
       <SolicitudPanel
         key={solicitudDetalleActual?.id ?? "ninguna"}
