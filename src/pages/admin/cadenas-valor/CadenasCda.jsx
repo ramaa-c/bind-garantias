@@ -19,7 +19,7 @@ const PANTALLAS = [
 ];
 
 const DESCRIPCION_LINEAS =
-  "Se validan al pedir una línea de crédito. Aplican por igual a todas las líneas activas de la cadena.";
+  "Se validan al pedir una línea y aplican a todas las líneas activas.";
 
 const contarCdasActivos = (data) => {
   const cdas = Array.isArray(data?.cdas) ? data.cdas : data?.cdas?.items || data?.cdas?.data || [];
