@@ -14,6 +14,14 @@ export const normalizarHistorialTercero = (data) => {
   }));
 };
 
+export const normalizarHistorialLinea = (data) => {
+  const lista = Array.isArray(data) ? data : data ? [data] : [];
+  return lista.map((f) => ({
+    ...f,
+    socioexecutecdaid: f.tipolimitesocioexecutecdaid ?? f.TipoLimiteSocioExecuteCdaID ?? f.socioexecutecdaid,
+  }));
+};
+
 const idDe = (item) => Number(item?.socioexecutecdaid ?? item?.SocioExecuteCdaID) || 0;
 
 const estadoDeItem = (item) => {

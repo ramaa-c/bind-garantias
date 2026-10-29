@@ -6,7 +6,7 @@ const MARGEN_SEGURIDAD_PX = 2;
 export function useFilasPorPagina(
   contenedorRef,
   listaRef,
-  { porDefecto = 8, minimo = 4, maximo = 30 } = {},
+  { porDefecto = 8, minimo = 4, maximo = 30, activo = true } = {},
 ) {
   const [filas, setFilas] = useState(porDefecto);
   const rango2Ref = useRef(null);
@@ -48,8 +48,15 @@ export function useFilasPorPagina(
     }
     const libre = Math.max(0, fondoContenedor - fondoContenido);
 
+    const inicioContenido =
+      lista.getBoundingClientRect().top + lista.clientTop - lista.scrollTop;
+    const altoContenido =
+      lista.lastElementChild.getBoundingClientRect().bottom -
+      inicioContenido +
+      parseFloat(getComputedStyle(lista).paddingBottom);
+
     const disponible = lista.clientHeight + libre - MARGEN_SEGURIDAD_PX;
-    const sobrante = lista.scrollHeight - (ultima.bottom - primera.top);
+    const sobrante = altoContenido - (ultima.bottom - primera.top);
     const entran = Math.floor((disponible - sobrante - primera.height) / paso) + 1;
 
     setFilas(Math.min(maximo, Math.max(minimo, entran)));
@@ -58,7 +65,7 @@ export function useFilasPorPagina(
   useEffect(() => {
     const contenedor = contenedorRef.current;
     const lista = listaRef.current;
-    if (!contenedor || !lista || typeof window === "undefined") return;
+    if (!activo || !contenedor || !lista || typeof window === "undefined") return;
 
     const observadorTamano = new ResizeObserver(() => calcular());
     observadorTamano.observe(contenedor);
@@ -79,7 +86,7 @@ export function useFilasPorPagina(
       contenedor.removeEventListener("transitionend", calcular);
       window.removeEventListener("resize", calcular);
     };
-  }, [calcular, contenedorRef, listaRef]);
+  }, [calcular, contenedorRef, listaRef, activo]);
 
   return filas;
 }

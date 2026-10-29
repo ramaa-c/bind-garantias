@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   FiUser,
@@ -31,6 +31,7 @@ import {
   FiPlay,
   FiCode,
   FiSearch,
+  FiDollarSign,
 } from "react-icons/fi";
 import {
   useSocioPorId,
@@ -42,6 +43,7 @@ import { cdaService } from "../../../services/cdaService";
 import {
   useObtenerTodasWebConEstado,
   useObtenerGrupoCdaConCdas,
+  consultaGrupoCdaConCdas,
   idsCdasActivos,
 } from "../../../hooks/useCadenaValor";
 import { useObtenerDatosSocioLegajo, useEstadoCdaTerceros } from "../../../hooks/useTerceros";
@@ -58,9 +60,18 @@ import {
   useTamanioEmpresa,
   useTipoCanalComercializacion,
   useEstadoExecuteCda,
+  useTiposProducto,
 } from "../../../hooks/useCatalogos";
 import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../hooks/useCda";
-import { useObtenerLimitesPorSocio } from "../../../hooks/useLinea";
+import { useObtenerLimitesPorSocio, useHistorialesCdaLineas } from "../../../hooks/useLinea";
+import { PANTALLA_LINEAS } from "../../../utils/pantallasCda";
+import {
+  ESTADO_PENDIENTE,
+  ESTADO_RECHAZADA,
+  estadoTextoDesde,
+  esRechazoAutomatico,
+} from "../../../utils/estadoLimiteSocio";
+import { importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useCadenaDelSocio } from "../../../hooks/useCadenaDelSocio";
@@ -83,6 +94,8 @@ import {
   combinarEstadoCdas,
   obtenerCdasDeLaCorridaActual,
   ultimasEjecucionesDeCadena,
+  calcularEstadoConCdasVigentes,
+  calcularEstadoDesdeHistorial,
 } from "../../../utils/executeCda";
 import {
   Button,
@@ -1220,6 +1233,360 @@ function CdasTercerosSection({ socio, cadenaValorId, descripcionPorCda, reglaGlo
   );
 }
 
+const AVISO_REEJECUCION_LINEA = "El resultado queda en el historial: no cambia el estado de la solicitud.";
+
+function CdasLineasSection({ socio, descripcionPorCda, reglaGlobalPorCda }) {
+  const queryClient = useQueryClient();
+  const { ejecutarValidaciones } = useCdaEngine();
+  const { mutateAsync: reejecutarCda } = useReejecutarCda();
+  const [abierta, setAbierta] = useState(true);
+  const [lineaEnCurso, setLineaEnCurso] = useState(null);
+  const [cdaEnCurso, setCdaEnCurso] = useState(null);
+  const [lineaExpandida, setLineaExpandida] = useState(null);
+  const [confirmReejecutarTodasOpen, setConfirmReejecutarTodasOpen] = useState(false);
+  const [reejecutandoTodas, setReejecutandoTodas] = useState(false);
+  const [verExpresionItem, setVerExpresionItem] = useState(null);
+
+  const { data: limitesSocio, isLoading: cargandoLineas } = useObtenerLimitesPorSocio(socio?.socioid);
+  const { data: cadenasWeb } = useObtenerTodasWebConEstado();
+  const { data: tiposLimite } = useTiposProducto();
+
+  const lineas = useMemo(() => {
+    const nombrePorCadena = new Map(
+      (cadenasWeb || []).map((c) => [
+        Number(c.cadenavalorid),
+        (c.referencia || "").trim() || c.denominacion || "",
+      ]),
+    );
+    const descripcionPorTipo = new Map(
+      (tiposLimite?.raw || []).map((t) => [Number(t.tipolimiteid), t.descripcion]),
+    );
+    const lista = Array.isArray(limitesSocio) ? limitesSocio : limitesSocio ? [limitesSocio] : [];
+    return lista
+      .map((l) => {
+        const tipoLimiteId = Number(l.tipolimiteid);
+        const cadena = Number(l.cadenavalorid) || null;
+        const estadoId = Number(l.tipolimiteestadoid ?? ESTADO_PENDIENTE);
+        return {
+          id: Number(l.tipolimitesocioid),
+          cadena,
+          cadenaNombre: (cadena && nombrePorCadena.get(cadena)) || (cadena ? `Cadena #${cadena}` : "Sin cadena"),
+          nombre: descripcionPorTipo.get(tipoLimiteId) || `Línea #${tipoLimiteId}`,
+          estadoTexto: estadoTextoDesde(estadoId),
+          rechazoAutomatico: estadoId === ESTADO_RECHAZADA && esRechazoAutomatico(l.observaciones),
+          monto: `${simboloMoneda(l.monedaid)} ${new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(l))}`,
+        };
+      })
+      .filter((l) => l.id)
+      .sort((a, b) => b.id - a.id);
+  }, [limitesSocio, cadenasWeb, tiposLimite]);
+
+  const { data: historiales, isLoading: cargandoHistoriales } = useHistorialesCdaLineas(lineas.map((l) => l.id));
+
+  const cadenas = [...new Set(lineas.map((l) => l.cadena).filter(Boolean))];
+  const grupoPorCadena = useQueries({
+    queries: cadenas.map((cadena) => consultaGrupoCdaConCdas(cadena, PANTALLA_LINEAS)),
+    combine: (resultados) => new Map(resultados.map((r, i) => [cadenas[i], r.data])),
+  });
+
+  const detallePorLinea = new Map(
+    lineas.map((linea) => {
+      const filas = historiales?.get(linea.id);
+      const historial = filas || [];
+      const grupo = linea.cadena ? grupoPorCadena.get(linea.cadena) : undefined;
+      const cdasActivosIds = grupo ? idsCdasActivos(grupo) : null;
+      const ultimas = linea.cadena
+        ? ultimasEjecucionesDeCadena(historial, linea.cadena)
+        : ultimaEjecucionPorCda(historial).filter((f) => Number(f.cdaid ?? f.CdaID ?? -1) !== 0);
+      const cdas = ultimas
+        .map((f) => ({
+          ...f,
+          cdaid: Number(f.cdaid ?? f.CdaID),
+          vinculado: !cdasActivosIds || cdasActivosIds.includes(Number(f.cdaid ?? f.CdaID)),
+        }))
+        .sort((a, b) => Number(b.vinculado) - Number(a.vinculado));
+      const estado =
+        cdas.length === 0
+          ? null
+          : cdasActivosIds
+            ? calcularEstadoConCdasVigentes(historial, {
+                cadenaValorId: linea.cadena,
+                expresionAgrupacion: grupo?.grupo?.expresionagrupacion,
+                cdasActivosIds,
+              })
+            : calcularEstadoDesdeHistorial(historial);
+      const ultimaFecha = cdas
+        .map((f) => f.momentocontrol ?? f.MomentoControl)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b) - new Date(a))[0];
+      const rechazos = cdas
+        .filter((f) => f.vinculado && Number(f.estadoexecutecdaid ?? f.EstadoExecuteCdaID) === 2)
+        .map((f) => {
+          const descripcion = descripcionPorCda.get(f.cdaid) || `CDA #${f.cdaid}`;
+          const valor = String(f.valorresultado ?? f.ValorResultado ?? "").trim();
+          return valor ? `${descripcion} (valor: ${valor})` : `${descripcion} (sin dato de la integración)`;
+        });
+      return [linea.id, { cdas, estado, ultimaFecha, rechazos, errorHistorial: filas === null }];
+    }),
+  );
+
+  const invalidarLinea = (lineaId) => {
+    queryClient.invalidateQueries({ queryKey: ["linea", "executeCda", String(lineaId)] });
+    queryClient.invalidateQueries({ queryKey: ["linea", "executeCdaBulk"] });
+  };
+
+  const handleReejecutarLinea = async (linea) => {
+    setLineaEnCurso(linea.id);
+    const resultado = await ejecutarValidaciones(PANTALLA_LINEAS, { lineaId: linea.id }, linea.cadena);
+    setLineaEnCurso(null);
+    if (resultado.success) {
+      toast.success(`CDAs reejecutados para la línea N°${linea.id}.`, { description: AVISO_REEJECUCION_LINEA });
+    } else {
+      toast.error(resultado.errors?.[0]?.message || "No se cumplieron los criterios de aceptación.", {
+        description: AVISO_REEJECUCION_LINEA,
+      });
+    }
+    invalidarLinea(linea.id);
+  };
+
+  const handleReejecutarCda = async (linea, item) => {
+    setCdaEnCurso(`${linea.id}-${item.cdaid}`);
+    try {
+      const respuesta = await reejecutarCda({
+        cdaId: item.cdaid,
+        lineaId: linea.id,
+        pantalla: PANTALLA_LINEAS,
+        cadenaValorId: linea.cadena,
+      });
+      const { ok, mensaje } = mensajeResultadoReejecucion(respuesta);
+      if (ok) toast.success("CDA aprobado", { description: mensaje });
+      else toast.error("CDA no aprobado", { description: mensaje });
+    } catch {
+      toast.error("No se pudo re-ejecutar el CDA.");
+    } finally {
+      setCdaEnCurso(null);
+      invalidarLinea(linea.id);
+    }
+  };
+
+  const lineasConCadena = lineas.filter((l) => l.cadena);
+
+  const handleReejecutarTodas = async () => {
+    setReejecutandoTodas(true);
+    let aprobadas = 0;
+    let noAprobadas = 0;
+    for (const linea of lineasConCadena) {
+      setLineaEnCurso(linea.id);
+      const resultado = await ejecutarValidaciones(PANTALLA_LINEAS, { lineaId: linea.id }, linea.cadena);
+      if (resultado.success) aprobadas += 1;
+      else noAprobadas += 1;
+      invalidarLinea(linea.id);
+    }
+    setLineaEnCurso(null);
+    setReejecutandoTodas(false);
+    setConfirmReejecutarTodasOpen(false);
+    if (noAprobadas === 0) {
+      toast.success(`Se reejecutaron los CDAs de ${aprobadas} línea${aprobadas !== 1 ? "s" : ""}.`, {
+        description: AVISO_REEJECUCION_LINEA,
+      });
+    } else {
+      toast.warning(`${aprobadas} aprobada${aprobadas !== 1 ? "s" : ""}, ${noAprobadas} sin aprobar.`, {
+        description: AVISO_REEJECUCION_LINEA,
+      });
+    }
+  };
+
+  const cargando = cargandoLineas || (lineas.length > 0 && cargandoHistoriales);
+  const evaluadas = lineas.filter((l) => detallePorLinea.get(l.id)?.estado);
+  const cantidadNoAprobadas = evaluadas.filter((l) => detallePorLinea.get(l.id).estado !== "aprobado").length;
+  const ocupado = lineaEnCurso !== null || cdaEnCurso !== null || reejecutandoTodas;
+  const motivoSinCadena = "La línea no tiene una cadena de valor asociada";
+
+  return (
+    <section className={styles.cdasSection}>
+      <header className={`${styles.sectionCardHeader} ${styles.cdasSectionHeaderRow}`}>
+        <EncabezadoPlegable
+          abierta={abierta}
+          onToggle={() => setAbierta((v) => !v)}
+          icono={<FiDollarSign size={15} />}
+          titulo="CDAs de línea"
+          detalle={lineas.length > 0 ? `${lineas.length} línea${lineas.length !== 1 ? "s" : ""}` : null}
+        />
+        <div className={styles.cdasSectionHeaderActions}>
+          {!cargando && evaluadas.length > 0 && (
+            <EstadoBadge
+              label={cantidadNoAprobadas === 0 ? "Todas aprobadas" : `${cantidadNoAprobadas} sin aprobar`}
+              tono={cantidadNoAprobadas === 0 ? "success" : "danger"}
+              titulo="Último resultado de cada línea, con los CDAs de alta de línea activos en su cadena."
+            />
+          )}
+          <Button
+            variant="outlineBlue"
+            size="sm"
+            onClick={() => setConfirmReejecutarTodasOpen(true)}
+            isLoading={reejecutandoTodas}
+            disabled={ocupado || lineasConCadena.length === 0}
+            title={lineasConCadena.length === 0 ? motivoSinCadena : "Volver a evaluar todas las líneas"}
+          >
+            <FiRefreshCw size={13} /> Reejecutar todas
+          </Button>
+        </div>
+      </header>
+
+      {abierta &&
+        (cargando ? (
+          <div className={styles.listaCdas}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className={styles.filaCda}>
+                <span className={styles.filaCdaInfo}>
+                  <Skeleton width="45%" height="0.85rem" />
+                  <Skeleton width="30%" height="0.7rem" />
+                </span>
+                <Skeleton width="5.5rem" height="1.35rem" radius="pill" />
+                <Skeleton width="6rem" height="0.75rem" />
+                <span />
+              </div>
+            ))}
+          </div>
+        ) : lineas.length === 0 ? (
+          <p className={styles.cdasVacio}>
+            Esta empresa todavía no pidió ninguna línea. Cuando dé de alta una, los CDAs de alta de línea
+            van a aparecer acá.
+          </p>
+        ) : (
+          <div className={styles.listaCdas}>
+            {lineas.map((linea) => {
+              const detalle = detallePorLinea.get(linea.id);
+              const expandida = lineaExpandida === linea.id;
+              const tieneDetalle = detalle.cdas.length > 0;
+              const identidad = `N°${linea.id} · ${linea.cadenaNombre} · ${linea.monto}`;
+              const mostrarRechazos = detalle.estado === "rechazado" && detalle.rechazos.length > 0;
+
+              return (
+                <React.Fragment key={linea.id}>
+                  <FilaCda
+                    titulo={linea.nombre}
+                    etiquetas={
+                      <span
+                        className={`${styles.lineaEstadoPill} ${styles[`lineaEstadoPill-${getEstadoTono(linea.estadoTexto)}`]}`}
+                        title={
+                          linea.rechazoAutomatico
+                            ? "La solicitud se rechazó automáticamente al darla de alta. Reejecutar los CDAs no cambia su estado."
+                            : `Estado de la solicitud: ${linea.estadoTexto}`
+                        }
+                      >
+                        {linea.rechazoAutomatico ? "Rechazo automático" : linea.estadoTexto}
+                      </span>
+                    }
+                    detalle={
+                      detalle.errorHistorial
+                        ? `${identidad} · No se pudo consultar el historial de CDAs`
+                        : mostrarRechazos
+                          ? `${identidad} · No superó: ${detalle.rechazos.join("; ")}`
+                          : identidad
+                    }
+                    detalleRechazo={mostrarRechazos}
+                    estadoLabel={detalle.estado ? ESTADO_LABEL_EFECTIVO[detalle.estado] : "Sin evaluar"}
+                    fecha={detalle.ultimaFecha}
+                    expandible={tieneDetalle}
+                    expandido={expandida}
+                    onToggle={() => setLineaExpandida(expandida ? null : linea.id)}
+                    acciones={
+                      <AccionIcono
+                        icono={<FiRefreshCw size={14} />}
+                        etiqueta={`Volver a ejecutar los CDAs de la línea N°${linea.id}`}
+                        onClick={() => handleReejecutarLinea(linea)}
+                        cargando={lineaEnCurso === linea.id}
+                        disabled={ocupado || !linea.cadena}
+                        motivoDeshabilitado={!linea.cadena ? motivoSinCadena : undefined}
+                      />
+                    }
+                  />
+
+                  {expandida && tieneDetalle && (
+                    <div className={styles.filaCdaHijos}>
+                      {detalle.cdas.map((item) => {
+                        const valor = String(item.valorresultado ?? item.ValorResultado ?? "").trim();
+                        const motivo = !item.vinculado
+                          ? "Este CDA ya no está vinculado a esta cadena: no pesa en el resultado."
+                          : !linea.cadena
+                            ? motivoSinCadena
+                            : undefined;
+                        return (
+                          <FilaCda
+                            key={item.cdaid}
+                            hija
+                            desvinculada={!item.vinculado}
+                            titulo={descripcionPorCda.get(item.cdaid) || item.expresion || `CDA #${item.cdaid}`}
+                            etiquetas={
+                              !item.vinculado && (
+                                <span className={styles.cdaRowDesvinculadoPill} title={motivo}>
+                                  <FiX size={10} /> Desvinculado
+                                </span>
+                              )
+                            }
+                            detalle={valor ? `Valor: ${valor}` : "Sin dato de la integración"}
+                            estadoLabel={
+                              ESTADO_LABEL_POR_ID[Number(item.estadoexecutecdaid ?? item.EstadoExecuteCdaID)] ||
+                              "Pendiente"
+                            }
+                            fecha={item.momentocontrol ?? item.MomentoControl}
+                            acciones={
+                              <>
+                                <AccionIcono
+                                  icono={<FiEye size={14} />}
+                                  etiqueta="Ver expresión evaluada"
+                                  onClick={() => setVerExpresionItem(item)}
+                                />
+                                <AccionIcono
+                                  icono={<FiRefreshCw size={14} />}
+                                  etiqueta="Volver a ejecutar este CDA"
+                                  onClick={() => handleReejecutarCda(linea, item)}
+                                  cargando={cdaEnCurso === `${linea.id}-${item.cdaid}`}
+                                  disabled={ocupado || !linea.cadena || !item.vinculado}
+                                  motivoDeshabilitado={motivo}
+                                />
+                              </>
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        ))}
+
+      <VerExpresionModal
+        item={verExpresionItem}
+        onClose={() => setVerExpresionItem(null)}
+        descripcion={verExpresionItem ? descripcionPorCda.get(Number(verExpresionItem.cdaid)) : ""}
+        reglaGlobal={verExpresionItem ? reglaGlobalPorCda.get(Number(verExpresionItem.cdaid)) : ""}
+      />
+
+      <ConfirmacionModal
+        isOpen={confirmReejecutarTodasOpen}
+        onClose={() => {
+          if (!reejecutandoTodas) setConfirmReejecutarTodasOpen(false);
+        }}
+        onConfirm={handleReejecutarTodas}
+        titulo="Reejecutar CDAs de todas las líneas"
+        mensaje={`Se van a volver a evaluar los CDAs de ${
+          lineasConCadena.length === 1 ? "la línea" : `las ${lineasConCadena.length} líneas`
+        } de esta empresa, una por una, con los criterios activos de cada cadena. Cada evaluación vuelve a consultar las integraciones (Nosis, ARCA) y el estado de las solicitudes no cambia. ¿Confirmás que querés continuar?`}
+        variant="blue"
+        confirmText="Reejecutar todas"
+        cancelText="Cancelar"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={reejecutandoTodas}
+      />
+    </section>
+  );
+}
+
 function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   const { descripcionPorCda, reglaGlobalPorCda } = useMapasCatalogoCdas();
 
@@ -1233,6 +1600,11 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
       <CdasTercerosSection
         socio={socio}
         cadenaValorId={cadenaValorIdDetectada}
+        descripcionPorCda={descripcionPorCda}
+        reglaGlobalPorCda={reglaGlobalPorCda}
+      />
+      <CdasLineasSection
+        socio={socio}
         descripcionPorCda={descripcionPorCda}
         reglaGlobalPorCda={reglaGlobalPorCda}
       />

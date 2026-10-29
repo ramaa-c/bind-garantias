@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lineaService } from '../services/lineaService';
+import { normalizarHistorialLinea } from '../utils/executeCda';
 
 export const useObtenerLimitesPorSocio = (socioId) => {
     return useQuery({
@@ -108,5 +109,26 @@ export const useHistorialCdaLinea = (tipoLimiteSocioId, enabled = true) => {
         queryKey: ['linea', 'executeCda', String(tipoLimiteSocioId)],
         queryFn: () => lineaService.obtenerExecuteCda(tipoLimiteSocioId),
         enabled: enabled && !!tipoLimiteSocioId,
+    });
+};
+
+export const useHistorialesCdaLineas = (tipoLimiteSocioIds = []) => {
+    const ids = [...new Set((tipoLimiteSocioIds || []).filter(Boolean).map(Number))].sort((a, b) => a - b);
+    return useQuery({
+        queryKey: ['linea', 'executeCdaBulk', ids.join(',')],
+        queryFn: async () => {
+            const entradas = await Promise.all(
+                ids.map(async (id) => {
+                    try {
+                        return [id, normalizarHistorialLinea(await lineaService.obtenerExecuteCda(id))];
+                    } catch (err) {
+                        console.warn('[useHistorialesCdaLineas] Error obteniendo historial de CDA para la línea', id, err);
+                        return [id, null];
+                    }
+                }),
+            );
+            return new Map(entradas);
+        },
+        enabled: ids.length > 0,
     });
 };

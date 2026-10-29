@@ -1236,6 +1236,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           }
         } catch (uploadErr) {
           console.error("[MODAL - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
+          queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] });
+          uploadErr.mensajeParaUsuario = `Los datos del accionista se guardaron, pero no se pudo subir el DNI. ${
+            uploadErr.esValidacionArchivo ? uploadErr.message : mensajeNegocio(uploadErr, "Reintentá en unos minutos.")
+          }`;
           throw uploadErr;
         }
       }
@@ -1269,7 +1273,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       } else {
         // Motivo de negocio de la API (ej. la suma de participaciones supera
         // el 100%, relación duplicada, CUIT inválido) o el texto genérico.
-        toast.error(mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."), { id: mainToastId });
+        toast.error(
+          error?.mensajeParaUsuario || mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."),
+          { id: mainToastId },
+        );
       }
     } finally {
       setGuardando(false);
