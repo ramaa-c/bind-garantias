@@ -9,25 +9,25 @@ const TOOLS = [
   {
     name: "repos_estado",
     description:
-      "Muestra la rama actual, si hay cambios sin commitear, si la rama actual está al día con GitHub y cómo están dev y main en GitHub y en Devinline (iguales, atrás, adelante o con historiales distintos). No modifica nada.",
+      "Muestra la rama actual, si hay cambios sin commitear, si la rama actual está al día con GitHub, cómo está dev en GitHub y en Devinline y si main de Devinline (espejo de dev) está igual a dev. No modifica nada.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
     name: "repos_sincronizar",
     description:
-      "Copia dev y main al repo que esté atrás (GitHub o Devinline). Solo avanza ramas, nunca fuerza: si los historiales son distintos, frena y avisa.",
+      "Copia dev al repo que esté atrás (GitHub o Devinline) y avanza main de Devinline hasta dev. El main de GitHub no se toca. Solo avanza ramas, nunca fuerza: si los historiales son distintos, frena y avisa.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
     name: "repos_publicar",
     description:
-      "Publica la rama actual: exige que no haya cambios sin commitear, trae dev, corre lint y build y, si pasan, sube la rama a GitHub (las ramas de trabajo no van a Devinline). Con mergear_dev=true también actualiza dev en GitHub y en Devinline con esa rama. Nunca fuerza.",
+      "Publica la rama actual: exige que no haya cambios sin commitear, trae dev, corre lint y build y, si pasan, sube la rama a GitHub (las ramas de trabajo no van a Devinline). Con mergear_dev=true también actualiza dev en GitHub y en Devinline, y main de Devinline, con esa rama. Nunca fuerza.",
     inputSchema: {
       type: "object",
       properties: {
         mergear_dev: {
           type: "boolean",
-          description: "Si es true, después de subir la rama actualiza dev en los dos repos.",
+          description: "Si es true, después de subir la rama actualiza dev en los dos repos y main de Devinline.",
         },
       },
       additionalProperties: false,

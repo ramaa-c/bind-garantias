@@ -10,8 +10,11 @@ const REMOTOS = [
   { remoto: "origin", nombre: "GitHub" },
   { remoto: "devinline", nombre: "Devinline" },
 ];
-const RAMAS_COMPARTIDAS = ["dev", "main"];
+const RAMAS_COMPARTIDAS = ["dev"];
 const RAMAS_PROTEGIDAS = ["dev", "main"];
+// En Devinline, main es un espejo de dev: el equipo de backend consulta ese repo y suele mirar main.
+// El main de GitHub se actualiza aparte y no se sincroniza con el de Devinline.
+const ESPEJO_DEV_DEVINLINE = "main";
 
 class ErrorPublicar extends Error {}
 
@@ -108,7 +111,23 @@ export const estado = () => {
   for (const r of RAMAS_COMPARTIDAS) {
     lineas.push(`- ${r}: ${describirRelacion(relacion(`origin/${r}`, `devinline/${r}`), "GitHub", "Devinline")}`);
   }
+  lineas.push(
+    `- ${ESPEJO_DEV_DEVINLINE} de Devinline: ${describirRelacion(relacion(`devinline/${ESPEJO_DEV_DEVINLINE}`, "origin/dev"), `${ESPEJO_DEV_DEVINLINE} de Devinline`, "dev de GitHub")}`,
+  );
   return lineas.join("\n");
+};
+
+const actualizarEspejoDev = (ref) => {
+  const destino = `devinline/${ESPEJO_DEV_DEVINLINE}`;
+  if (sha(destino) === sha(ref)) return `${ESPEJO_DEV_DEVINLINE} de Devinline: sin cambios.`;
+  if (sha(destino) && !esAncestro(destino, ref)) {
+    throw new ErrorPublicar(
+      `${ESPEJO_DEV_DEVINLINE} de Devinline tiene commits que dev no tiene. No se fuerza nada: hay que traerlos a dev con ` +
+        `"git merge -s ours devinline/${ESPEJO_DEV_DEVINLINE}" (no cambia archivos) y volver a publicar.`,
+    );
+  }
+  git("push", "devinline", `${ref}:refs/heads/${ESPEJO_DEV_DEVINLINE}`);
+  return `${ESPEJO_DEV_DEVINLINE} de Devinline actualizado con dev.`;
 };
 
 const sincronizarRama = (r) => {
@@ -130,7 +149,10 @@ const sincronizarRama = (r) => {
 export const sincronizar = ({ ramas = RAMAS_COMPARTIDAS } = {}) => {
   asegurarRemotos();
   traerAmbos();
-  return ramas.map(sincronizarRama).join("\n");
+  const pasos = ramas.map(sincronizarRama);
+  traerAmbos();
+  pasos.push(actualizarEspejoDev("origin/dev"));
+  return pasos.join("\n");
 };
 
 export const publicar = ({ mergearDev = false } = {}) => {
@@ -156,6 +178,13 @@ export const publicar = ({ mergearDev = false } = {}) => {
       );
     }
     pasos.push(`Se trajo dev a '${rama}'.`);
+  }
+
+  if (mergearDev && sha(`devinline/${ESPEJO_DEV_DEVINLINE}`) && !esAncestro(`devinline/${ESPEJO_DEV_DEVINLINE}`, "HEAD")) {
+    throw new ErrorPublicar(
+      `${ESPEJO_DEV_DEVINLINE} de Devinline tiene commits que tu rama no tiene, no se subió nada. Traelos con ` +
+        `"git merge -s ours devinline/${ESPEJO_DEV_DEVINLINE}" (no cambia archivos) y volvé a publicar.`,
+    );
   }
 
   if (sha(`origin/${rama}`) && !esAncestro(`origin/${rama}`, "HEAD")) {
@@ -184,6 +213,7 @@ export const publicar = ({ mergearDev = false } = {}) => {
   subir("origin", "GitHub", rama);
   if (mergearDev) {
     for (const { remoto, nombre } of REMOTOS) subir(remoto, nombre, "dev");
+    subir("devinline", "Devinline", ESPEJO_DEV_DEVINLINE);
   }
 
   if (mergearDev && sha("dev") && esAncestro("dev", "HEAD")) {
@@ -196,9 +226,9 @@ export const publicar = ({ mergearDev = false } = {}) => {
 
 const ayuda = `Uso:
   npm run publicar               Trae dev, corre lint y build y sube tu rama a GitHub
-  npm run publicar -- --dev      Igual, y además actualiza dev en GitHub y Devinline con tu rama
-  npm run publicar:estado        Muestra cómo está tu rama en GitHub y dev/main en los dos repos
-  npm run publicar:sincronizar   Copia dev y main al repo que esté atrás (nunca fuerza)`;
+  npm run publicar -- --dev      Igual, y además actualiza dev en GitHub y Devinline, y main de Devinline, con tu rama
+  npm run publicar:estado        Muestra cómo está tu rama en GitHub, dev en los dos repos y main de Devinline
+  npm run publicar:sincronizar   Copia dev al repo que esté atrás y main de Devinline a dev (nunca fuerza)`;
 
 const esPrincipal = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
