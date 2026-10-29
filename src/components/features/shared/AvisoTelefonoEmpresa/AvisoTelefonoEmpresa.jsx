@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FiPhone, FiMail, FiUserPlus, FiChevronRight } from "react-icons/fi";
+import { FiPhone, FiMail, FiUserPlus, FiAlertCircle, FiClock } from "react-icons/fi";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId, useActualizarSocio, useUsuariosVinculadosASocio } from "../../../../hooks/useSocios";
 import { usuarioVinculacionService } from "../../../../services/usuarioVinculacionService";
@@ -91,23 +91,15 @@ export const AvisoTelefonoEmpresa = () => {
   const modalTelefonoAbierta =
     visible && puedeValidarTelefono && faltaTelefono && (contactoAbierto || !omitido);
 
-  if (!visible || (!faltaTelefono && !faltaEmailFacturacion && !faltaUsuario)) {
+  const pendienteTelefono = faltaTelefono && !isVendor;
+
+  if (!visible || (!pendienteTelefono && !faltaEmailFacturacion && !faltaUsuario)) {
     return null;
   }
 
-  const textoTelefono = isVendor
-    ? "La empresa todavía no tiene un teléfono validado. Lo valida el administrador de la empresa cuando ingresa a su cuenta: sin teléfono no se puede aceptar la solicitud ni migrar a SGR+."
-    : puedeValidarTelefono
-      ? "Tu empresa no tiene un teléfono validado. Hasta que lo valides no vas a poder avanzar con tus solicitudes ni con la migración a SGR+."
-      : "Tu empresa no tiene un teléfono validado y sin él no se puede avanzar. Pedile a un administrador de la empresa que lo valide desde Mi perfil.";
-
-  const textoEmail = isVendor
-    ? "La empresa todavía no tiene email de facturación: sin él no se puede aceptar la solicitud ni migrar a SGR+. Cargalo si lo conocés, o lo va a completar el usuario de la empresa."
-    : "Tu empresa no tiene email de facturación. Hasta que lo cargues no vas a poder avanzar con tus solicitudes ni con la migración a SGR+.";
-
-  const textoUsuario = hayInvitacionPendiente
-    ? "Ya invitaste a un usuario de la empresa: falta que acepte la invitación. Hasta que haya un usuario vinculado la empresa no puede migrar a SGR+."
-    : "Tenés que vincular al menos un usuario de la empresa. El primero que vincules queda como administrador y su email pasa a ser el de la empresa.";
+  const textoPrincipal = isVendor
+    ? "Para que la empresa pueda avanzar falta:"
+    : "Para avanzar con tus solicitudes y la migración a SGR+ falta:";
 
   const omitirTelefono = () => {
     marcarTelefonoOmitido(socioIdActivo);
@@ -172,53 +164,70 @@ export const AvisoTelefonoEmpresa = () => {
 
   return (
     <div className={styles.contenedor}>
-      {faltaUsuario && (
-        <div className={styles.aviso} role="alert">
-          <span className={styles.icono} aria-hidden="true">
-            <FiUserPlus />
-          </span>
-          <p className={styles.texto}>{textoUsuario}</p>
-          {!enUsuarios && (
-            <button type="button" className={styles.accion} onClick={() => navigate(`${basePath}/usuarios`)}>
-              {hayInvitacionPendiente ? "Ver usuarios" : "Vincular usuario"} <FiChevronRight aria-hidden="true" />
-            </button>
-          )}
-        </div>
-      )}
-      {faltaTelefono && (
-        <div className={styles.aviso} role="alert">
-          <span className={styles.icono} aria-hidden="true">
-            <FiPhone />
-          </span>
-          <p className={styles.texto}>{textoTelefono}</p>
-          {puedeValidarTelefono && (
+      <div className={styles.aviso} role="alert">
+        <span className={styles.icono} aria-hidden="true">
+          <FiAlertCircle />
+        </span>
+        <p className={styles.texto}>{textoPrincipal}</p>
+        <div className={styles.pendientes}>
+          {faltaUsuario &&
+            (hayInvitacionPendiente ? (
+              <button
+                type="button"
+                className={`${styles.pendiente} ${styles.pendienteEspera}`}
+                onClick={() => navigate(`${basePath}/usuarios`)}
+                disabled={enUsuarios}
+                title="Ya invitaste a un usuario de la empresa: falta que acepte la invitación."
+              >
+                <FiClock aria-hidden="true" /> Usuario invitado: falta que acepte
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={styles.pendiente}
+                onClick={() => navigate(`${basePath}/usuarios`)}
+                disabled={enUsuarios}
+                title="El primer usuario que vincules queda como administrador y su email pasa a ser el de la empresa."
+              >
+                <FiUserPlus aria-hidden="true" /> Vincular un usuario
+              </button>
+            ))}
+          {pendienteTelefono &&
+            (puedeValidarTelefono ? (
+              <button
+                type="button"
+                className={styles.pendiente}
+                onClick={abrirContacto}
+                disabled={!socioWeb || actualizarSocioMutation.isPending}
+                title="Sin teléfono validado no se puede aceptar la solicitud ni migrar a SGR+."
+              >
+                <FiPhone aria-hidden="true" /> Validar teléfono
+              </button>
+            ) : (
+              <span
+                className={`${styles.pendiente} ${styles.pendienteEspera}`}
+                title="Lo valida un administrador de la empresa desde Mi perfil."
+              >
+                <FiPhone aria-hidden="true" /> Teléfono: lo valida un administrador
+              </span>
+            ))}
+          {faltaEmailFacturacion && (
             <button
               type="button"
-              className={styles.accion}
-              onClick={abrirContacto}
+              className={styles.pendiente}
+              onClick={abrirFacturacion}
               disabled={!socioWeb || actualizarSocioMutation.isPending}
+              title={
+                isVendor
+                  ? "Cargalo si lo conocés, o lo va a completar el usuario de la empresa."
+                  : "Sin email de facturación no se puede aceptar la solicitud ni migrar a SGR+."
+              }
             >
-              Validar teléfono <FiChevronRight aria-hidden="true" />
+              <FiMail aria-hidden="true" /> Cargar email de facturación
             </button>
           )}
         </div>
-      )}
-      {faltaEmailFacturacion && (
-        <div className={styles.aviso} role="alert">
-          <span className={styles.icono} aria-hidden="true">
-            <FiMail />
-          </span>
-          <p className={styles.texto}>{textoEmail}</p>
-          <button
-            type="button"
-            className={styles.accion}
-            onClick={abrirFacturacion}
-            disabled={!socioWeb || actualizarSocioMutation.isPending}
-          >
-            Cargar email <FiChevronRight aria-hidden="true" />
-          </button>
-        </div>
-      )}
+      </div>
 
       <FormProvider {...metodosContacto}>
         <ContactoModal
