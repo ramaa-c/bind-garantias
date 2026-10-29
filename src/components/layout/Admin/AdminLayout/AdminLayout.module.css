@@ -129,6 +129,14 @@
   }
 }
 
+@media (min-width: 769px) {
+  .containerInner:has([data-ancho-completo]) {
+    max-width: 97.5rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
 /* El padding-top de acá arriba solo se achica por ANCHO (1024px/768px),
    nunca por ALTO - pero Rango 2 casi siempre se dispara por zoom en una
    pantalla ancha (a 133% sobre 1920px el ancho efectivo sigue ~1443px, muy
