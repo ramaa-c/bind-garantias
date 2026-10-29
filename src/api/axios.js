@@ -7,6 +7,7 @@ import {
   borrarTokenApi,
   esperarFinRenovacion,
   esRenovacionDeLaMismaSesion,
+  hayRenovacionEnCurso,
 } from "./tokenApi";
 import { CABECERAS_BASE_API } from "./cabecerasApi";
 import { useAuthStore } from "../store/useAuthStore";
@@ -47,14 +48,26 @@ const redirigirAFueraDeServicio = () => {
   setTimeout(() => window.location.assign("/fuera-de-servicio"), 900);
 };
 
-const agregarTokenApi = (config) => {
+// Sin token, la API responde 401 "Authorization Required" a todo lo que no
+// es público (lo público va con sinToken): se corta acá para no llenar el
+// log del backend, típicamente con las consultas que se refrescan justo
+// después de cerrar sesión o de que venció el token en otra pestaña.
+const agregarTokenApi = async (config) => {
   if (config.sinToken) return config;
-  const token = obtenerTokenApi();
-  if (token) {
-    config.__conToken = true;
-    config.__tokenUsado = token;
-    config.headers.Authorization = `Bearer ${token}`;
+  let token = obtenerTokenApi();
+  if (!token && hayRenovacionEnCurso()) {
+    await esperarFinRenovacion();
+    token = obtenerTokenApi();
   }
+  if (!token) {
+    const error = new Error("No hay una sesión activa");
+    error.isSinSesion = true;
+    error.config = config;
+    throw error;
+  }
+  config.__conToken = true;
+  config.__tokenUsado = token;
+  config.headers.Authorization = `Bearer ${token}`;
   return config;
 };
 
@@ -187,6 +200,11 @@ api.interceptors.response.use(
   async (error) => {
     if (error?.isPlataformaOffline) {
       redirigirAFueraDeServicio();
+      return Promise.reject(error);
+    }
+
+    if (error?.isSinSesion) {
+      if (useAuthStore.getState().isAuthenticated) cerrarSesionLocal();
       return Promise.reject(error);
     }
 

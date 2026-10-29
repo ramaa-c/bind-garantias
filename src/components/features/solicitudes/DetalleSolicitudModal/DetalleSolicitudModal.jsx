@@ -86,7 +86,10 @@ export const DetalleSolicitudModal = ({
         console.warn("No se pudo obtener relaciones locales", e);
       }
 
-      const arrSgr = Array.isArray(relacionesSGR) ? relacionesSGR : [];
+      const arrSgr = (Array.isArray(relacionesSGR) ? relacionesSGR : []).map((r) => ({
+        ...r,
+        __origenSgrPlus: true,
+      }));
       const arrLocal = Array.isArray(relacionesLocal) ? relacionesLocal : [];
 
       const mapaRel = new Map();
@@ -164,7 +167,7 @@ export const DetalleSolicitudModal = ({
         let tercero = cacheRef.current[terceroId];
         if (!tercero) {
           try {
-            tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+            tercero = rel.__origenSgrPlus ? null : await tercerosService.obtenerTerceroPorId(terceroId);
             if (!tercero || !tercero.denominacion || !tercero.cuit) {
               const terceroSGR = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
               if (terceroSGR && (terceroSGR.denominacion || terceroSGR.cuit)) {
