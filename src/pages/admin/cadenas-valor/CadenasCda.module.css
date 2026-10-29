@@ -85,9 +85,47 @@
   }
 }
 
+/* Rango 1: la pantalla entra entera en el alto visible; la lista de
+   cadenas y el editor scrollean por dentro y el pie queda siempre a la
+   vista. En Rango 2 scrollea la página completa. */
 @media (min-width: 1441px) and (min-height: 717px) {
+  .container {
+    height: 100%;
+    min-height: 0;
+  }
+
   .layout {
+    flex: 1;
+    min-height: 0;
     grid-template-columns: 20rem minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .layoutDetalle .lista,
+  .lista {
+    position: static;
+    max-height: none;
+    min-height: 0;
+  }
+
+  .detalle {
+    min-height: 0;
+  }
+
+  .panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .panelCuerpo {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .panelPie {
+    position: static;
   }
 }
 
