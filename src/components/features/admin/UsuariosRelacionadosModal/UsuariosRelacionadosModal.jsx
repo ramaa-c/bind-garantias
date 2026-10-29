@@ -10,7 +10,7 @@ import {
 import { usuarioService } from "../../../../services/usuarioService";
 import { sociosService } from "../../../../services/sociosService";
 import styles from "./UsuariosRelacionadosModal.module.css";
-import { FiUserPlus, FiAlertCircle, FiUsers } from "react-icons/fi";
+import { FiUserPlus, FiUsers } from "react-icons/fi";
 
 const EMPTY_ARRAY = [];
 
@@ -87,6 +87,11 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
   // Registro.jsx) — el admin nunca los da de alta, solo busca y vincula a
   // uno que ya existe. Si no lo encuentra, hay que avisarle a la persona
   // que todavía no se registró en vez de crearle la cuenta desde acá.
+  const marcarErrorEmail = (mensaje) => {
+    setErrorEmail(mensaje);
+    toast.error(mensaje);
+  };
+
   const handleVincular = async () => {
     const trimmedEmail = searchEmail.trim().toLowerCase();
     if (!trimmedEmail) return;
@@ -108,7 +113,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       const userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
 
       if (!userId) {
-        setErrorEmail(
+        marcarErrorEmail(
           "No hay ningún usuario registrado con ese correo. Debe registrarse primero desde el login de su banco.",
         );
         return;
@@ -118,7 +123,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       // valor: no tiene sentido (ni corresponde) vincularlo a una en
       // particular como usuario de cadena.
       if (esAdministradorActivo(targetUser)) {
-        setErrorEmail(
+        marcarErrorEmail(
           "Es Administrador General: ya tiene acceso a todas las cadenas de valor.",
         );
         return;
@@ -135,7 +140,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       }
 
       if (verificacionSocios === "con_socios") {
-        setErrorEmail(
+        marcarErrorEmail(
           "Ya opera como cliente con una empresa vinculada. Para administrar la cadena debe registrarse con otro correo.",
         );
         return;
@@ -238,7 +243,6 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
                 error={!!errorEmail}
                 hideErrorSpace
                 aria-invalid={!!errorEmail}
-                aria-describedby={errorEmail ? "error-email-vinculo" : undefined}
               />
             </div>
             <Button
@@ -250,12 +254,6 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
               <FiUserPlus aria-hidden="true" /> Vincular
             </Button>
           </div>
-          {errorEmail && (
-            <p id="error-email-vinculo" className={styles.errorVinculo} role="alert">
-              <FiAlertCircle aria-hidden="true" />
-              {errorEmail}
-            </p>
-          )}
         </div>
 
         <div className={styles.seccionTitulo}>

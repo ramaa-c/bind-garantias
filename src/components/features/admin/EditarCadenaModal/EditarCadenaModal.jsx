@@ -73,7 +73,6 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   // Mismo patrón que LineasCadena.jsx/ActivarCadenaModal.jsx: cada campo
   // obligatorio muestra su propio error debajo en vez de un toast que
   // desaparece solo y no señala qué campo hay que corregir.
-  const [formErrors, setFormErrors] = useState({});
 
   const fileInputRef = useRef(null);
 
@@ -146,17 +145,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     JSON.stringify(normalizarParaComparar(formState)) ===
       JSON.stringify(normalizarParaComparar(formStateInicial));
 
-  // Actualiza el campo y, si ya tenía un error marcado, lo limpia apenas el
-  // usuario empieza a corregirlo - mismo criterio que handleInputChange en
-  // LineasCadena.jsx/ActivarCadenaModal.jsx.
   const handleInputChange = (field, val) => {
     setFormState((prev) => ({ ...prev, [field]: val }));
-    setFormErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
   };
 
   // Cambiar el tipo invalida el modelo elegido previamente (los modelos de
@@ -235,10 +225,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     return errores;
   };
 
+  const errorPendiente = Object.values(validarFormulario())[0];
+
   const handleSave = () => {
-    const errores = validarFormulario();
-    setFormErrors(errores);
-    if (Object.keys(errores).length > 0) return;
+    if (errorPendiente) return;
     setConfirmOpen(true);
   };
 
@@ -292,7 +282,11 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       preventClose={actualizarMutation.isPending}
       footer={
         <>
-          <span className={f.pieAyuda}>Los campos con * son obligatorios</span>
+          <span className={`${f.pieAyuda} ${!formState.monedaid ? f.pieAyudaError : ""}`}>
+            {formState.monedaid
+              ? "Los campos con * son obligatorios"
+              : "Esta cadena no tiene moneda asignada. Contactá a soporte para configurarla."}
+          </span>
           <Button variant="adminNeutro" onClick={onClose} disabled={actualizarMutation.isPending}>
             Cancelar
           </Button>
@@ -300,8 +294,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
             variant="blue"
             onClick={handleSave}
             isLoading={actualizarMutation.isPending}
-            disabled={sinCambios}
-            title={sinCambios ? "No hay cambios para guardar" : undefined}
+            disabled={sinCambios || !!errorPendiente}
+            title={sinCambios ? "No hay cambios para guardar" : errorPendiente}
           >
             Guardar cambios
           </Button>
@@ -344,8 +338,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               options={canalesOpciones}
               value={formState.tipocanalcomercializacionid}
               onChange={(val) => handleInputChange("tipocanalcomercializacionid", val)}
-              error={formErrors.tipocanalcomercializacionid}
-              hideErrorSpace={!formErrors.tipocanalcomercializacionid}
+              hideErrorSpace
             />
             <SelectSimple
               label="Equipo Comercial *"
@@ -353,8 +346,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               options={equiposOpciones}
               value={formState.equipocomercialid}
               onChange={(val) => handleInputChange("equipocomercialid", val)}
-              error={formErrors.equipocomercialid}
-              hideErrorSpace={!formErrors.equipocomercialid}
+              hideErrorSpace
             />
             <SelectSimple
               label="Tipo de Contrato *"
@@ -362,8 +354,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               options={contratosOpciones}
               value={formState.tipocontratoid}
               onChange={(val) => handleInputChange("tipocontratoid", val)}
-              error={formErrors.tipocontratoid}
-              hideErrorSpace={!formErrors.tipocontratoid}
+              hideErrorSpace
             />
           </div>
         </SeccionCadena>
@@ -421,8 +412,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               value={formState.monedaid}
               onChange={() => {}}
               disabled
-              error={formErrors.monedaid}
-              hideErrorSpace={!formErrors.monedaid}
+              hideErrorSpace
             />
             <div className={f.campo}>
               <InputSimple
@@ -434,10 +424,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 lazy={false}
                 sinIconos
                 disabled={!formState.monedaid}
-                error={formErrors.montomaximo}
               />
               {!formState.monedaid && <span className={f.ayudaEnCampo}>Sin moneda asignada</span>}
-              {formState.monedaid && !formErrors.montomaximo && (
+              {formState.monedaid && (
                 <MontoEnPalabras value={desenmascarar(formState.montomaximo)} />
               )}
             </div>
@@ -451,10 +440,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 lazy={false}
                 sinIconos
                 disabled={!formState.monedaid}
-                error={formErrors.montomaximoutilizado}
               />
               {!formState.monedaid && <span className={f.ayudaEnCampo}>Sin moneda asignada</span>}
-              {formState.monedaid && !formErrors.montomaximoutilizado && (
+              {formState.monedaid && (
                 <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
               )}
             </div>
@@ -465,8 +453,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               mask="% num"
               blocks={{ num: bloqueNumerico(100) }}
               lazy={false}
-              error={formErrors.porcentajemaximoutilizado}
-              hideErrorSpace={!formErrors.porcentajemaximoutilizado}
+              hideErrorSpace
             />
           </div>
         </SeccionCadena>

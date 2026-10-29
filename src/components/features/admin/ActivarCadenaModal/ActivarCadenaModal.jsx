@@ -53,7 +53,6 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   // Mismo patrón que LineasCadena.jsx: cada campo obligatorio muestra su
   // propio error debajo (InputSimple/SelectSimple ya lo soportan) en vez de
   // un toast que desaparece solo y no señala qué campo hay que corregir.
-  const [formErrors, setFormErrors] = useState({});
 
   const fileInputRef = useRef(null);
 
@@ -77,17 +76,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     return val.replace(/[^0-9,]/g, "").replace(",", ".");
   };
 
-  // Actualiza el campo y, si ya tenía un error marcado, lo limpia apenas el
-  // usuario empieza a corregirlo - mismo criterio que handleInputChange en
-  // LineasCadena.jsx.
   const handleInputChange = (field, val) => {
     setFormState((prev) => ({ ...prev, [field]: val }));
-    setFormErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
   };
 
   // Queries & Mutations
@@ -156,7 +146,6 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       modelodocumentoid: "0",
     });
     setTipoModeloDocumentoIdUI("");
-    setFormErrors({});
     setStep("form");
   };
 
@@ -227,10 +216,10 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     return errores;
   };
 
+  const errorPendiente = Object.values(validarFormulario())[0];
+
   const handleSave = () => {
-    const errores = validarFormulario();
-    setFormErrors(errores);
-    if (Object.keys(errores).length > 0) return;
+    if (errorPendiente) return;
     setConfirmOpen(true);
   };
 
@@ -320,7 +309,13 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
             <Button variant="adminNeutro" onClick={() => setStep("select")} disabled={crearMutation.isPending}>
               <FiArrowLeft aria-hidden="true" /> Volver
             </Button>
-            <Button variant="blue" onClick={handleSave} isLoading={crearMutation.isPending}>
+            <Button
+              variant="blue"
+              onClick={handleSave}
+              isLoading={crearMutation.isPending}
+              disabled={!!errorPendiente}
+              title={errorPendiente}
+            >
               <FiPower aria-hidden="true" /> Activar cadena
             </Button>
           </>
@@ -421,8 +416,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   options={canalesOpciones}
                   value={formState.tipocanalcomercializacionid}
                   onChange={(val) => handleInputChange("tipocanalcomercializacionid", val)}
-                  error={formErrors.tipocanalcomercializacionid}
-                  hideErrorSpace={!formErrors.tipocanalcomercializacionid}
+                  hideErrorSpace
                 />
                 <SelectSimple
                   label="Equipo Comercial *"
@@ -430,8 +424,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   options={equiposOpciones}
                   value={formState.equipocomercialid}
                   onChange={(val) => handleInputChange("equipocomercialid", val)}
-                  error={formErrors.equipocomercialid}
-                  hideErrorSpace={!formErrors.equipocomercialid}
+                  hideErrorSpace
                 />
                 <SelectSimple
                   label="Tipo de Contrato *"
@@ -439,8 +432,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   options={contratosOpciones}
                   value={formState.tipocontratoid}
                   onChange={(val) => handleInputChange("tipocontratoid", val)}
-                  error={formErrors.tipocontratoid}
-                  hideErrorSpace={!formErrors.tipocontratoid}
+                  hideErrorSpace
                 />
               </div>
             </SeccionCadena>
@@ -490,8 +482,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   options={monedasOpciones}
                   value={formState.monedaid}
                   onChange={(val) => handleInputChange("monedaid", val)}
-                  error={formErrors.monedaid}
-                  hideErrorSpace={!formErrors.monedaid}
+                  hideErrorSpace
                 />
                 <div className={f.campo}>
                   <InputSimple
@@ -503,10 +494,9 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     lazy={false}
                     sinIconos
                     disabled={!formState.monedaid}
-                    error={formErrors.montomaximoutilizado}
                   />
                   {!formState.monedaid && <span className={f.ayudaEnCampo}>Elegí primero una moneda</span>}
-                  {formState.monedaid && !formErrors.montomaximoutilizado && (
+                  {formState.monedaid && (
                     <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
                   )}
                 </div>
@@ -517,8 +507,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   mask="% num"
                   blocks={{ num: bloqueNumerico(100) }}
                   lazy={false}
-                  error={formErrors.porcentajemaximoutilizado}
-                  hideErrorSpace={!formErrors.porcentajemaximoutilizado}
+                  hideErrorSpace
                 />
               </div>
             </SeccionCadena>

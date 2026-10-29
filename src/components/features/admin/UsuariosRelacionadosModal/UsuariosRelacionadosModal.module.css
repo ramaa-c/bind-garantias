@@ -25,19 +25,6 @@
   margin: 0;
 }
 
-.errorVinculo {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  color: #ff7b72;
-  font-size: 0.78rem;
-}
-
-.errorVinculo svg {
-  flex-shrink: 0;
-}
-
 .seccionTitulo {
   display: flex;
   align-items: center;

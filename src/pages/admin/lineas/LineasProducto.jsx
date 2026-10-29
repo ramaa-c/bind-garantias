@@ -146,10 +146,7 @@ const ConfigModalInner = ({
   const handleSubmitForm = (e) => {
     e.preventDefault();
 
-    if (!formData.tipoobligacionid) {
-      toast.warning("Por favor selecciona un producto financiero");
-      return;
-    }
+    if (faltanObligatorios) return;
 
     const payload = {
       tipoobligaciontipolimiteid: formData.tipoobligaciontipolimiteid || 0,
@@ -182,6 +179,7 @@ const ConfigModalInner = ({
   };
 
   const guardandoProducto = asociarMutation.isPending || actualizarProductoMutation.isPending;
+  const faltanObligatorios = !formData.tipoobligacionid || !String(formData.descripcionProducto || "").trim();
 
   return (
     <form onSubmit={handleSubmitForm} className={styles.formProducto}>
@@ -205,11 +203,17 @@ const ConfigModalInner = ({
         />
         <span className={styles.ayudaCampo}>Es el nombre con el que se identifica el producto dentro de esta línea.</span>
       </div>
-      <PieModal>
+      <PieModal ayuda="Los campos con * son obligatorios">
         <Button type="button" variant="adminNeutro" onClick={onClose} disabled={guardandoProducto}>
           Cancelar
         </Button>
-        <Button type="submit" variant="blue" isLoading={guardandoProducto} disabled={guardandoProducto}>
+        <Button
+          type="submit"
+          variant="blue"
+          isLoading={guardandoProducto}
+          disabled={guardandoProducto || faltanObligatorios}
+          title={faltanObligatorios ? "Completá los campos obligatorios" : undefined}
+        >
           {formData.tipoobligaciontipolimiteid ? "Guardar cambios" : "Vincular producto"}
         </Button>
       </PieModal>

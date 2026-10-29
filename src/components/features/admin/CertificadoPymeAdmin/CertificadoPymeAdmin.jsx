@@ -84,7 +84,6 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   const [certificadoEditando, setCertificadoEditando] = useState(null);
   const [form, setForm] = useState(FORM_INICIAL);
   const [guardando, setGuardando] = useState(false);
-  const [errorNumero, setErrorNumero] = useState("");
   const [confirmEliminarOpen, setConfirmEliminarOpen] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -137,7 +136,6 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   const abrirAlta = () => {
     setCertificadoEditando(null);
     setForm(FORM_INICIAL);
-    setErrorNumero("");
     setModalAbierto(true);
   };
 
@@ -152,21 +150,13 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       sector: sectorGuardado(certificadoActual),
       tamanio: String(certificadoActual.tamanioempresaid ?? certificadoActual.TamanioEmpresaId ?? 0),
     });
-    setErrorNumero("");
     setModalAbierto(true);
   };
 
   const handleGuardar = async (e) => {
     e.preventDefault();
     const numero = String(form.numero ?? "").trim();
-    if (!numero) {
-      setErrorNumero("El número de certificado es obligatorio.");
-      return;
-    }
-    if (!form.sector) {
-      toast.error("Elegí el sector de actividad del certificado.");
-      return;
-    }
+    if (!numero || !form.sector) return;
     setGuardando(true);
     try {
       const payload = {
@@ -344,10 +334,18 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         preventClose={guardando}
         footer={
           <>
+            <span className={styles.pieAyuda}>Los campos con * son obligatorios</span>
             <Button type="button" variant="adminNeutro" onClick={() => setModalAbierto(false)} disabled={guardando}>
               Cancelar
             </Button>
-            <Button type="submit" form="form-certificado-pyme" variant="blue" isLoading={guardando}>
+            <Button
+              type="submit"
+              form="form-certificado-pyme"
+              variant="blue"
+              isLoading={guardando}
+              disabled={!String(form.numero ?? "").trim() || !form.sector}
+              title={!String(form.numero ?? "").trim() || !form.sector ? "Completá los campos obligatorios" : undefined}
+            >
               {certificadoEditando ? "Guardar" : "Cargar certificado"}
             </Button>
           </>
@@ -357,19 +355,14 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
           <InputSimple
             label="Número de certificado *"
             value={form.numero}
-            onChange={(val) => {
-              setForm((f) => ({ ...f, numero: val }));
-              if (errorNumero) setErrorNumero("");
-            }}
+            onChange={(val) => setForm((f) => ({ ...f, numero: val }))}
             variant="admin"
-            error={errorNumero}
-            hideErrorSpace={!errorNumero}
+            hideErrorSpace
             aria-required="true"
-            aria-invalid={!!errorNumero}
           />
           <div className={styles.formRow}>
             <SelectSimple
-              label="Sector"
+              label="Sector *"
               value={form.sector}
               onChange={(val) => setForm((f) => ({ ...f, sector: val }))}
               options={OPCIONES_SECTOR}
