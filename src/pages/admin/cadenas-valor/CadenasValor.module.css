@@ -31,37 +31,6 @@
   margin-left: auto;
 }
 
-.paginacionCompacta {
-  display: none;
-  margin-left: auto;
-}
-
-.paginacionCompacta > div {
-  margin-top: 0;
-}
-
-.paginacionCompacta button {
-  min-width: 1.85rem;
-  height: 1.85rem;
-  padding: 0 0.4rem;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-}
-
-@media (min-width: 64rem) {
-  .paginacionCompacta {
-    display: block;
-  }
-
-  .paginacionCompacta + .btnActivar {
-    margin-left: 0;
-  }
-
-  .paginacionPie {
-    display: none;
-  }
-}
-
 /* ── FILTROS ────────────────────────────────────────────── */
 .filtros {
   display: flex;

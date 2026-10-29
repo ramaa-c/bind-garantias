@@ -302,22 +302,6 @@ export default function CadenasValor() {
     setPagina(1);
   };
 
-  const paginacion = (compacta) =>
-    !isLoadingActive &&
-    filteredCadenas.length > 0 && (
-      <div className={compacta ? styles.paginacionCompacta : styles.paginacionPie}>
-        <Paginacion
-          page={paginaActual}
-          onPageChange={setPagina}
-          hasMoreData={paginaActual < totalPaginas}
-          isLoading={isLoadingActive}
-          knownEndPage={totalPaginas}
-          variant="admin"
-          {...(compacta ? {} : { totalItems: filteredCadenas.length, pageSize: ELEMENTOS_POR_PAGINA, itemLabel: "cadenas" })}
-        />
-      </div>
-    );
-
   const renderCupo = (item) => {
     const maximo = Number(item.montomaximo) || 0;
     if (maximo <= 0) return <span className={styles.cupoVacio}>Sin cupo definido</span>;
@@ -356,7 +340,6 @@ export default function CadenasValor() {
               : `${filteredCadenas.length} de ${activeList.length} cadenas`}
           </span>
         )}
-        {paginacion(true)}
         <Button type="button" variant="blue" size="md" onClick={handleOpenActivarModal} className={styles.btnActivar} aria-label="Activar cadena">
           <FiPlus /> <span className={styles.textoBoton}>Activar cadena</span>
         </Button>
@@ -514,7 +497,19 @@ export default function CadenasValor() {
         )}
       </div>
 
-      {paginacion(false)}
+      {!isLoadingActive && filteredCadenas.length > 0 && (
+        <Paginacion
+          page={paginaActual}
+          onPageChange={setPagina}
+          hasMoreData={paginaActual < totalPaginas}
+          isLoading={isLoadingActive}
+          knownEndPage={totalPaginas}
+          variant="admin"
+          totalItems={filteredCadenas.length}
+          pageSize={ELEMENTOS_POR_PAGINA}
+          itemLabel="cadenas"
+        />
+      )}
 
       {/* Modals */}
       <ActivarCadenaModal
