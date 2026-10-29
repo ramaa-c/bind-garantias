@@ -901,7 +901,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className={styles.container} ref={contenedorRef} data-ancho-completo>
+    <div className={styles.container} ref={contenedorRef}>
       <div className={styles.layout}>
         <aside className={styles.panel} aria-label="Cadena y filtros">
           {fichaCadena}

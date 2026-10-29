@@ -5,167 +5,8 @@
   width: 100%;
 }
 
-/* ── ENCABEZADO ─────────────────────────────────────────── */
-.header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin: 0;
-  color: #ffffff;
-  letter-spacing: -0.02em;
-}
-
 .headerResumen {
-  font-size: 0.8rem;
-  color: #8b949e;
   white-space: nowrap;
-}
-
-.btnActivar {
-  margin-left: auto;
-}
-
-/* ── FILTROS ────────────────────────────────────────────── */
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.searchWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  flex: 1 1 16rem;
-  max-width: 30rem;
-  height: 2.5rem;
-  padding: 0 0.85rem;
-  border-radius: 0.625rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
-  transition: border-color 0.2s;
-}
-
-.searchWrap:focus-within {
-  border-color: var(--color-azul-bind, #4c65e6);
-  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.18);
-}
-
-.searchWrap input {
-  flex: 1;
-  min-width: 0;
-  background: none;
-  border: none;
-  outline: none;
-  color: #ffffff;
-  font-size: 0.85rem;
-}
-
-.searchWrap input::placeholder {
-  color: var(--text-muted);
-}
-
-.iconSearch {
-  color: #8b949e;
-  flex-shrink: 0;
-}
-
-.estados {
-  display: flex;
-  gap: 0.15rem;
-  padding: 0.2rem;
-  border-radius: 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.estado {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  height: 1.95rem;
-  padding: 0 0.7rem;
-  border: 0;
-  border-radius: 0.5rem;
-  background: none;
-  color: #8b949e;
-  font-size: 0.78rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.estado:hover {
-  color: #ffffff;
-}
-
-.estadoCantidad {
-  min-width: 1.25rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 0.4rem;
-  background: rgba(255, 255, 255, 0.06);
-  color: #9aa4b0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-align: center;
-}
-
-.estadoActivo,
-.estadoActivo:hover {
-  background: rgba(76, 101, 230, 0.2);
-  box-shadow: inset 0 0 0 1px rgba(76, 101, 230, 0.45);
-  color: #ffffff;
-}
-
-.estadoActivo .estadoCantidad {
-  background: var(--color-azul-bind, #4c65e6);
-  color: #ffffff;
-}
-
-.filtroSelect {
-  width: 11rem;
-}
-
-.limpiar {
-  padding: 0 0.25rem;
-  border: 0;
-  background: none;
-  color: var(--color-azul-bind-300, #8a9fff);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.limpiar:hover {
-  color: #ffffff;
-}
-
-@media (max-width: 47.99rem) {
-  .searchWrap {
-    flex-basis: 100%;
-    max-width: none;
-  }
-
-  .estados {
-    flex: 1 1 100%;
-  }
-
-  .estado {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .filtroSelect {
-    flex: 1 1 0;
-    width: auto;
-  }
 }
 
 /* ── TABLA ──────────────────────────────────────────────── */
@@ -221,10 +62,13 @@
 @media (min-width: 64rem) {
   .tabla {
     gap: 0;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.875rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.9rem;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.015);
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .fila {
@@ -253,7 +97,7 @@
     min-height: 2.4rem;
     padding-top: 0;
     padding-bottom: 0;
-    background: rgba(255, 255, 255, 0.03);
+    background: #141922;
     border-bottom-color: rgba(255, 255, 255, 0.07);
     color: #7d8590;
     font-size: 0.65rem;

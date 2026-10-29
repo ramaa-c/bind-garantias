@@ -220,7 +220,7 @@ export default function TiposRelacionSocio() {
   const valorComun = valoresTab.length > 0 && valoresTab.every((v) => v === valoresTab[0]) ? valoresTab[0] : null;
 
   return (
-    <div className={styles.container} data-ancho-completo>
+    <div className={styles.container}>
       <div className={styles.header}>
         <h1>Relaciones de terceros</h1>
       </div>

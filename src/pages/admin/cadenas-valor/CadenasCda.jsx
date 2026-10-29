@@ -120,7 +120,7 @@ export default function CadenasCda() {
   if (bloqueado) return null;
 
   return (
-    <div className={styles.container} data-ancho-completo>
+    <div className={styles.container}>
       <div className={styles.header}>
         <h1>CDAs por cadena</h1>
         <span className={styles.headerResumen}>Qué criterios se validan en cada cadena, por pantalla</span>

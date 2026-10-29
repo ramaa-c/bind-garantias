@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FiSearch, FiPlus, FiEdit2, FiList, FiUsers, FiShield } from "react-icons/fi";
 import styles from "./CadenasValor.module.css";
+import l from "../../../components/features/admin/ListadoAdmin/ListadoAdmin.module.css";
 import { useObtenerTodasWebConEstado, useActualizarCadenaValor } from "../../../hooks/useCadenaValor";
 import { cadenaValorService } from "../../../services/cadenaValorService";
 import { lineaService } from "../../../services/lineaService";
@@ -8,7 +9,7 @@ import {
   useTipoCanalComercializacion,
   useEquipoComercial,
 } from "../../../hooks/useCatalogos";
-import { Spinner, Button, Skeleton, Switch, SelectSimple } from "../../../components/ui";
+import { Spinner, Button, Skeleton, Switch, FiltroDesplegable } from "../../../components/ui";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import {
   ActivarCadenaModal,
@@ -334,24 +335,24 @@ export default function CadenasValor() {
   if (bloqueado) return null;
 
   return (
-    <div className={styles.container} data-ancho-completo>
-      <div className={styles.header}>
+    <div className={styles.container}>
+      <div className={l.encabezado}>
         <h1>Cadenas de valor</h1>
         {!isLoadingActive && (
-          <span className={styles.headerResumen}>
+          <span className={`${l.resumen} ${styles.headerResumen}`}>
             {filteredCadenas.length === activeList.length
               ? `${activeList.length} cadenas`
               : `${filteredCadenas.length} de ${activeList.length} cadenas`}
           </span>
         )}
-        <Button type="button" variant="blue" size="md" onClick={handleOpenActivarModal} className={styles.btnActivar} aria-label="Activar cadena">
+        <Button type="button" variant="blue" size="md" onClick={handleOpenActivarModal} className={l.accionPrincipal} aria-label="Activar cadena">
           <FiPlus /> <span className={styles.textoBoton}>Activar cadena</span>
         </Button>
       </div>
 
-      <div className={styles.filtros}>
-        <div className={styles.searchWrap}>
-          <FiSearch className={styles.iconSearch} />
+      <div className={l.filtros}>
+        <div className={l.buscador}>
+          <FiSearch aria-hidden="true" />
           <input
             type="text"
             placeholder="Buscar por denominación o referencia"
@@ -360,47 +361,37 @@ export default function CadenasValor() {
             aria-label="Buscar por denominación o referencia"
           />
         </div>
-        <div className={styles.estados} role="radiogroup" aria-label="Estado">
+        <div className={l.segmentado} role="radiogroup" aria-label="Estado">
           {ESTADOS_FILTRO.map(({ value, label }) => (
             <button
               key={value}
               type="button"
               role="radio"
               aria-checked={estadoFiltro === value}
-              className={`${styles.estado} ${estadoFiltro === value ? styles.estadoActivo : ""}`}
+              className={`${l.segOpcion} ${estadoFiltro === value ? l.segActiva : ""}`}
               onClick={() => conReinicioDePagina(setEstadoFiltro)(value)}
             >
               {label}
-              <span className={styles.estadoCantidad}>{isLoadingActive ? "–" : cantidadPorEstado[value]}</span>
+              <span className={l.segCantidad}>{isLoadingActive ? "–" : cantidadPorEstado[value]}</span>
             </button>
           ))}
         </div>
-        <div className={styles.filtroSelect}>
-          <SelectSimple
-            label="Canal"
-            value={canalFiltro}
-            onChange={conReinicioDePagina(setCanalFiltro)}
-            options={[OPCION_TODOS, ...canalesOpciones]}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-          />
-        </div>
-        <div className={styles.filtroSelect}>
-          <SelectSimple
-            label="Equipo"
-            value={equipoFiltro}
-            onChange={conReinicioDePagina(setEquipoFiltro)}
-            options={[OPCION_TODOS, ...equiposOpciones]}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-          />
-        </div>
+        <FiltroDesplegable
+          etiqueta="Canal"
+          valor={canalFiltro}
+          opciones={[OPCION_TODOS, ...canalesOpciones]}
+          onChange={conReinicioDePagina(setCanalFiltro)}
+          valorPorDefecto={OPCION_TODOS.value}
+        />
+        <FiltroDesplegable
+          etiqueta="Equipo"
+          valor={equipoFiltro}
+          opciones={[OPCION_TODOS, ...equiposOpciones]}
+          onChange={conReinicioDePagina(setEquipoFiltro)}
+          valorPorDefecto={OPCION_TODOS.value}
+        />
         {hayFiltrosActivos && (
-          <button type="button" className={styles.limpiar} onClick={limpiarFiltros}>
+          <button type="button" className={l.limpiar} onClick={limpiarFiltros}>
             Limpiar
           </button>
         )}
