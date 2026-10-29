@@ -231,8 +231,11 @@ api.interceptors.response.use(
 
     const isNetworkError = !error.response;
     const isServerError = error.response && error.response.status >= 500;
+    // Solo lecturas: un POST/PUT que respondió 5xx (o se cortó) puede haberse
+    // aplicado igual, y reintentarlo duplica altas en la API.
+    const esLectura = (config.method || "get").toLowerCase() === "get";
     const isSafeToRetry =
-      (isNetworkError || isServerError) && !isPoolExhaustionError(error);
+      esLectura && (isNetworkError || isServerError) && !isPoolExhaustionError(error);
 
     if (isSafeToRetry && !config.noRetry && config.__retryCount < MAX_RETRIES) {
       config.__retryCount += 1;

@@ -83,8 +83,8 @@ export default function Paso5Documentacion({
   isSubmitting,
   socioId,
 }) {
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = cadenaActivaId;
 
   const { tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);

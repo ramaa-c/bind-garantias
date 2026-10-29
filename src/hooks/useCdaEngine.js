@@ -210,6 +210,24 @@ export const useCdaEngine = () => {
         return { success: true, errors: [] };
       }
 
+      // 403/404: la API no reconoce la entidad como propia del usuario. No es
+      // una integración caída: quien llama no debe tomarlo como "dejar pasar".
+      if (status === 403 || status === 404) {
+        setLoading(false);
+        return {
+          success: false,
+          errors: [
+            {
+              cdaid: 0,
+              isInvalidante: true,
+              message: "No se pudieron evaluar los criterios de aceptación. Intentá nuevamente o contactá a soporte.",
+              isSystemError: true,
+              isAccesoRechazado: true,
+            },
+          ],
+        };
+      }
+
       // 400 (cualquier otro motivo) / 500 / red / cualquier otra cosa: error
       // de sistema, no un rechazo de negocio real.
       const mensajeApi = responseData?.message || responseData?.Message;

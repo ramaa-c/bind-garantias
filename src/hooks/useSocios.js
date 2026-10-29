@@ -7,7 +7,6 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
-import { usuarioService } from "../services/usuarioService";
 import { esSocioVacio } from "../utils/socioUtils";
 import { calcularEstadoDesdeHistorial } from "../utils/executeCda";
 import { idsCdasActivos, useObtenerGrupoCdaConCdas } from "./useCadenaValor";
@@ -265,50 +264,29 @@ export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
   });
 };
 
-// Sección "Usuarios Vinculados" del panel admin (EmpresaDetalle.jsx).
-// api/SocioUsuario/{SocioID}:PorSocio solo trae { SocioID, UsuarioWebID,
-// momentoCreacion } - sin email ni estado de la cuenta - así que hay que
-// resolver cada UsuarioWebID aparte contra api/usuario/{id} (mismo patrón
-// que useEmpresasCompletas, arriba, pero en el sentido socio → usuarios en
-// vez de usuario → socios).
-export const useUsuariosVinculadosASocio = (socioId, { conDetalle = true } = {}) => {
-  const { data: vinculos, isPending: isPendingVinculos } = useQuery({
+// api/SocioUsuario/{SocioID}:PorSocio trae el email de cada usuario: no hace
+// falta pedir api/usuario/{id}, que la API solo responde al propio usuario o
+// a un Admin (al resto le da "recurso ajeno").
+export const useUsuariosVinculadosASocio = (socioId) => {
+  const { data: vinculos, isPending } = useQuery({
     queryKey: ["socioUsuario", "listaPorSocio", socioId],
     queryFn: () => sociosService.obtenerSocioUsuarioPorSocioId(socioId),
     enabled: !!socioId,
     staleTime: 1000 * 60 * 5,
   });
 
-  const lista = Array.isArray(vinculos) ? vinculos : [];
-  const usuarioIds = lista
-    .map((v) => Number(v.usuariowebid ?? v.UsuarioWebID))
-    .filter((id) => !Number.isNaN(id));
-
-  const resultados = useQueries({
-    queries: (conDetalle ? usuarioIds : []).map((usuarioWebId) => ({
-      queryKey: ["usuarios", "detalle", usuarioWebId],
-      queryFn: () => usuarioService.obtenerUsuarioPorId(usuarioWebId),
-      staleTime: 1000 * 60 * 5,
-    })),
-  });
-
-  const usuariosVinculados = lista
-    .map((v, i) => {
-      const detalle = resultados[i]?.data;
+  const usuariosVinculados = (Array.isArray(vinculos) ? vinculos : [])
+    .map((v) => {
       const usuarioWebId = Number(v.usuariowebid ?? v.UsuarioWebID);
       if (Number.isNaN(usuarioWebId)) return null;
       return {
         usuarioWebId,
         momentoCreacion: v.momentocreacion ?? v.momentoCreacion ?? v.MomentoCreacion,
-        email: detalle?.email || detalle?.Email || "",
-        estado: detalle?.estado ?? detalle?.Estado ?? "",
+        email: v.email ?? v.Email ?? "",
         esAdministradorCuit: String(v.esadministradorcuit ?? v.EsAdministradorCuit ?? "") === "1",
       };
     })
     .filter(Boolean);
 
-  return {
-    usuariosVinculados,
-    isLoading: isPendingVinculos || resultados.some((r) => r.isPending),
-  };
+  return { usuariosVinculados, isLoading: !!socioId && isPending };
 };

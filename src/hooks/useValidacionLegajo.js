@@ -102,12 +102,12 @@ export const useValidacionLegajo = ({
   cadenaId: cadenaIdOverride,
 } = {}) => {
   const empresaActiva = useEmpresaActiva(adminMode);
-  const { cadenaSlug } = useCadenaActiva();
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
 
   const socioIdActivo = adminMode ? socioIdOverride : empresaActiva.socioIdActivo;
   const tipoPersonaId = adminMode ? tipoPersonaIdOverride : empresaActiva.tipoPersonaId;
   const nombreEmpresa = adminMode ? nombreEmpresaOverride : empresaActiva.nombreEmpresa;
-  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : cadenaActivaId;
 
   const { requisitos, isLoading: loadingRequisitos } = useRequisitos(
     cadenaId,

@@ -23,6 +23,9 @@ import { BotonIcono } from "../../../ui/BotonIcono/BotonIcono";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { useHistorialCdaLinea } from "../../../../hooks/useLinea";
 import { useObtenerTodosCdas } from "../../../../hooks/useCda";
+import { useObtenerGrupoCdaConCdas } from "../../../../hooks/useCadenaValor";
+import { esAdminGeneralToken } from "../../../../api/tokenApi";
+import { PANTALLA_LINEAS } from "../../../../utils/pantallasCda";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { formatearMomentoControl, ultimaEjecucionPorCda, ordenarEjecucionesCda } from "../../../../utils/executeCda";
 import {
@@ -138,7 +141,12 @@ export const SolicitudPanel = ({
     tipoLimiteSocioId,
     isOpen,
   );
-  const { data: catalogoCdas } = useObtenerTodosCdas({ enabled: isOpen });
+  const esAdminGeneral = esAdminGeneralToken();
+  const { data: catalogoCdas } = useObtenerTodosCdas({ enabled: isOpen && esAdminGeneral });
+  const { data: grupoLineas } = useObtenerGrupoCdaConCdas(
+    isOpen && !esAdminGeneral ? solicitud?.cadenavalorid : null,
+    PANTALLA_LINEAS,
+  );
   const {
     isValid: legajoValido,
     totalRequisitos,
@@ -154,12 +162,12 @@ export const SolicitudPanel = ({
 
   const descripcionPorCda = useMemo(() => {
     const mapa = new Map();
-    (Array.isArray(catalogoCdas) ? catalogoCdas : []).forEach((c) => {
+    [...(grupoLineas?.cdas || []), ...(Array.isArray(catalogoCdas) ? catalogoCdas : [])].forEach((c) => {
       const id = Number(c.cdaid ?? c.CdaID);
       if (id) mapa.set(id, c.descripcion || c.Descripcion || "");
     });
     return mapa;
-  }, [catalogoCdas]);
+  }, [catalogoCdas, grupoLineas]);
 
   const historial = useMemo(() => normalizarHistorialLinea(historialRaw), [historialRaw]);
   const ultimas = useMemo(() => ultimaEjecucionPorCda(historial), [historial]);
@@ -336,18 +344,20 @@ export const SolicitudPanel = ({
               <FiChevronRight className={styles.accesoFlecha} aria-hidden="true" />
             </button>
           </li>
-          <li>
-            <button type="button" className={styles.acceso} onClick={onVerActividad}>
-              <span className={styles.accesoIcono} aria-hidden="true">
-                <FiActivity />
-              </span>
-              <span className={styles.accesoTexto}>
-                <span className={styles.accesoLabel}>Actividad de la empresa</span>
-                <span className={styles.accesoAyuda}>Consultas y cambios registrados</span>
-              </span>
-              <FiChevronRight className={styles.accesoFlecha} aria-hidden="true" />
-            </button>
-          </li>
+          {!soloLectura && (
+            <li>
+              <button type="button" className={styles.acceso} onClick={onVerActividad}>
+                <span className={styles.accesoIcono} aria-hidden="true">
+                  <FiActivity />
+                </span>
+                <span className={styles.accesoTexto}>
+                  <span className={styles.accesoLabel}>Actividad de la empresa</span>
+                  <span className={styles.accesoAyuda}>Consultas y cambios registrados</span>
+                </span>
+                <FiChevronRight className={styles.accesoFlecha} aria-hidden="true" />
+              </button>
+            </li>
+          )}
         </ul>
       </section>
     </>

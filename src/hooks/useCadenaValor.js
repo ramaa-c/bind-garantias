@@ -4,6 +4,7 @@ import { cadenaValorService } from '../services/cadenaValorService';
 import { cdaService } from '../services/cdaService';
 import { esCadenaAprobadaYVigente, esCadenaOperativaParaWeb, obtenerCadenaValorId } from '../utils/cadenaValorUtils';
 import { esCdaActivo } from '../utils/cdaUtils';
+import { esAdminGeneralToken } from '../api/tokenApi';
 
 const CLAVES_MONTO_MAXIMO_CORE = ['montomaximocv', 'montomaximo', 'tope', 'monto_maximo'];
 
@@ -95,9 +96,10 @@ export const consultaGrupoCdaConCdas = (cadenaId, pantalla) => ({
         const grupoList = Array.isArray(grupo) ? grupo : grupo?.items || grupo?.data || (grupo ? [grupo] : []);
         const grupoRow = grupoList[0] || null;
         if (!grupoRow?.grupocdaid) return { grupo: null, cdas: [] };
+        // El catálogo global (cda/Cda) es solo para Admin: el resto recibiría 403 en cada consulta
         const [vinculados, catalogo] = await Promise.all([
             cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid),
-            cdaService.obtenerTodosCdas().catch(() => null),
+            esAdminGeneralToken() ? cdaService.obtenerTodosCdas().catch(() => null) : null,
         ]);
         const listaCatalogo = Array.isArray(catalogo) ? catalogo : catalogo?.items || catalogo?.data || [];
         const activoGlobalPorId = new Map(

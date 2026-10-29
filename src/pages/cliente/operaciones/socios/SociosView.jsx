@@ -20,8 +20,8 @@ import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 export default function SociosView() {
   const queryClient = useQueryClient();
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = cadenaActivaId;
   const { socioIdActivo, cuitActivo } = useEmpresaActiva();
 
   // Único caso que NO bloquea la carga (ver useBloqueoLegajo): sin

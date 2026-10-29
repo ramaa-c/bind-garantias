@@ -40,7 +40,7 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
   const { basePath } = useChannel();
   const { cadenaId } = useCadenaActiva();
   const miUsuarioWebId = obtenerDatosTokenApi()?.usuarioWebId ?? null;
-  const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId, { conDetalle: false });
+  const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId);
   const { data: canales } = useTipoCanalComercializacion();
   const { data: cadenaWeb } = useObtenerCadenaPublicaWeb(cadenaId);
   const { asistenciaQueAtiendo, asistenciaPedida } = useAsistenciaInterna();

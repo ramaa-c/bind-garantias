@@ -67,7 +67,6 @@ export const AvisoTelefonoEmpresa = () => {
   const miUsuarioWebId = obtenerDatosTokenApi()?.usuarioWebId ?? null;
   const { usuariosVinculados, isLoading: cargandoUsuarios } = useUsuariosVinculadosASocio(
     isVendor ? socioIdActivo : null,
-    { conDetalle: false },
   );
   const cuitLimpio = String(cuitActivo || "").replace(/\D/g, "");
   const { data: invitaciones } = useQuery({

@@ -110,8 +110,8 @@ export function SociosLegajo({
   // CDAs del socio, ver detectarCadenaValorId). Sin detección, useRequisitos
   // cae solo al fallback por tipo de persona/sociedad (ver mismo criterio en
   // DocumentosLegajo).
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : cadenaActivaId;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   // Reutiliza la misma validación que ya decide si el legajo está completo,

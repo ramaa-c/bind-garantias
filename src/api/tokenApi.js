@@ -99,8 +99,11 @@ export const obtenerDatosTokenApi = () => {
     emitidoMs: payload.iat ? payload.iat * 1000 : guardadoEn,
     inicioSesionMs: payload.sat ? payload.sat * 1000 : null,
     usuarioWebId: payload.uid ?? null,
+    roles: String(payload.roles ?? "").split(/[;,]/).map((r) => r.trim()).filter(Boolean),
   };
 };
+
+export const esAdminGeneralToken = () => (obtenerDatosTokenApi()?.roles || []).includes("Admin");
 
 export const cerrarSesionApi = () => {
   const token = obtenerTokenApi();

@@ -448,14 +448,12 @@ export const AltaOperacion = () => {
     setEnviandoSolicitud(true);
     try {
       const cleanData = data;
-      const cuitLimpio = cuitActivo
-        ? String(cuitActivo).replace(/\D/g, "")
-        : "33711316839";
+      const cuitLimpio = String(cuitActivo || "").replace(/\D/g, "");
 
       let finalSocioId = socioIdActivo;
 
-      // Si no se encuentra el ID real del socio, bloqueamos el envío de la solicitud
-      if (!finalSocioId) {
+      // Sin socio o sin CUIT de la empresa activa no se puede armar la solicitud
+      if (!finalSocioId || cuitLimpio.length !== 11) {
         toast.error("Error al enviar", {
           description: "No se pudo determinar el ID real del socio. La solicitud no se puede procesar.",
         });
@@ -541,17 +539,24 @@ export const AltaOperacion = () => {
       // Regla: CDA de PANTALLA_LINEAS sobre la línea elegida (vinculado por
       // cadena entera en LineasCda.jsx, ver CdaPanel.jsx). Mismo criterio
       // que PorcentajeMinimoSolicitud: no impide cargar la solicitud, si
-      // rechaza se envía igual pero queda rechazada automáticamente. Se
-      // reusa el motor ya probado en el onboarding (useCdaEngine), pasando
-      // LineaID en vez de SocioID/TerceroID - es el mismo parámetro real
-      // que ya acepta cda/execute. Un error de sistema o "pendiente"
-      // (integración caída) NO rechaza, se deja pasar igual que en el resto
-      // de los CDAs de la app - solo un rechazo de negocio real bloquea.
+      // rechaza se envía igual pero queda rechazada automáticamente.
+      // La línea del socio todavía no existe, así que no hay LineaID: se
+      // evalúa por SocioID + TipoLimiteID (el TipoLimiteID no es una línea
+      // del socio y como LineaID la API lo rechazaba con 404, con lo que el
+      // CDA nunca se aplicaba). Una integración caída o "pendiente" NO
+      // rechaza; un 403/404 corta el envío, porque no se evaluó nada.
       const resultCdaLinea = await ejecutarValidaciones(
         PANTALLA_LINEAS,
-        { lineaId: tipoLimiteIdReal },
+        { socioId: finalSocioId, tipoLimiteId: tipoLimiteIdReal },
         Number(cadenaSlug),
       );
+      if (resultCdaLinea.errors.some((e) => e.isAccesoRechazado)) {
+        toast.error("No se pudo enviar la solicitud", {
+          description: resultCdaLinea.errors[0].message,
+        });
+        setEnviandoSolicitud(false);
+        return;
+      }
       const rechazosCdaLinea = resultCdaLinea.success
         ? []
         : resultCdaLinea.errors.filter(

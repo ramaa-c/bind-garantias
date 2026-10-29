@@ -1083,7 +1083,7 @@ export default function Dashboard() {
                       {/* Siempre seguido de otra acción (CRITERIOS si el admin
                           está restringido, ACEPTAR/RECHAZAR si no), así que el
                           divisor va sin condición extra. */}
-                      {isPendiente && (
+                      {isPendiente && !isRestricted && (
                         <>
                           <BotonIcono
                             icon={FiFileText}

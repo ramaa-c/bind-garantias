@@ -154,8 +154,8 @@ export function DocumentosLegajo({
   // detectar (historial viejo o inexistente), useRequisitos cae solo al
   // fallback por tipo de persona/sociedad — sigue siendo mejor que mostrar
   // el legajo completo sin ningún criterio.
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : cadenaActivaId;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const estructuraFiltrada = useMemo(() => {

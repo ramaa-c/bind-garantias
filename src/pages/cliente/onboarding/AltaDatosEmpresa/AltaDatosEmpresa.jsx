@@ -373,7 +373,18 @@ export const AltaDatosEmpresa = () => {
         "[AltaDatosEmpresa] PUT a /Socio con payload:",
         { ...payloadSocio, socioid: socioId },
       );
-      await sociosService.actualizarSocio({ ...payloadSocio, socioid: socioId });
+      // El cliente no puede cambiar estos campos: la API los ignora y registra cada diferencia, así que se reenvía lo guardado
+      const respuestaGuardado = await sociosService.obtenerSocioPorId(socioId).catch(() => null);
+      const socioGuardado = Array.isArray(respuestaGuardado) ? respuestaGuardado[0] : respuestaGuardado;
+      await sociosService.actualizarSocio({
+        ...payloadSocio,
+        socioid: socioId,
+        ...(socioGuardado && {
+          email: socioGuardado.email ?? "",
+          tamanioempresaid: socioGuardado.tamanioempresaid ?? 0,
+          tipoactividadglobalid: socioGuardado.tipoactividadglobalid ?? 0,
+        }),
+      });
 
       // sociosService.actualizarSocio se llama acá directo (no vía
       // useActualizarSocio) porque este componente ya maneja su propio
