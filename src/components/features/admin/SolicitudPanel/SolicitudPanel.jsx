@@ -117,6 +117,7 @@ export const SolicitudPanel = ({
   soloLectura = false,
   pausado = false,
   modeloDocumento,
+  faltantesConfiguracion = null,
   cargandoDocumento = false,
   decidiendo = false,
   migrando = false,
@@ -210,9 +211,20 @@ export const SolicitudPanel = ({
   const faltantesContacto = solicitud.faltantesContacto || [];
   const faltaContacto = faltantesContacto.length > 0;
   const textoFaltantesContacto = `La empresa todavía no tiene ${faltantesContacto.join(" ni ")}`;
-  const puedeAceptar = legajoCompleto && !faltaContacto;
+  const configuracionCompleta = Array.isArray(faltantesConfiguracion) && faltantesConfiguracion.length === 0;
+  const textoConfiguracion =
+    faltantesConfiguracion === null
+      ? "Revisando la configuración de la cadena…"
+      : `Falta configurar ${faltantesConfiguracion.join(", ")}`;
+  const puedeAceptar = legajoCompleto && !faltaContacto && configuracionCompleta;
+  const avisoMigrar =
+    faltaContacto && !solicitud.legajoMigrado
+      ? textoFaltantesContacto
+      : !configuracionCompleta
+        ? textoConfiguracion
+        : null;
 
-  const tonoLegajo = puedeAceptar ? "ok" : cargandoLegajo ? "neutro" : "pendiente";
+  const tonoLegajo = legajoCompleto && !faltaContacto ? "ok" : cargandoLegajo ? "neutro" : "pendiente";
 
   const detalleRequisitos = solicitud.legajoMigrado
     ? "Legajo completo"
@@ -235,7 +247,9 @@ export const SolicitudPanel = ({
       ? "Revisando el legajo de la empresa…"
       : !legajoCompleto
         ? "El legajo de la empresa está incompleto"
-        : textoFaltantesContacto;
+        : faltaContacto
+          ? textoFaltantesContacto
+          : textoConfiguracion;
 
   const contenidoResumen = (
     <>
@@ -542,16 +556,15 @@ export const SolicitudPanel = ({
           ) : !soloLectura && esAprobada ? (
             <>
               <span className={styles.pieEspacio}>
-                {faltaContacto && !solicitud.legajoMigrado && (
-                  <span className={styles.pieAviso}>{textoFaltantesContacto}</span>
-                )}
+                {avisoMigrar && <span className={styles.pieAviso}>{avisoMigrar}</span>}
               </span>
               <Button
                 type="button"
                 variant="outlineBlue"
                 size="md"
                 onClick={onMigrar}
-                disabled={migrando || (faltaContacto && !solicitud.legajoMigrado)}
+                disabled={migrando || !!avisoMigrar}
+                title={avisoMigrar || "Migrar a SGR+"}
               >
                 <FiRefreshCw /> Migrar a SGR+
               </Button>

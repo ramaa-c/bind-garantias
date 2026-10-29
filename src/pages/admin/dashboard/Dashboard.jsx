@@ -13,7 +13,7 @@ import { Skeleton } from "../../../components/ui";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
-import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
+import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea, useLimitesDeCadenas } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
 import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
@@ -110,6 +110,29 @@ const faltantesContactoSocio = (socio) =>
     !String(socio?.telefono ?? socio?.Telefono ?? "").trim() && "teléfono validado",
     !String(socio?.emailfacturacion ?? socio?.EmailFacturacion ?? "").trim() && "email de facturación",
   ].filter(Boolean);
+
+// La migración arma el contrato en SGR+ con datos de la cadena y de su línea:
+// si falta alguno, Linea/Migrar falla recién al final (con la línea ya
+// aprobada). null = todavía no se pudo leer la configuración.
+const faltantesConfiguracionMigracion = (cadena, lineasCadena, tipoLimiteId) => {
+  if (!cadena || !lineasCadena) return null;
+  const linea = lineasCadena.find((l) => Number(l.tipolimiteid) === Number(tipoLimiteId));
+  return [
+    !(Number(cadena.tipocontratoid) > 0) && "el tipo de contrato de la cadena",
+    !(Number(cadena.equipocomercialid) > 0) && "el equipo comercial de la cadena",
+    !(Number(cadena.tipocanalcomercializacionid) > 0) && "el canal de comercialización de la cadena",
+    !linea && "la línea en la cadena",
+    linea && !(Number(linea.monedalineaid) > 0) && "la moneda de la línea",
+    linea && !(Number(linea.diasvigencialinea) > 0) && "los días de vigencia de la línea",
+    linea && !(Number(linea.monedacontratoid) > 0) && "la moneda del contrato de la línea",
+    linea && !(Number(linea.diasvigenciacontrato) > 0) && "los días de vigencia del contrato de la línea",
+  ].filter(Boolean);
+};
+
+const textoFaltantesConfiguracion = (faltantes) =>
+  faltantes === null
+    ? "Revisando la configuración de la cadena…"
+    : `Falta configurar ${faltantes.join(", ")}`;
 
 const ELEMENTOS_POR_PAGINA = 8;
 
@@ -398,6 +421,18 @@ export default function Dashboard() {
     cadenaInfoPorId,
   ]);
 
+  const lineasPorCadena = useLimitesDeCadenas(solicitudesCanal.map((s) => s.cadenavalorid));
+  const cadenaPorId = useMemo(
+    () => new Map((todasCadenasConEstado || []).map((c) => [String(c.cadenavalorid), c])),
+    [todasCadenasConEstado],
+  );
+  const faltantesConfiguracionDe = (item) =>
+    faltantesConfiguracionMigracion(
+      cadenaPorId.get(String(item.cadenavalorid)),
+      lineasPorCadena.get(String(item.cadenavalorid)),
+      item.raw?.tipolimiteid ?? item.raw?.TipoLimiteID,
+    );
+
   // La migración a SGR+ es un paso aparte de la aprobación en TipoLimiteSocio
   // (que ya quedó guardada) — si falla acá, no hay que revertir nada, solo
   // avisar. `contexto` solo cambia el texto de los toasts: "reintento" se usa
@@ -497,6 +532,16 @@ export default function Dashboard() {
   // Primero el socio y despues la linea: Linea/Migrar necesita que el socio ya exista en SGR+ (si no, responde 409 y
   // la linea quedaba sin migrar hasta un segundo clic).
   const migrarSocioYLinea = async (item, opciones) => {
+    const faltantesConfiguracion = faltantesConfiguracionDe(item);
+    if (faltantesConfiguracion === null || faltantesConfiguracion.length > 0) {
+      toast.warning(
+        opciones?.contexto === "reintento"
+          ? `No se puede migrar la línea N°${item.id} a SGR+`
+          : `La línea N°${item.id} se aprobó, pero no se puede migrar a SGR+`,
+        { description: textoFaltantesConfiguracion(faltantesConfiguracion) },
+      );
+      return;
+    }
     await migrarSocioSiCorresponde(item, opciones);
     migrarLinea(item, opciones);
   };
@@ -974,6 +1019,9 @@ export default function Dashboard() {
                       tieneApoderadoFirmante,
                     })
                   : null;
+                const faltantesConfiguracion = isAprobada ? faltantesConfiguracionDe(item) : [];
+                const configuracionIncompleta = faltantesConfiguracion === null || faltantesConfiguracion.length > 0;
+                const faltaContactoSinMigrar = item.faltantesContacto.length > 0 && !item.legajoMigrado;
 
                 return (
                   <div
@@ -1061,13 +1109,13 @@ export default function Dashboard() {
                               variant="outlineBlue"
                               size="sm"
                               title={
-                                item.faltantesContacto.length > 0 && !item.legajoMigrado
+                                faltaContactoSinMigrar
                                   ? `La empresa todavía no tiene ${item.faltantesContacto.join(" ni ")}`
-                                  : "Reintentar la migración de esta línea a SGR+"
+                                  : configuracionIncompleta
+                                    ? textoFaltantesConfiguracion(faltantesConfiguracion)
+                                    : "Reintentar la migración de esta línea a SGR+"
                               }
-                              disabled={
-                                migrarLineaMutation.isPending || (item.faltantesContacto.length > 0 && !item.legajoMigrado)
-                              }
+                              disabled={migrarLineaMutation.isPending || faltaContactoSinMigrar || configuracionIncompleta}
                             >
                               <FiRefreshCw /> MIGRAR
                             </Button>
@@ -1137,6 +1185,7 @@ export default function Dashboard() {
         soloLectura={isRestricted}
         pausado={!!solicitudCda || !!solicitudARechazar || !!empresaActividad}
         modeloDocumento={modeloDocumentoDetalle}
+        faltantesConfiguracion={solicitudDetalleActual ? faltantesConfiguracionDe(solicitudDetalleActual) : null}
         cargandoDocumento={pendienteModeloDocumentoId === solicitudDetalleActual?.id}
         decidiendo={actualizarEstadoMutation.isPending}
         migrando={migrarLineaMutation.isPending}

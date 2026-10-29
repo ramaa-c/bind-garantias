@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lineaService } from '../services/lineaService';
 
 export const useObtenerLimitesPorSocio = (socioId) => {
@@ -42,6 +42,26 @@ export const useObtenerLimitesCadenaValor = (cadenavalorid) => {
         queryKey: ['linea', 'limitesCadenaValor', String(cadenavalorid)],
         queryFn: () => lineaService.obtenerLimitesCadenaValor(cadenavalorid),
         enabled: !!cadenavalorid,
+    });
+};
+
+export const useLimitesDeCadenas = (cadenaIds) => {
+    const ids = [...new Set((cadenaIds || []).filter(Boolean).map(String))];
+    return useQueries({
+        queries: ids.map((id) => ({
+            queryKey: ['linea', 'limitesCadenaValor', id],
+            queryFn: () => lineaService.obtenerLimitesCadenaValor(id),
+            staleTime: 1000 * 60,
+        })),
+        combine: (resultados) => {
+            const porCadena = new Map();
+            resultados.forEach((r, i) => {
+                if (!r.isSuccess) return;
+                const lista = Array.isArray(r.data) ? r.data : r.data?.items || r.data?.data || [];
+                porCadena.set(ids[i], lista);
+            });
+            return porCadena;
+        },
     });
 };
 
