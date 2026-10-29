@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw, FiClock, FiFolder, FiLayers, FiEye } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
+import { LoadingScreen } from "../../../components/ui/LoadingScreen/LoadingScreen";
 import { obtenerInicialesEmpresa } from "../../../utils/empresaAvatar";
 import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
 import { Modal } from "../../../components/ui/Modal/Modal";
@@ -206,9 +207,9 @@ export default function Dashboard() {
   const { porModelo: parametrosPorModelo } = useParametrosModelosDocumento(modelosDocumentoIds);
 
   const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
-  const { data: limitesData, isLoading: isLoadingLimites } =
+  const { data: limitesData, isLoading: isLoadingLimites, refetch: refetchLimites } =
     useObtenerLimites(targetCadenaId > 0 ? targetCadenaId : undefined);
-  const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
+  const { data: sociosData, isLoading: isLoadingSocios, refetch: refetchSocios } = useObtenerSocios();
   const actualizarEstadoMutation = useActualizarLimiteSocio();
   const migrarLineaMutation = useMigrarLinea();
   const queryClient = useQueryClient();
@@ -230,6 +231,20 @@ export default function Dashboard() {
   );
 
   const loading = isLoadingLimites || isLoadingSocios;
+  const cargaInicial = loading && !limitesData && !sociosData;
+  const [cargaDemorada, setCargaDemorada] = useState(false);
+
+  useEffect(() => {
+    if (!cargaInicial) return undefined;
+    const id = setTimeout(() => setCargaDemorada(true), 15000);
+    return () => clearTimeout(id);
+  }, [cargaInicial]);
+
+  const reintentarCarga = () => {
+    setCargaDemorada(false);
+    refetchLimites();
+    refetchSocios();
+  };
 
   // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
   // porque migrarSocioSiCorresponde necesita leer el MarcaVinculacion del
@@ -695,6 +710,25 @@ export default function Dashboard() {
           tieneApoderadoFirmante: argumentosDocumentoDetalle[2],
         })
       : null;
+
+  if (cargaInicial) {
+    return (
+      <LoadingScreen
+        title={cargaDemorada ? "Está tardando más de lo habitual" : "Preparando el panel"}
+        message={
+          cargaDemorada
+            ? "Seguimos esperando la respuesta del servidor. Podés esperar o volver a intentar."
+            : "Cargando solicitudes y empresas..."
+        }
+      >
+        {cargaDemorada && (
+          <Button variant="adminSuave" onClick={reintentarCarga}>
+            <FiRefreshCw aria-hidden="true" /> Reintentar
+          </Button>
+        )}
+      </LoadingScreen>
+    );
+  }
 
   return (
     <div className={styles.container} ref={contenedorRef}>
