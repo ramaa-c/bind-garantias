@@ -1,467 +1,438 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.85rem;
   width: 100%;
-  height: 100%;
 }
 
 .header {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-@media (min-width: 768px) {
-  .header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-}
-
-.titleBox h1 {
-  font-size: 2rem;
-  font-weight: 800;
+.header h1 {
   margin: 0;
   color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 800;
   letter-spacing: -0.02em;
 }
 
-.titleBox p {
-  color: #8b949e;
-  margin: 0.35rem 0 0 0;
-  font-size: 0.9rem;
-  max-width: 34rem;
-}
-
-.actionsTop {
+/* ── DISTRIBUCIÓN: los dos paneles siempre del mismo alto ─────────────── */
+.layout {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
-
-/* Búsqueda + tabla van en una columna angosta (.listColumn, ver más abajo)
-   al lado de la parametrización, no una debajo de la otra - el contenido
-   real (IDs cortos, descripciones de una línea) nunca necesita más ancho
-   que eso, a diferencia del header de arriba, que sí usa el ancho completo
-   para el título y el botón de acción. */
-.contentRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-}
-
-/* 27rem: el mínimo donde el placeholder del buscador ("Buscar por
-   descripción o ID...") entra entero junto al contador de la derecha - a
-   21rem quedaba cortado a la mitad. La parametrización, al lado, se queda
-   con todo el ancho restante (flex:1, sin tope). */
-.listColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  width: 100%;
-  max-width: 27rem;
-  flex-shrink: 0;
-}
-
-.filtersCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  padding: 0.85rem 1rem;
-  display: flex;
-  align-items: center;
+  flex-direction: column-reverse;
   gap: 1rem;
 }
 
-.searchWrap {
-  display: flex;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  gap: 0.5rem;
-  flex: 1;
-  transition: border-color 0.2s;
-}
-
-.searchWrap:focus-within {
-  border-color: var(--color-azul-bind, #4c65e6);
-}
-
-.searchWrap input {
-  background: none;
-  border: none;
-  color: #ffffff;
-  width: 100%;
-  outline: none;
-  font-size: 0.875rem;
-}
-
-.iconSearch {
-  color: #8b949e;
-}
-
-.listCount {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #8b949e;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.tableCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.9rem;
-  overflow: hidden;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.tableWrapper {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.table th,
-.table td {
-  padding: 0.9rem 1.1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.table th {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #8b949e;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: rgba(20, 24, 32, 0.97);
-}
-
-.table td {
-  font-size: 0.825rem;
-  color: #c9d1d9;
-}
-
-.table tr:last-child td {
-  border-bottom: none;
-}
-
-.idTag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.22rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  background: rgba(76, 101, 230, 0.1);
-  color: #8a9fff;
-  border: 1px solid rgba(76, 101, 230, 0.3);
-}
-
-.editBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 0.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: #8b949e;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.editBtn:hover {
-  color: #ffffff;
-  border-color: rgba(76, 101, 230, 0.4);
-  background: rgba(76, 101, 230, 0.12);
-}
-
-.emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 3.5rem 1rem;
-  color: #8b949e;
-}
-
-/* ── PARAMETRIZACIÓN POR CADENA ───────────────────────────────────────────
-   Mismo dato/mismo triple-estado que RequisitosConfigModal (sección
-   "Relaciones y Secciones") - clases visuales calcadas de ese modal para
-   que se sienta como el mismo control, no uno nuevo. A diferencia del
-   catálogo de arriba (angosto, texto corto), esta zona sí aprovecha el
-   ancho: tiene tabs + descripción + control segmentado por fila. */
-.paramCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.9rem;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  flex: 1 1 30rem;
-  min-width: 0;
-}
-
-@media (max-width: 900px) {
-  .listColumn {
-    max-width: none;
+@media (min-width: 64rem) {
+  .layout {
+    display: grid;
+    grid-template-columns: 22.5rem minmax(0, 1fr);
+    align-items: stretch;
   }
 }
 
-.paramHeader h2 {
+/* Rango 1: la pantalla entra entera en el alto visible y cada panel
+   scrollea por dentro. En Rango 2 scrollea la página completa. */
+@media (min-width: 1441px) and (min-height: 717px) {
+  .container {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .layout {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: 24rem minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .catalogo,
+  .paramCuerpo {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  background: rgba(13, 17, 23, 0.6);
+}
+
+.panelCabecera {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-height: 4.25rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.panelCabecera h2 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 800;
+  white-space: nowrap;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.contador {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #9aa4b0;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.btnNueva {
+  margin-left: auto;
+}
+
+.selectorCadena {
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 24rem;
+  margin-left: auto;
+}
+
+.panelNota {
+  margin: 0;
+  margin-top: auto;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+/* ── CATÁLOGO ───────────────────────────────────────────── */
+.buscador {
+  position: relative;
+  padding: 0.65rem 1rem;
+}
+
+.buscadorIcono {
+  position: absolute;
+  top: 50%;
+  left: 1.75rem;
+  transform: translateY(-50%);
+  color: #8b949e;
+}
+
+.buscador input {
+  width: 100%;
+  height: 2.2rem;
+  padding: 0 0.75rem 0 2.1rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.buscador input:focus {
+  border-color: var(--color-azul-bind, #4c65e6);
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.18);
+}
+
+.buscador input::placeholder {
+  color: var(--text-muted);
+}
+
+.catalogo {
+  display: flex;
+  flex-direction: column;
+}
+
+.catalogoFila {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  padding: 0 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.idTag {
+  flex-shrink: 0;
+  padding: 0.12rem 0.45rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(76, 101, 230, 0.35);
+  background: rgba(76, 101, 230, 0.08);
+  color: #a5b4ff;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-variant-ligatures: none;
+}
+
+.catalogoNombre {
+  flex: 1;
+  min-width: 0;
+  color: #e6edf3;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editBtn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: none;
+  color: #8b949e;
+  cursor: pointer;
+}
+
+.editBtn:hover {
+  border-color: rgba(76, 101, 230, 0.5);
   color: #ffffff;
 }
 
-.paramHeader p {
-  margin: 0.3rem 0 0 0;
-  font-size: 0.8rem;
-  color: #8b949e;
-  max-width: 38rem;
-}
-
-.emptySelection {
-  padding: 3rem 1.5rem;
-  text-align: center;
-  color: #8b949e;
-  background: rgba(22, 27, 34, 0.3);
-  border: 1px dashed #30363d;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-}
-
-.paramSkeleton {
+.vacio {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  padding: 2rem 1.25rem;
+  color: #8b949e;
+  font-size: 0.82rem;
+  text-align: center;
 }
 
-.tabContainer {
+.vacio svg {
+  font-size: 1.35rem;
+}
+
+/* ── PARAMETRIZACIÓN ────────────────────────────────────── */
+.paramControles {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(76, 101, 230, 0.15);
-  border-radius: 0.75rem;
-  padding: 0.25rem;
-  gap: 0.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.75rem;
+  padding: 0.8rem 1rem 0.2rem;
+}
+
+.rotulo {
+  color: #8b949e;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.tipos {
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-.tabContainer::-webkit-scrollbar {
-  display: none;
-}
-
-.tabBtn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: #8b949e;
-  padding: 0.55rem 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.tabBtn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.tabActive {
-  background: linear-gradient(135deg, var(--color-azul-bind, #4c65e6) 0%, #3853c4 100%);
-  color: #ffffff !important;
-  box-shadow: 0 4px 10px rgba(76, 101, 230, 0.25);
-}
-
-.paramListHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.bulkActions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.bulkBtn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #8b949e;
-  padding: 0.3rem 0.625rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.bulkBtnNone:hover {
-  background: rgba(234, 74, 90, 0.12);
-  color: #ea4a5a;
-  border-color: rgba(234, 74, 90, 0.3);
-}
-
-.bulkBtnOptional:hover {
-  background: rgba(76, 101, 230, 0.12);
-  color: #8a9fff;
-  border-color: rgba(76, 101, 230, 0.3);
-}
-
-.bulkBtnRequired:hover {
-  background: rgba(56, 161, 105, 0.12);
-  color: #38a169;
-  border-color: rgba(56, 161, 105, 0.3);
-}
-
-.paramList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.paramRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.65rem 0.9rem;
-  background: rgba(76, 101, 230, 0.03);
-  border: 1px solid rgba(76, 101, 230, 0.12);
-  border-radius: 0.625rem;
-  transition: all 0.2s ease;
-}
-
-.paramRow:hover {
-  border-color: rgba(76, 101, 230, 0.3);
-  background: rgba(76, 101, 230, 0.06);
-}
-
-/* Se acota el texto (no la fila): la tarjeta ahora ocupa todo el ancho
-   disponible, pero una descripción de 700px de largo se vuelve ilegible -
-   los controles siguen alineados a la derecha en una sola columna, que es
-   lo que hace escaneable la lista. */
-.paramInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  flex: 1;
-  min-width: 0;
-  max-width: 30rem;
-}
-
-.paramInfo strong {
-  color: #ffffff;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.paramInfo span {
-  color: #8b949e;
-  font-size: 0.72rem;
-  line-height: 1.3;
-}
-
-.segmentedControl {
-  display: flex;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.25rem;
-  border-radius: 0.5rem;
+.tipo {
   flex-shrink: 0;
-}
-
-.segmentBtn {
-  background: transparent;
-  border: none;
+  height: 1.85rem;
+  padding: 0 0.7rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: none;
   color: #8b949e;
-  padding: 0.375rem 0.7rem;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  border-radius: 0.375rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 82px;
 }
 
-.segmentBtn:hover {
+.tipo:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.03);
 }
 
-.activeNone {
-  background: rgba(234, 74, 90, 0.15) !important;
-  color: #ea4a5a !important;
-  border: 1px solid rgba(234, 74, 90, 0.25);
+.tipoActivo,
+.tipoActivo:hover {
+  background: rgba(76, 101, 230, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(76, 101, 230, 0.45);
+  color: #ffffff;
 }
 
-.activeOptional {
-  background: rgba(76, 101, 230, 0.18) !important;
-  color: #8a9fff !important;
-  border: 1px solid rgba(76, 101, 230, 0.3);
-}
-
-.activeRequired {
-  background: rgba(56, 161, 105, 0.15) !important;
-  color: #38a169 !important;
-  border: 1px solid rgba(56, 161, 105, 0.25);
-}
-
-.paramFooter {
+.aplicarTodos {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
 }
 
-@media (max-width: 620px) {
-  .paramListHeader {
-    flex-direction: column;
-    align-items: flex-start;
+.paramCuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+}
+
+.relaciones {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.relacion {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.relacion:last-child {
+  border-bottom: 0;
+}
+
+.relacionTextos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.relacionTextos strong {
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.relacionTextos span {
+  color: #8b949e;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.triple {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.opcion {
+  height: 1.7rem;
+  padding: 0 0.6rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: none;
+  color: #8b949e;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.opcion:hover {
+  color: #ffffff;
+}
+
+.opcionNo,
+.opcionNo:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #e6edf3;
+}
+
+.opcionOpcional,
+.opcionOpcional:hover {
+  background: rgba(227, 179, 65, 0.15);
+  color: #e3b341;
+}
+
+.opcionObligatorio,
+.opcionObligatorio:hover {
+  background: rgba(76, 101, 230, 0.22);
+  color: #c7d0ff;
+}
+
+.paramPie {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0 0 1rem 1rem;
+  background: #0d1117;
+}
+
+.pieEstado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.pieEstadoCambios {
+  color: #e3b341;
+}
+
+@media (min-width: 1441px) and (min-height: 717px) {
+  .paramPie {
+    position: static;
   }
-  .paramRow {
+}
+
+@media (max-width: 47.99rem) {
+  .selectorCadena {
+    flex-basis: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .aplicarTodos {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+
+  .relacion {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.5rem;
   }
-  .segmentedControl {
-    width: 100%;
+
+  .triple {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .segmentBtn {
+
+  .aplicarTodos .triple {
+    flex-basis: 100%;
+  }
+
+  .pieEstado {
+    display: none;
+  }
+
+  .paramPie > button {
     flex: 1;
   }
-}
-
-.emptyStateIcon {
-  font-size: 2rem;
-  opacity: 0.4;
 }
