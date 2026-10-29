@@ -539,8 +539,8 @@ export default function LineasCadena() {
 
     const datosLinea = {
       tipolimiteid: String(linea.tipolimiteid),
-      monedaLineaId: String(linea.monedalineaid),
-      monedaContratoId: String(linea.monedacontratoid),
+      monedaLineaId: Number(linea.monedalineaid) > 0 ? String(linea.monedalineaid) : "",
+      monedaContratoId: Number(linea.monedacontratoid) > 0 ? String(linea.monedacontratoid) : "",
       descripcion: linea.descripcion || "",
       montoLinea: String(linea.montolinea),
       montoContrato: linea.montocontrato != null ? String(linea.montocontrato) : "",

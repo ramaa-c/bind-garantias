@@ -21,7 +21,7 @@ const construirDatosFormulario = (activeItem) => ({
   logo: activeItem?.logo || "",
   tipocanalcomercializacionid: activeItem?.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
   equipocomercialid: activeItem?.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
-  tipocontratoid: activeItem?.tipocontratoid != null ? activeItem.tipocontratoid.toString() : "",
+  tipocontratoid: Number(activeItem?.tipocontratoid) > 0 ? activeItem.tipocontratoid.toString() : "",
   montomaximo: activeItem?.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
   montomaximoutilizado: activeItem?.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
   porcentajemaximoutilizado: activeItem?.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",

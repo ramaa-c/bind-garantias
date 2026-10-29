@@ -149,7 +149,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       logo: chain.logo || "",
       tipocanalcomercializacionid: chain.tipocanalcomercializacionid != null ? chain.tipocanalcomercializacionid.toString() : "",
       equipocomercialid: chain.equipocomercialid != null ? chain.equipocomercialid.toString() : "",
-      tipocontratoid: chain.tipocontratoid != null ? chain.tipocontratoid.toString() : "",
+      tipocontratoid: Number(chain.tipocontratoid) > 0 ? chain.tipocontratoid.toString() : "",
       monedaid: monedaMatch ? String(monedaMatch.monedaid) : "",
       montomaximoutilizado: "0",
       porcentajemaximoutilizado: "100",
