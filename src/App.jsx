@@ -84,7 +84,6 @@ const LineasCadena = lazy(() => import("./pages/admin/lineas/LineasCadena"));
 const LineasProducto = lazy(
   () => import("./pages/admin/lineas/LineasProducto"),
 );
-const LineasCda = lazy(() => import("./pages/admin/lineas/LineasCda"));
 const ModoOffline = lazy(
   () => import("./pages/admin/configuracion/ModoOffline"),
 );
@@ -384,13 +383,7 @@ const rutasAdmin = (
     />
     <Route
       path="/admin/lineas-cda"
-      element={
-        <AdminGuard>
-          <AdminLayout>
-            <LineasCda />
-          </AdminLayout>
-        </AdminGuard>
-      }
+      element={<Navigate to="/admin/cadenas-cda?pantalla=PANTALLA_LINEAS" replace />}
     />
     <Route
       path="/admin/lineas-cadenas"

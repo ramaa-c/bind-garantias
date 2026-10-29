@@ -104,7 +104,6 @@ export default function AdminNavbar() {
       items: [
         { label: "CDAs Globales", path: "/admin/cdas" },
         { label: "CDAs por Cadena", path: "/admin/cadenas-cda" },
-        { label: "CDAs Alta de Línea", path: "/admin/lineas-cda" },
       ],
     },
     {
