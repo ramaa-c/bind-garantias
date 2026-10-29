@@ -302,26 +302,30 @@ export default function CadenasValor() {
     setPagina(1);
   };
 
+  // Cupo disponible = Monto Máximo CV de la cadena en SGR+ menos el Monto
+  // Máximo asignado en la web. La barra muestra la parte ya asignada.
   const renderCupo = (item) => {
-    const maximo = Number(item.montomaximo) || 0;
-    if (maximo <= 0) return <span className={styles.cupoVacio}>Sin cupo definido</span>;
-    const usado = Number(item.montomaximoutilizado) || 0;
-    const porcentaje = Math.round((usado / maximo) * 100);
+    const cupoCore = Number(item.montoMaximoCore) || 0;
+    if (cupoCore <= 0) return <span className={styles.cupoVacio}>Sin cupo en SGR+</span>;
+    const asignado = Number(item.montomaximo) || 0;
+    const disponible = Math.max(0, cupoCore - asignado);
+    const porcentajeAsignado = Math.min(100, Math.round((asignado / cupoCore) * 100));
     const simbolo = simboloMoneda(item.monedaid);
-    const nivel = porcentaje >= 90 ? styles.cupoPeligro : porcentaje >= 70 ? styles.cupoAlerta : "";
+    const nivel =
+      porcentajeAsignado >= 90 ? styles.cupoPeligro : porcentajeAsignado >= 70 ? styles.cupoAlerta : "";
     return (
       <div
         className={styles.cupo}
-        title={`Usado ${simbolo} ${usado.toLocaleString("es-AR")} de ${simbolo} ${maximo.toLocaleString("es-AR")}`}
+        title={`Monto Máximo CV ${simbolo} ${cupoCore.toLocaleString("es-AR")} − Monto Máximo ${simbolo} ${asignado.toLocaleString("es-AR")}`}
       >
         <div className={styles.cupoTextos}>
           <span>
-            <strong>{simbolo} {formatearMontoCorto(usado)}</strong> de {simbolo} {formatearMontoCorto(maximo)}
+            <strong>{simbolo} {formatearMontoCorto(disponible)}</strong> de {simbolo} {formatearMontoCorto(cupoCore)}
           </span>
-          <span>{porcentaje}%</span>
+          <span>{100 - porcentajeAsignado}% libre</span>
         </div>
         <div className={styles.cupoBarra}>
-          <span className={nivel} style={{ width: `${Math.min(100, porcentaje)}%` }} />
+          <span className={nivel} style={{ width: `${porcentajeAsignado}%` }} />
         </div>
       </div>
     );
@@ -406,7 +410,7 @@ export default function CadenasValor() {
         <div className={`${styles.fila} ${styles.cabecera}`} aria-hidden="true">
           <span>Cadena</span>
           <span>Canal · Equipo</span>
-          <span>Cupo usado</span>
+          <span>Cupo disponible</span>
           <span className={styles.cabeceraDerecha}>Configuración</span>
           <span className={styles.cabeceraCentro}>Activa</span>
         </div>

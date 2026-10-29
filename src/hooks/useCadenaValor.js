@@ -5,6 +5,14 @@ import { cdaService } from '../services/cdaService';
 import { esCadenaAprobadaYVigente, esCadenaOperativaParaWeb, obtenerCadenaValorId } from '../utils/cadenaValorUtils';
 import { esCdaActivo } from '../utils/cdaUtils';
 
+const CLAVES_MONTO_MAXIMO_CORE = ['montomaximocv', 'montomaximo', 'tope', 'monto_maximo'];
+
+const montoMaximoCoreDe = (cadenaCore) => {
+    if (!cadenaCore) return 0;
+    const clave = Object.keys(cadenaCore).find((k) => CLAVES_MONTO_MAXIMO_CORE.includes(k.toLowerCase()));
+    return parseFloat(cadenaCore[clave] || 0) || 0;
+};
+
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
     return useQuery({
         queryKey: ['cadenaValor', 'todas', page, pageSize],
@@ -160,6 +168,7 @@ export const useObtenerTodasWebConEstado = () => {
             return {
                 ...item,
                 aprobadaVigente: esCadenaAprobadaYVigente(cadenaCore),
+                montoMaximoCore: montoMaximoCoreDe(cadenaCore),
                 activaOperativa: esCadenaOperativaParaWeb(item, cadenaCore),
             };
         });
