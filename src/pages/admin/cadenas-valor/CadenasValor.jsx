@@ -322,11 +322,11 @@ export default function CadenasValor() {
           <span>
             <strong>{simbolo} {formatearMontoCorto(disponible)}</strong> de {simbolo} {formatearMontoCorto(cupoCore)}
           </span>
-          <span>{100 - porcentajeAsignado}% libre</span>
         </div>
         <div className={styles.cupoBarra}>
           <span className={nivel} style={{ width: `${porcentajeAsignado}%` }} />
         </div>
+        <span className={styles.cupoPie}>{100 - porcentajeAsignado}% libre</span>
       </div>
     );
   };
