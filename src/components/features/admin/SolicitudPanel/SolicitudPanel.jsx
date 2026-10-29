@@ -27,7 +27,12 @@ import { useObtenerGrupoCdaConCdas } from "../../../../hooks/useCadenaValor";
 import { esAdminGeneralToken } from "../../../../api/tokenApi";
 import { PANTALLA_LINEAS } from "../../../../utils/pantallasCda";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
-import { formatearMomentoControl, ultimaEjecucionPorCda, ordenarEjecucionesCda } from "../../../../utils/executeCda";
+import {
+  formatearMomentoControl,
+  ultimaEjecucionPorCda,
+  ordenarEjecucionesCda,
+  normalizarHistorialLinea,
+} from "../../../../utils/executeCda";
 import {
   ESTADO_APROBADA,
   ESTADO_RECHAZADA,
@@ -50,14 +55,6 @@ const PASOS_SGR = [
   "Firma del contrato",
   "Línea activa para operar",
 ];
-
-const normalizarHistorialLinea = (data) => {
-  const lista = Array.isArray(data) ? data : data ? [data] : [];
-  return lista.map((f) => ({
-    ...f,
-    socioexecutecdaid: f.tipolimitesocioexecutecdaid ?? f.TipoLimiteSocioExecuteCdaID ?? f.socioexecutecdaid,
-  }));
-};
 
 const estadoEjecucion = (fila) => {
   const estadoId = Number(fila?.estadoexecutecdaid ?? fila?.EstadoExecuteCdaID ?? 0);

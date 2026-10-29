@@ -56,6 +56,7 @@ import {
   FORMATOS_ARCHIVO,
 } from "../../../../utils/fileUtils";
 import { ESTRUCTURA_LEGAJO } from "./DocumentosLegajo.constants";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 // Ícono de los botones de descarga en ZIP según en qué fase esté
 // (ver useDescargaConFeedback). A diferencia de la descarga de un archivo
@@ -418,8 +419,6 @@ export function DocumentosLegajo({
         return;
       }
 
-      setValue(key, file, { shouldValidate: true, shouldDirty: true });
-
       if (!socioIdActivo) {
         toast.error("No se pudo identificar la empresa activa.");
         return;
@@ -431,14 +430,14 @@ export function DocumentosLegajo({
           : null;
 
       setUploadingKey(key);
+      let subido = false;
       try {
-        let resultado;
         if (specificId) {
           const existente = archivosBackend.find(
             (a) => a.socioarchivoid === Number(specificId)
           );
           if (existente) {
-            resultado = await socioArchivoService.actualizarArchivo(
+            await socioArchivoService.actualizarArchivo(
               existente,
               file,
               key,
@@ -452,7 +451,7 @@ export function DocumentosLegajo({
             throw new Error("No se encontró el archivo a actualizar.");
           }
         } else {
-          resultado = await socioArchivoService.subirArchivo(
+          await socioArchivoService.subirArchivo(
             socioIdActivo,
             file,
             key,
@@ -463,34 +462,38 @@ export function DocumentosLegajo({
             fchArchivoManual
           );
         }
-
-        if (resultado) {
-          // Se espera a que termine el refetch de "socioArchivos" (dispara
-          // uno porque la query está activa, ver el comentario de
-          // archivosBackendData más arriba) antes de mover la subpestaña:
-          // categoryFiles sale de ese mismo query, así que sin este await
-          // selectSubTab(key, 0) corría contra la lista todavía vieja (sin
-          // el archivo recién subido) - en una categoría que arrancaba
-          // vacía (ej. "Otros documentos"), categoryFiles[0] todavía no
-          // existía y el dropzone se veía vacío un instante hasta que el
-          // refetch en segundo plano terminaba (reportado el 2026-10-06).
-          // handleFileDelete de más abajo no tiene este problema porque ya
-          // actualiza la cache a mano con setQueryData antes de moverse.
-          await queryClient.invalidateQueries({
-            queryKey: ["socioArchivos", socioIdActivo],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ["socioLegajoCompleto", socioIdActivo],
-          });
-
-          toast.success("Documento subido exitosamente");
-          selectSubTab(key, 0);
-        }
+        subido = true;
       } catch (error) {
         console.error("Fallo al subir el archivo:", error);
-        toast.error("Error al subir el documento. Por favor, reintente.");
-      } finally {
-        setUploadingKey(null);
+        toast.error(
+          error?.esValidacionArchivo
+            ? error.message
+            : mensajeNegocio(error, "No se pudo subir el documento. Reintentá en unos minutos."),
+        );
+      }
+
+      // Se espera a que termine el refetch de "socioArchivos" (dispara
+      // uno porque la query está activa, ver el comentario de
+      // archivosBackendData más arriba) antes de mover la subpestaña:
+      // categoryFiles sale de ese mismo query, así que sin este await
+      // selectSubTab(key, 0) corría contra la lista todavía vieja (sin
+      // el archivo recién subido) - en una categoría que arrancaba
+      // vacía (ej. "Otros documentos"), categoryFiles[0] todavía no
+      // existía y el dropzone se veía vacío un instante hasta que el
+      // refetch en segundo plano terminaba (reportado el 2026-10-06).
+      // handleFileDelete de más abajo no tiene este problema porque ya
+      // actualiza la cache a mano con setQueryData antes de moverse.
+      await queryClient.invalidateQueries({
+        queryKey: ["socioArchivos", socioIdActivo],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["socioLegajoCompleto", socioIdActivo],
+      });
+      setUploadingKey(null);
+
+      if (subido) {
+        toast.success("Documento subido exitosamente");
+        selectSubTab(key, 0);
       }
     }
   };
@@ -1107,7 +1110,7 @@ export function DocumentosLegajo({
       {fechaBalanceModal}
       {confirmarEliminarArchivoModal}
       {legajoToolbar}
-      <div className={`${styles.workspace} ${adminMode ? "" : styles.workspaceCliente}`}>
+      <div className={`${styles.workspace} ${adminMode ? "legajoAdmin" : styles.workspaceCliente}`}>
         <div className={`${styles.sidebar} scroll-visible`}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =

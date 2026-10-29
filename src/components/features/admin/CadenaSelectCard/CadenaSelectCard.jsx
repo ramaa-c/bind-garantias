@@ -8,6 +8,7 @@ export const CadenaSelectCard = ({
   value,
   onChange,
   placeholder = "Seleccionar Cadena de Valor...",
+  compacta = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -92,7 +93,7 @@ export const CadenaSelectCard = ({
   };
 
   return (
-    <div className={styles.container} ref={dropdownRef}>
+    <div className={`${styles.container} ${compacta ? styles.compacta : ""}`} ref={dropdownRef}>
       {/* Trigger Area */}
       <div
         className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""} ${!selectedChain ? styles.triggerEmpty : ""}`}
@@ -110,6 +111,7 @@ export const CadenaSelectCard = ({
               cadenavalorid={selectedChain.cadenavalorid}
               cuittercero={selectedChain.cuittercero}
               avatarColor={getAvatarColor(selectedChain.denominacion)}
+              compacta={compacta}
             />
           </div>
         ) : (

@@ -37,7 +37,7 @@ function encontrarContenedorScrolleable(el) {
 // lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
 // combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
 // decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
-export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description, enModal = false, contenedorPie }) => {
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description, enModal = false, enPagina = false, contenedorPie }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -535,7 +535,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   );
 
   return (
-    <div className={`${styles.panel} ${enModal ? styles.enModal : ""}`}>
+    <div className={`${styles.panel} ${enModal ? styles.enModal : ""} ${enPagina ? styles.enPagina : ""}`}>
       <div className={styles.modalBody}>
         {!hideHeader && (
           <CadenaHeaderCard
@@ -546,12 +546,14 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
             cuittercero={activeItem?.cuittercero}
           />
         )}
+        {!enPagina && (
         <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
           {description ||
             (isReadOnly
               ? "CDAs activos para esta cadena y pantalla. La regla se define en Criterios de Aceptación."
               : "Activá los CDAs a ejecutar y cómo se combinan. La regla se define en Criterios de Aceptación; acá solo el valor por cadena.")}
         </p>
+        )}
 
         {/* En modo solo-lectura el selector AND/OR/personalizada (leftCol)
             queda deshabilitado y no aporta nada interactivo - ocupa espacio
@@ -579,7 +581,14 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         {!isReadOnly && (
         <div className={styles.leftCol}>
           <div className={styles.agrupacionSection}>
-            <span className={styles.customTextareaLabel}>Agrupación lógica de esta cadena y pantalla</span>
+            {enPagina ? (
+              <div className={styles.seccionCabecera}>
+                <h3 className={styles.seccionTitulo}>Cómo se combinan</h3>
+                <p className={styles.seccionAyuda}>Qué tiene que cumplir la empresa para aprobar.</p>
+              </div>
+            ) : (
+              <span className={styles.customTextareaLabel}>Agrupación lógica de esta cadena y pantalla</span>
+            )}
 
             <div className={styles.typeSelector}>
               <div
@@ -594,7 +603,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
                   disabled={isReadOnly || isSaving}
                 />
                 <div className={styles.radioLabel}>
-                  <span className={styles.radioLabelText}>Cumplir todos los criterios (AND)</span>
+                  <span className={styles.radioLabelText}>{enPagina ? <>Todos los criterios <span className={styles.radioTag}>AND</span></> : "Cumplir todos los criterios (AND)"}</span>
                   <span className={styles.radioDescText}>Se deben cumplir todos los CDAs activos.</span>
                 </div>
               </div>
@@ -611,7 +620,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
                   disabled={isReadOnly || isSaving}
                 />
                 <div className={styles.radioLabel}>
-                  <span className={styles.radioLabelText}>Cumplir al menos un criterio (OR)</span>
+                  <span className={styles.radioLabelText}>{enPagina ? <>Al menos uno <span className={styles.radioTag}>OR</span></> : "Cumplir al menos un criterio (OR)"}</span>
                   <span className={styles.radioDescText}>Basta con que se cumpla cualquiera de los CDAs activos.</span>
                 </div>
               </div>
@@ -628,7 +637,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
                   disabled={isReadOnly || isSaving}
                 />
                 <div className={styles.radioLabel}>
-                  <span className={styles.radioLabelText}>Expresión personalizada (Avanzado)</span>
+                  <span className={styles.radioLabelText}>{enPagina ? <>Personalizada <span className={styles.radioTag}>Avanzado</span></> : "Expresión personalizada (Avanzado)"}</span>
                   <span className={styles.radioDescText}>Escribí una expresión lógica compleja utilizando los IDs de los CDAs.</span>
                 </div>
               </div>
@@ -698,6 +707,21 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         )}
 
         <div className={styles.rightCol}>
+        {enPagina && (
+          <div className={styles.seccionCabecera}>
+            <div className={styles.seccionTituloFila}>
+              <h3 className={styles.seccionTitulo}>Criterios</h3>
+              {allCdasListSinAcotar.length > 0 && (
+                <span className={styles.seccionContador}>
+                  {cdasEnPantalla.filter((cda) => cdaConfigs[getCdaId(cda)]?.checked).length} de {cdasEnPantalla.length} activos
+                </span>
+              )}
+            </div>
+            <p className={styles.seccionAyuda}>
+              {description || "Tildá los que se validan. La regla se define en CDAs globales; acá solo el valor."}
+            </p>
+          </div>
+        )}
         {/* Se gatea por el catálogo SIN acotar (no por cdasEnPantalla): si el
             filtro por pantalla deja la vista en 0 pero el catálogo global
             tiene CDAs, igual hace falta mostrar el toggle "Ver todos" para
@@ -710,7 +734,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
               <FiSearch className={styles.iconSearch} />
               <input
                 type="text"
-                placeholder="Buscar por descripción o expresión..."
+                placeholder={enPagina ? "Buscar criterio" : "Buscar por descripción o expresión..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -742,7 +766,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
           </div>
         )}
 
-        {!hideUnchecked && allCdasListSinAcotar.length > 0 && (
+        {!enPagina && !hideUnchecked && allCdasListSinAcotar.length > 0 && (
           <div className={styles.checklistHeader}>
             {/* Cuenta relativa a lo VISIBLE (cdasEnPantalla), no al total
                 global marcado (checkedIds): si se cuenta contra el total,

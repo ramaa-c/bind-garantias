@@ -19,9 +19,11 @@ const fileToBase64 = (file) =>
 const leerArchivoValidado = async (file) => {
   const contenidoBase64 = await fileToBase64(file);
   if (!esContenidoArchivoPermitido(contenidoBase64)) {
-    throw new Error(
+    const error = new Error(
       `El contenido de "${file.name}" no corresponde a un PDF, JPG o PNG válido.`,
     );
+    error.esValidacionArchivo = true;
+    throw error;
   }
   return contenidoBase64;
 };

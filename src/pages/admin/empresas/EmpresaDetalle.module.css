@@ -373,8 +373,10 @@
   padding: 1rem;
 }
 
-.usuariosVinculadosTab .sectionCard {
-  max-width: 32rem;
+.datosFooterEstado {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.82rem;
 }
 
 .usuariosVinculadosLista {
@@ -496,6 +498,7 @@
 
 .datosFooter {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
   flex: 0 0 auto;
@@ -1529,6 +1532,39 @@
 .filaCdaTitulo .cdaRowForzadoPill,
 .filaCdaTitulo .cdaRowDesvinculadoPill {
   margin-left: 0;
+}
+
+.lineaEstadoPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.lineaEstadoPill-success {
+  background: rgba(61, 220, 132, 0.1);
+  color: #3ddc84;
+  border-color: rgba(61, 220, 132, 0.25);
+}
+
+.lineaEstadoPill-warning {
+  background: rgba(255, 179, 0, 0.1);
+  color: #ffb300;
+  border-color: rgba(255, 179, 0, 0.25);
+}
+
+.lineaEstadoPill-danger {
+  background: rgba(255, 82, 82, 0.1);
+  color: #ff5252;
+  border-color: rgba(255, 82, 82, 0.25);
 }
 
 .filaCdaNombre {

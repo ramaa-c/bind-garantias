@@ -1300,3 +1300,185 @@
     white-space: nowrap;
   }
 }
+
+/* ── En página (CadenasCda): dos secciones con cabecera propia (título,
+   ayuda y contador a la misma altura), contenedores translúcidos y
+   textos más grandes ───────────────────────────────────────────────────── */
+.seccionCabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-height: 3.6rem;
+}
+
+.seccionTituloFila {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.seccionTitulo {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+.seccionAyuda {
+  margin: 0;
+  color: #8b949e;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.seccionContador {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(76, 101, 230, 0.14);
+  color: #c7d0ff;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.radioTag {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.07);
+  color: #9aa4b0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  vertical-align: 0.1em;
+}
+
+.enPagina .modalBody {
+  gap: 0;
+}
+
+@media (min-width: 56rem) {
+  .enPagina .mainLayout {
+    grid-template-columns: 18.5rem minmax(0, 1fr);
+    column-gap: 0;
+  }
+
+  .enPagina .leftCol {
+    padding-right: 1.5rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .enPagina .rightCol {
+    padding-left: 1.5rem;
+  }
+}
+
+.enPagina .leftCol,
+.enPagina .rightCol {
+  gap: 1rem;
+}
+
+.enPagina .agrupacionSection {
+  gap: 1rem;
+}
+
+.enPagina .typeSelector {
+  gap: 0.5rem;
+}
+
+.enPagina .radioOption {
+  align-items: flex-start;
+  padding: 0.75rem 0.85rem;
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.enPagina .radioOption.radioActive {
+  border-color: rgba(76, 101, 230, 0.5);
+  background: rgba(76, 101, 230, 0.1);
+}
+
+.enPagina .radioInput {
+  margin-top: 0.15rem;
+}
+
+.enPagina .radioLabel {
+  gap: 0.25rem;
+}
+
+.enPagina .radioLabelText {
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.enPagina .radioDescText {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.enPagina .searchRow {
+  align-items: center;
+  margin: 0;
+}
+
+.enPagina .searchWrap,
+.enPagina .customTextarea,
+.enPagina .controlValueInput {
+  background: rgba(10, 12, 20, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.enPagina .searchWrap {
+  height: 2.5rem;
+}
+
+.enPagina .cdasSection {
+  margin-top: 0;
+}
+
+.enPagina .cdasList {
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.enPagina .cdaCard,
+.enPagina .cdaCard.cdaCardChecked {
+  padding: 0.9rem 1rem;
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.enPagina .cdaCard.cdaCardChecked {
+  background: rgba(76, 101, 230, 0.06);
+}
+
+.enPagina .globalRuleRow {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.enPagina .pillsContainer,
+.enPagina .infoBox {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.enPagina .customTextareaLabel {
+  font-size: 0.74rem;
+}
+
+.enPagina .cdaTitleText {
+  font-size: 0.92rem;
+}
+
+.enPagina .globalRuleExpr {
+  font-size: 0.82rem;
+}
+
+.enPagina .globalRechazoText {
+  font-size: 0.8rem;
+}
+
+.enPagina .controlPanelLabel {
+  font-size: 0.72rem;
+}

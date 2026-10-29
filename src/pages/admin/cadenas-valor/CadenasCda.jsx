@@ -19,7 +19,7 @@ const PANTALLAS = [
 ];
 
 const DESCRIPCION_LINEAS =
-  "Se validan al pedir una línea de crédito. Aplican por igual a todas las líneas activas de la cadena.";
+  "Se validan al pedir una línea y aplican a todas las líneas activas.";
 
 const contarCdasActivos = (data) => {
   const cdas = Array.isArray(data?.cdas) ? data.cdas : data?.cdas?.items || data?.cdas?.data || [];
@@ -53,9 +53,9 @@ export default function CadenasCda() {
     : PANTALLAS[0].value;
 
   const [busqueda, setBusqueda] = useState("");
-  const [selectedCadenaId, setSelectedCadenaId] = useState("");
+  const [selectedCadenaId, setSelectedCadenaId] = useState(() => searchParams.get("cadena") || "");
   const [selectedPantalla, setSelectedPantalla] = useState(pantallaInicial);
-  const [verDetalleMovil, setVerDetalleMovil] = useState(false);
+  const [verDetalleMovil, setVerDetalleMovil] = useState(() => !!searchParams.get("cadena"));
   const [contenedorPie, setContenedorPie] = useState(null);
 
   const { data: activeCadenas, isLoading: isLoadingActive } = useObtenerTodasWebConEstado();
@@ -120,7 +120,7 @@ export default function CadenasCda() {
   if (bloqueado) return null;
 
   return (
-    <div className={styles.container} data-ancho-completo>
+    <div className={styles.container}>
       <div className={styles.header}>
         <h1>CDAs por cadena</h1>
         <span className={styles.headerResumen}>Qué criterios se validan en cada cadena, por pantalla</span>
@@ -261,6 +261,7 @@ export default function CadenasCda() {
                     hideUnchecked={false}
                     description={esLineas ? DESCRIPCION_LINEAS : undefined}
                     enModal
+                    enPagina
                     contenedorPie={contenedorPie}
                     key={`${activeItem.cadenavalorid}-${selectedPantalla}`}
                   />

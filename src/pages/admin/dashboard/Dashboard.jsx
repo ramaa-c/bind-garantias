@@ -141,17 +141,25 @@ const ELEMENTOS_POR_PAGINA = 8;
 // Misma forma que una fila real, para que el loading no "salte" de tamaño
 // cuando llegan los datos.
 const SolicitudRowSkeleton = () => (
-  <div className={styles.row}>
+  <div className={styles.row} aria-hidden="true">
     <Skeleton width="2.35rem" height="2.35rem" radius="50%" />
     <div className={styles.rowIdentity}>
-      <Skeleton height="0.9rem" width="55%" />
-      <Skeleton height="0.75rem" width="75%" style={{ marginTop: "0.35rem" }} />
+      <Skeleton height="0.875rem" width="35%" />
+      <Skeleton height="0.75rem" width="55%" style={{ margin: "0.125rem 0" }} />
+      <span className={styles.rowChips}>
+        <Skeleton width="4rem" height="1.45rem" radius="0.4rem" />
+        <Skeleton width="6.75rem" height="1.45rem" radius="0.4rem" />
+        <Skeleton width="8rem" height="1.45rem" radius="0.4rem" />
+      </span>
     </div>
-    <Skeleton width="6rem" height="1.4rem" radius="9999px" />
-    <Skeleton width="7rem" height="1.1rem" />
-    <div className={styles.rowSpacer} />
-    <Skeleton width="10rem" height="1.9rem" radius="0.5rem" />
-    <Skeleton width="1rem" height="1rem" />
+    <Skeleton width="7.5rem" height="1.45rem" radius="pill" />
+    <div className={styles.rowAmountBlock}>
+      <Skeleton width="2.5rem" height="0.6rem" />
+      <Skeleton width="5.75rem" height="1.05rem" style={{ marginTop: "0.15rem" }} />
+    </div>
+    <div className={styles.rowActions}>
+      <Skeleton width="7.3rem" height="1.9rem" radius="0.6rem" />
+    </div>
   </div>
 );
 
@@ -165,9 +173,6 @@ export default function Dashboard() {
   const [pagina, setPagina] = useState(1);
   const contenedorRef = useRef(null);
   const listaRef = useRef(null);
-  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
-    porDefecto: ELEMENTOS_POR_PAGINA,
-  });
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
 
@@ -250,6 +255,10 @@ export default function Dashboard() {
 
   const loading = isLoadingLimites || isLoadingSocios;
   const cargaInicial = loading && !limitesData && !sociosData;
+  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
+    porDefecto: ELEMENTOS_POR_PAGINA,
+    activo: !cargaInicial,
+  });
   const [cargaDemorada, setCargaDemorada] = useState(false);
 
   useEffect(() => {
@@ -948,7 +957,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className={styles.container} ref={contenedorRef} data-ancho-completo>
+    <div className={styles.container} ref={contenedorRef}>
       <div className={styles.layout}>
         <aside className={styles.panel} aria-label="Cadena y filtros">
           {fichaCadena}
@@ -992,7 +1001,7 @@ export default function Dashboard() {
           {/* Lista de solicitudes */}
           <div className={styles.listWrapper} ref={listaRef}>
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => <SolicitudRowSkeleton key={i} />)
+              Array.from({ length: filasPorPagina }).map((_, i) => <SolicitudRowSkeleton key={i} />)
             ) : filtradas.length === 0 ? (
               <SinResultados
                 className={styles.emptyState}

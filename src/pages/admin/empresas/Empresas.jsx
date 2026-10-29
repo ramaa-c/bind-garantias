@@ -1,17 +1,18 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiX, FiChevronRight, FiChevronUp, FiChevronDown, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
+import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
 import { useObtenerSocios, useObtenerExecuteCda } from "../../../hooks/useSocios";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
-import { SelectSimple } from "../../../components/ui";
+import { FiltroDesplegable } from "../../../components/ui";
 import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { detectarCadenaValorId } from "../../../utils/executeCda";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import styles from "./Empresas.module.css";
+import l from "../../../components/features/admin/ListadoAdmin/ListadoAdmin.module.css";
 
 // Filas más altas que antes (avatar + contacto en dos líneas): con 10
 // se generaba scroll de página en full HD, por eso se bajó a 8.
@@ -39,13 +40,13 @@ const FILTROS_POR_DEFECTO = {
 };
 
 const OPCIONES_TIPO_PERSONA = [
-  { value: "todos", label: "Todos los tipos" },
+  { value: "todos", label: "Todos" },
   { value: "fisica", label: "Persona Física" },
   { value: "juridica", label: "Persona Jurídica" },
 ];
 
 const OPCIONES_ESTADO = [
-  { value: "todos", label: "Todos los estados" },
+  { value: "todos", label: "Todos" },
   { value: "migrado", label: "Migrado a SGR+" },
   { value: "postulante", label: "Postulante" },
 ];
@@ -151,12 +152,7 @@ export default function Empresas() {
   const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
     porDefecto: ELEMENTOS_POR_PAGINA,
   });
-  // Colapsado por defecto solo en Rango 2 (mismo umbral y mismo criterio
-  // que Dashboard.jsx - ahí es donde el espacio es crítico; en Rango 1
-  // arranca abierto porque sobra aire).
-  const [panelesVisibles, setPanelesVisibles] = useState(
-    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
-  );
+
 
   // El backend solo permite filtrar la lista de socios por Cuit o por
   // Denominacion (nunca ambos a la vez: el Cuit es único, así que combinarlos
@@ -241,113 +237,64 @@ export default function Empresas() {
 
   return (
     <div className={styles.container} ref={contenedorRef}>
-      <div className={styles.headerTitle}>
-        <div>
-          <h1>Empresas</h1>
-          <p>Listado de empresas registradas en la plataforma.</p>
-        </div>
-        <button
-          type="button"
-          className={styles.toggleFiltersBtn}
-          onClick={() => setPanelesVisibles((v) => !v)}
-          aria-expanded={panelesVisibles}
-          title={panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
-        >
-          {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
-          {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
-          {/* Con el panel colapsado, esta es la única señal de que la lista
-              de abajo está filtrada y no es el total real. */}
-          {!panelesVisibles && hayFiltrosActivos && (
-            <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
-          )}
-        </button>
-      </div>
-
-      {/* Colapsable en Rango 2 (mismo patrón que Dashboard.jsx): entra por
-          panelesVisibles, con grid-template-rows 1fr→0fr (ver
-          .collapsiblePanel en Empresas.module.css). */}
-      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
-        <div className={styles.collapsiblePanelInner}>
-      <div className={styles.filtersCard}>
-        <div className={styles.searchWrap}>
-          <FiSearch className={styles.iconSearch} />
-          <input
-            type="text"
-            placeholder="Buscar por CUIT o Denominación..."
-            value={busqueda}
-            onChange={(e) => handleBusqueda(e.target.value)}
-            className={styles.inputSearch}
-          />
-        </div>
-
-        <div className={styles.filterFieldsRow}>
-          <SelectSimple
-            label="Tipo"
-            value={tipoPersona}
-            onChange={handleTipoPersona}
-            options={OPCIONES_TIPO_PERSONA}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-          <SelectSimple
-            label="Estado"
-            value={estado}
-            onChange={handleEstado}
-            options={OPCIONES_ESTADO}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-          <SelectSimple
-            label="Orden"
-            value={orden}
-            onChange={handleOrden}
-            options={OPCIONES_ORDEN}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-        </div>
-
-        <button
-          type="button"
-          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
-          onClick={handleLimpiarFiltros}
-          disabled={!hayFiltrosActivos}
-          tabIndex={hayFiltrosActivos ? 0 : -1}
-          title="Limpiar filtros"
-          aria-label="Limpiar filtros"
-        >
-          <FiX />
-        </button>
-
+      <div className={l.encabezado}>
+        <h1>Empresas</h1>
         {!isLoading && (
-          <span className={styles.listCount}>
-            <FiBriefcase />
+          <span className={l.resumen}>
             {empresas.length} empresa{empresas.length !== 1 ? "s" : ""}
           </span>
         )}
       </div>
-      </div>
+
+      <div className={l.filtros}>
+        <div className={l.buscador}>
+          <FiSearch aria-hidden="true" />
+          <input
+            type="text"
+            placeholder="Buscar por CUIT o denominación"
+            value={busqueda}
+            onChange={(e) => handleBusqueda(e.target.value)}
+            aria-label="Buscar por CUIT o denominación"
+          />
+        </div>
+        <FiltroDesplegable
+          etiqueta="Tipo"
+          valor={tipoPersona}
+          opciones={OPCIONES_TIPO_PERSONA}
+          onChange={handleTipoPersona}
+          valorPorDefecto={FILTROS_POR_DEFECTO.tipoPersona}
+        />
+        <FiltroDesplegable
+          etiqueta="Estado"
+          valor={estado}
+          opciones={OPCIONES_ESTADO}
+          onChange={handleEstado}
+          valorPorDefecto={FILTROS_POR_DEFECTO.estado}
+        />
+        <FiltroDesplegable
+          etiqueta="Orden"
+          valor={orden}
+          opciones={OPCIONES_ORDEN}
+          onChange={handleOrden}
+          valorPorDefecto={FILTROS_POR_DEFECTO.orden}
+        />
+        {hayFiltrosActivos && (
+          <button type="button" className={l.limpiar} onClick={handleLimpiarFiltros}>
+            Limpiar
+          </button>
+        )}
       </div>
 
-      <div className={styles.tableCard}>
-        <div className={styles.tableWrapper} ref={listaRef}>
-          <table className={styles.table}>
+      <div className={l.tablaCaja}>
+        <div className={l.tablaScroll} ref={listaRef}>
+          <table className={`${l.tabla} ${styles.table}`}>
             <thead>
               <tr>
-                <th style={{ width: "36%" }}>Empresa</th>
-                <th style={{ width: "30%" }}>Contacto</th>
+                <th style={{ width: "34%" }}>Empresa</th>
+                <th style={{ width: "28%" }}>Contacto</th>
                 <th style={{ width: "13%" }}>Tipo</th>
                 <th style={{ width: "13%" }}>Estado</th>
-                <th style={{ width: "2.5rem" }}></th>
+                <th style={{ width: "8rem" }}></th>
                 <th style={{ width: "2.5rem" }}></th>
               </tr>
             </thead>
@@ -356,9 +303,9 @@ export default function Empresas() {
                 Array.from({ length: 6 }).map((_, i) => <EmpresaRowSkeleton key={i} />)
               ) : empresasPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: 0 }}>
-                    <div className={styles.emptyState}>
-                      <FiInbox className={styles.emptyStateIcon} />
+                  <td colSpan={6} style={{ padding: 0, height: "auto" }}>
+                    <div className={l.vacio}>
+                      <FiInbox aria-hidden="true" />
                       <span>No se encontraron empresas que coincidan con los criterios de búsqueda.</span>
                     </div>
                   </td>
@@ -370,7 +317,7 @@ export default function Empresas() {
                     <tr
                       key={e.socioid || `${e.cuit}-${idx}`}
                       data-fila
-                      className={styles.clickableRow}
+                      className={`${l.filaClickeable} ${styles.clickableRow}`}
                       onClick={() => navigate(`/admin/empresas/${e.socioid}`)}
                     >
                       <td>
@@ -402,17 +349,18 @@ export default function Empresas() {
                       <td>
                         <EstadoBadge e={e} cadenasWeb={cadenasWeb} />
                       </td>
-                      <td style={{ textAlign: "center" }}>
+                      <td style={{ textAlign: "right" }}>
                         <button
                           type="button"
-                          className={styles.activityButton}
-                          title="Ver actividad"
+                          className={l.accionFila}
+                          title="Ver la actividad de la empresa"
+                          aria-label="Ver la actividad de la empresa"
                           onClick={(ev) => {
                             ev.stopPropagation();
                             setEmpresaActividad(e);
                           }}
                         >
-                          <FiActivity size={14} />
+                          <FiActivity aria-hidden="true" /> <span className={l.textoAccion}>Actividad</span>
                         </button>
                       </td>
                       <td style={{ textAlign: "center" }}>
