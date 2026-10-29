@@ -90,7 +90,7 @@ export default function VariablesParametrizacion() {
               <tr>
                 <th>Variable</th>
                 <th style={{ width: "9rem" }}>Valor</th>
-                <th style={{ textAlign: "center", width: "4.5rem" }}></th>
+                <th style={{ textAlign: "center", width: "7rem" }}></th>
               </tr>
             </thead>
             <tbody>
@@ -119,7 +119,7 @@ export default function VariablesParametrizacion() {
                         onClick={() => handleEditar(item)}
                         title="Editar valor"
                       >
-                        <FiEdit2 size={14} />
+                        <FiEdit2 size={13} aria-hidden="true" /> Editar
                       </button>
                     </td>
                   </tr>

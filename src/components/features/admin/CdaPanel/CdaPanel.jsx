@@ -37,7 +37,7 @@ function encontrarContenedorScrolleable(el) {
 // lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
 // combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
 // decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
-export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description, enModal = false, contenedorPie }) => {
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description, enModal = false, enPagina = false, contenedorPie }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -535,7 +535,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   );
 
   return (
-    <div className={`${styles.panel} ${enModal ? styles.enModal : ""}`}>
+    <div className={`${styles.panel} ${enModal ? styles.enModal : ""} ${enPagina ? styles.enPagina : ""}`}>
       <div className={styles.modalBody}>
         {!hideHeader && (
           <CadenaHeaderCard

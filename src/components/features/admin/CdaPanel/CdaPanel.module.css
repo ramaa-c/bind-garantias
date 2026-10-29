@@ -1300,3 +1300,84 @@
     white-space: nowrap;
   }
 }
+
+/* ── En página (CadenasCda): contenedores translúcidos y textos más
+   grandes, misma línea que las listas del panel admin ─────────────────── */
+.enPagina .cdasList {
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.enPagina .cdaCard,
+.enPagina .cdaCard.cdaCardChecked {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.enPagina .cdaCard.cdaCardChecked {
+  background: rgba(76, 101, 230, 0.06);
+}
+
+.enPagina .radioOption {
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.enPagina .radioOption.radioActive {
+  border-color: rgba(76, 101, 230, 0.45);
+  background: rgba(76, 101, 230, 0.1);
+}
+
+.enPagina .searchWrap,
+.enPagina .customTextarea,
+.enPagina .controlValueInput {
+  background: rgba(10, 12, 20, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.enPagina .globalRuleRow {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.enPagina .pillsContainer,
+.enPagina .infoBox {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.enPagina .modalBody > p {
+  font-size: 0.88rem !important;
+}
+
+.enPagina .radioLabelText {
+  font-size: 0.9rem;
+}
+
+.enPagina .radioDescText {
+  font-size: 0.78rem;
+}
+
+.enPagina .customTextareaLabel {
+  font-size: 0.74rem;
+}
+
+.enPagina .cdaTitleText {
+  font-size: 0.92rem;
+}
+
+.enPagina .globalRuleExpr {
+  font-size: 0.82rem;
+}
+
+.enPagina .globalRechazoText {
+  font-size: 0.8rem;
+}
+
+.enPagina .checklistHeader {
+  font-size: 0.8rem;
+}
+
+.enPagina .controlPanelLabel {
+  font-size: 0.76rem;
+}

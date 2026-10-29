@@ -261,6 +261,7 @@ export default function CadenasCda() {
                     hideUnchecked={false}
                     description={esLineas ? DESCRIPCION_LINEAS : undefined}
                     enModal
+                    enPagina
                     contenedorPie={contenedorPie}
                     key={`${activeItem.cadenavalorid}-${selectedPantalla}`}
                   />

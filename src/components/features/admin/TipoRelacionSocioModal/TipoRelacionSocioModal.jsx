@@ -41,7 +41,11 @@ export const TipoRelacionSocioModal = ({
   );
 
   const opcionesCatalogo = useMemo(() => {
-    const opciones = catalogoReal?.opciones || [];
+    const opciones = (catalogoReal?.opciones || []).map((o) => ({
+      ...o,
+      label: `#${o.value} · ${o.label}`,
+      descripcion: o.label,
+    }));
     if (esEdicion) return opciones;
     return opciones.filter((o) => !idsActivosSet.has(String(o.value)));
   }, [catalogoReal, esEdicion, idsActivosSet]);
@@ -132,7 +136,7 @@ export const TipoRelacionSocioModal = ({
             onChange={(value) => {
               setTipoRelacionSocioId(value);
               const opcion = opcionesCatalogo.find((o) => String(o.value) === String(value));
-              if (opcion && !descripcion.trim()) setDescripcion(opcion.label);
+              if (opcion && !descripcion.trim()) setDescripcion(opcion.descripcion);
             }}
             options={opcionesCatalogo}
             isSearchable

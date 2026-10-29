@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FiPlus, FiEdit2, FiSearch, FiInbox, FiCheck, FiRotateCcw, FiAlertCircle } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, InfoTooltip, Skeleton } from "../../../components/ui";
+import { Button, Skeleton } from "../../../components/ui";
 import { TipoRelacionSocioModal } from "../../../components/features/admin/TipoRelacionSocioModal/TipoRelacionSocioModal";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -223,11 +223,6 @@ export default function TiposRelacionSocio() {
     <div className={styles.container} data-ancho-completo>
       <div className={styles.header}>
         <h1>Relaciones de terceros</h1>
-        <InfoTooltip
-          variant="admin"
-          label="¿Cómo funciona el ID?"
-          texto="El ID siempre es el del catálogo real de SGR+ - acá solo se define cómo se llama esa relación para la web. Una vez activada, no se puede desactivar."
-        />
       </div>
 
       <div className={styles.layout}>
@@ -277,7 +272,7 @@ export default function TiposRelacionSocio() {
                     title="Editar descripción"
                     aria-label={`Editar ${item.descripcion}`}
                   >
-                    <FiEdit2 size={13} />
+                    <FiEdit2 size={13} aria-hidden="true" /> Editar
                   </button>
                 </div>
               ))
@@ -285,7 +280,7 @@ export default function TiposRelacionSocio() {
           </div>
 
           <p className={styles.panelNota}>
-            El ID es el del catálogo de SGR+. Acá solo se define el nombre que ve el cliente.
+            El ID es el del catálogo real de SGR+ y no cambia: acá solo se define el nombre que ve el cliente. Una vez activada, una relación no se puede desactivar.
           </p>
         </section>
 
