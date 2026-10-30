@@ -186,10 +186,17 @@ const ActividadItem = ({ item }) => {
   );
 };
 
+// Sin fechaDesde la API devuelve solo el último mes: se muestra ese rango en
+// el filtro en vez de dejarlo vacío, que daba a entender "todo el historial".
+// Mismo formato que entrega SelectFechaSimple (mediodía local).
+const haceUnMes = () => {
+  const hoy = new Date();
+  return new Date(hoy.getFullYear(), hoy.getMonth() - 1, hoy.getDate(), 12, 0, 0).toISOString();
+};
+
 const FILTROS_DEFECTO = {
   verbo: "todas",
   busqueda: "",
-  fechaDesde: "",
   fechaHasta: "",
   orden: "desc",
 };
@@ -197,7 +204,7 @@ const FILTROS_DEFECTO = {
 export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => {
   const [verbo, setVerbo] = useState(FILTROS_DEFECTO.verbo);
   const [busqueda, setBusqueda] = useState(FILTROS_DEFECTO.busqueda);
-  const [fechaDesde, setFechaDesde] = useState(FILTROS_DEFECTO.fechaDesde);
+  const [fechaDesde, setFechaDesde] = useState(haceUnMes);
   const [fechaHasta, setFechaHasta] = useState(FILTROS_DEFECTO.fechaHasta);
   const [orden, setOrden] = useState(FILTROS_DEFECTO.orden);
   const [visibles, setVisibles] = useState(ELEMENTOS_POR_TANDA);
@@ -275,7 +282,7 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
   const hayFiltrosActivos =
     verbo !== FILTROS_DEFECTO.verbo ||
     !!busqueda ||
-    !!fechaDesde ||
+    diaLocal(fechaDesde) !== diaLocal(haceUnMes()) ||
     !!fechaHasta ||
     orden !== FILTROS_DEFECTO.orden;
 
@@ -292,7 +299,7 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
   };
 
   const handleFechaDesde = (value) => {
-    setFechaDesde(value);
+    setFechaDesde(value || haceUnMes());
     resetVisibles();
   };
 
@@ -309,7 +316,7 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
   const limpiarFiltros = () => {
     setVerbo(FILTROS_DEFECTO.verbo);
     setBusqueda(FILTROS_DEFECTO.busqueda);
-    setFechaDesde(FILTROS_DEFECTO.fechaDesde);
+    setFechaDesde(haceUnMes());
     setFechaHasta(FILTROS_DEFECTO.fechaHasta);
     setOrden(FILTROS_DEFECTO.orden);
     resetVisibles();
