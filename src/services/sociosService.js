@@ -230,14 +230,21 @@ export const sociosService = {
   // por cada consulta/alta/modificación hecha sobre ese CUIT en la
   // plataforma (usado por el panel admin para auditoría). Nunca da 404: si
   // el CUIT no tiene actividad registrada devuelve un array vacío. Viene
-  // paginado en orden cronológico ascendente. DetalleActividad puede traer
-  // un archivo entero en base64 (hasta 20 MB por fila, confirmado en vivo el
-  // 2026-10-30): por eso la página es chica, no se reintenta y ese contenido
-  // se descarta antes de guardarlo.
-  obtenerActividadSocio: async (cuit, pagina = 1) => {
+  // paginado; orden 1 = más reciente primero, y fchDesde/fchHasta filtran en
+  // la API para que "Cargar más" pagine sobre lo filtrado. DetalleActividad
+  // puede traer un archivo entero en base64 en registros viejos (hasta 20 MB
+  // por fila, confirmado en vivo el 2026-10-30): por eso la página es chica,
+  // no se reintenta y ese contenido se descarta antes de guardarlo.
+  obtenerActividadSocio: async (cuit, { pagina = 1, descendente = true, fechaDesde, fechaHasta } = {}) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
     const response = await api.get(`api/Socio/Actividad/${cuitLimpio}`, {
-      params: { page: pagina, page_size: ACTIVIDAD_POR_PAGINA },
+      params: {
+        page: pagina,
+        page_size: ACTIVIDAD_POR_PAGINA,
+        orden: descendente ? 1 : 0,
+        ...(fechaDesde && { fchDesde: fechaDesde }),
+        ...(fechaHasta && { fchHasta: fechaHasta }),
+      },
       timeout: TIMEOUT_ACTIVIDAD_MS,
       noRetry: true,
     });

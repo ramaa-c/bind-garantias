@@ -255,11 +255,12 @@ export const useBloqueoLegajo = (socioId, cadenaValorId, cuit) => {
 // `habilitado` aparte de `!!cuit` para que la pantalla de listado pueda
 // abrir esto como modal on-demand (recién al abrirlo) en vez de traer el
 // log de las 8 empresas visibles en cada página.
-export const useActividadSocio = (cuit, habilitado = true) => {
+export const useActividadSocio = (cuit, habilitado = true, { descendente = true, fechaDesde, fechaHasta } = {}) => {
   const cuitLimpio = String(cuit || "").replace(/\D/g, "");
   const consulta = useInfiniteQuery({
-    queryKey: ["socios", "actividad", cuitLimpio],
-    queryFn: ({ pageParam }) => sociosService.obtenerActividadSocio(cuitLimpio, pageParam),
+    queryKey: ["socios", "actividad", cuitLimpio, descendente, fechaDesde || "", fechaHasta || ""],
+    queryFn: ({ pageParam }) =>
+      sociosService.obtenerActividadSocio(cuitLimpio, { pagina: pageParam, descendente, fechaDesde, fechaHasta }),
     initialPageParam: 1,
     getNextPageParam: (ultimaPagina, paginas) =>
       ultimaPagina.length < ACTIVIDAD_POR_PAGINA ? undefined : paginas.length + 1,

@@ -34,6 +34,13 @@ const finDelDia = (fecha) => {
   return d;
 };
 
+const diaLocal = (fecha) => {
+  if (!fecha) return undefined;
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 // Orden en el que se muestran los chips de verbo cuando están presentes.
 const ORDEN_VERBOS = ["get", "post", "put", "patch", "delete"];
 
@@ -184,7 +191,7 @@ const FILTROS_DEFECTO = {
   busqueda: "",
   fechaDesde: "",
   fechaHasta: "",
-  orden: "asc",
+  orden: "desc",
 };
 
 export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => {
@@ -196,7 +203,11 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
   const [visibles, setVisibles] = useState(ELEMENTOS_POR_TANDA);
 
   const { data, isLoading, isError, hayMasRegistros, cargandoMas, falloCargarMas, cargarMas } =
-    useActividadSocio(cuit, isOpen);
+    useActividadSocio(cuit, isOpen, {
+      descendente: orden === "desc",
+      fechaDesde: diaLocal(fechaDesde),
+      fechaHasta: diaLocal(fechaHasta),
+    });
 
   const actividad = useMemo(() => {
     return [...data].sort((a, b) =>
