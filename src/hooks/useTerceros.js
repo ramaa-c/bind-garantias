@@ -174,17 +174,24 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
           item.cuit && item.cuit !== "—" ? item.cuit : item.id;
 
         if (tiporelNum === RELACION_ACCIONISTA_ID) {
-          // LUFE puede traer accionistas con 0% de participación que no
-          // sirven de nada acá — se omiten. Nuestra propia modal nunca
-          // puede guardar uno en 0% (el form valida min=0.01), así que el
-          // único 0% que puede aparecer es o bien esto de LUFE, o bien un
-          // alta que se dejó a mitad de camino (el stub que se crea antes
-          // de validar el CDA, ver SocioAccionistaModal) — en ambos casos
-          // corresponde no mostrarlo hasta que tenga un % real.
-          if (item.participacion === 0) continue;
+          // LUFE puede traer accionistas con 0% de participación: se
+          // muestran, porque la API los exige completos para migrar el
+          // legajo (decidido con backend el 2026-10-30). Solo se omite el
+          // alta provisoria sin ningún dato (el stub que se crea antes de
+          // validar el CDA, ver SocioAccionistaModal), mismo criterio que
+          // ControlarTercero en la API.
+          const esAltaProvisoria =
+            item.participacion === 0 &&
+            !item.email &&
+            !item.telefono &&
+            !(rel.telefono || rel.Telefono) &&
+            !item.calle;
+          if (esAltaProvisoria) continue;
           const existing = accMap[identifier];
           if (!existing) {
             accMap[identifier] = item;
+          } else if ((existing.participacion > 0) !== (item.participacion > 0)) {
+            if (item.participacion > 0) accMap[identifier] = item;
           } else {
             const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
             const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();

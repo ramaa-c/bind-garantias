@@ -239,6 +239,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   );
 
   const maximoPermitido = Number((100 - totalSinSocioActual).toFixed(2));
+  // Un accionista que ya está en 0% (lo trae LUFE) se puede completar sin
+  // inventarle una participación; uno nuevo sigue necesitando más de 0.
+  const admiteParticipacionCero = !!socio && Number(socio.participacion) === 0;
   
   // Dropzone Error States
   const [errorDniFrente, setErrorDniFrente] = useState(false);
@@ -381,7 +384,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           numero: Number(socio.numero) || parsedDir.numero || 0,
           piso: socio.piso || parsedDir.piso || "",
           departamento: socio.departamento || parsedDir.departamento || "",
-          ciudad: socio.ciudad || "",
+          ciudad: socio.ciudad || socio.localidad || "",
           ciudadid: Number(socio.ciudadid) || 0,
           provinciaid: String(socio.provinciaid || ""),
           codpos: socio.codpos || "",
@@ -1432,7 +1435,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                         control={control}
                         rules={{
                           required: "Requerido",
-                          min: { value: 0.01, message: "Mayor a 0" },
+                          min: admiteParticipacionCero ? { value: 0, message: "No puede ser negativa" } : { value: 0.01, message: "Mayor a 0" },
                           max: { value: maximoPermitido, message: `Máx ${maximoPermitido}%` },
                         }}
                         render={({ field }) => (

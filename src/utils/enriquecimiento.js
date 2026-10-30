@@ -3,6 +3,7 @@ import { afipService } from "../services/afipService";
 import { tercerosService } from "../services/tercerosService";
 import { catalogosService } from "../services/catalogosService";
 import { matchProvinciaAfip } from "./provinciaUtils";
+import { buscarPorTexto } from "./catalogoPorTexto";
 import { parseAddress } from "./direccionParser";
 import {
   RELACION_ACCIONISTA_ID,
@@ -70,6 +71,21 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
     // Silently handle error
   }
 
+  const ciudadesPorProvincia = new Map();
+  const ciudadesDe = async (provinciaId) => {
+    const clave = String(provinciaId);
+    if (!ciudadesPorProvincia.has(clave)) {
+      const ciudades = await catalogosService.obtenerCiudades(provinciaId).catch(() => []);
+      ciudadesPorProvincia.set(
+        clave,
+        (Array.isArray(ciudades) ? ciudades : [])
+          .filter((c) => Number(c.ciudadid) > 0)
+          .map((c) => ({ value: String(c.ciudadid), label: c.descripcion })),
+      );
+    }
+    return ciudadesPorProvincia.get(clave);
+  };
+
   for (const rel of relacionAccionistas) {
     const terceroId =
       rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
@@ -130,6 +146,22 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
         const localidadVal =
           dom.localidad || dom.localidadNombre || terceroLocal.contacto || "";
 
+        let provIdVal = rel.provinciaid || 0;
+        if (!provIdVal && dom) {
+          const provNombre = dom.descripcionprovincia || dom.provincia || "";
+          if (provNombre) {
+            const match = matchProvinciaAfip(provNombre, opcionesProvincias);
+            if (match) {
+              provIdVal = match.value;
+            }
+          }
+        }
+
+        // Mismo emparejador que los modales de terceros (useSincronizarCatalogoPorTexto):
+        // sin esto el tercero quedaba con CiudadID 0 y el modal no podía mostrar la ciudad.
+        const ciudadesProvincia = provIdVal ? await ciudadesDe(provIdVal) : [];
+        const ciudadMatch = buscarPorTexto(localidadVal, ciudadesProvincia);
+
         const payloadTercero = {
           tercerorelacionadoid: terceroId,
           denominacion:
@@ -145,7 +177,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
           tipodocumentoid: 0,
           numerodocumento: cuitSocioLimpio,
           estadocivilid: 0,
-          ciudadid: 0,
+          ciudadid: Number(ciudadMatch?.value) || Number(terceroLocal.ciudadid) || 0,
           telefono: celularVal,
           conyuge: "",
           actividad: "",
@@ -162,17 +194,6 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
         };
 
         await tercerosService.actualizarTercero(payloadTercero);
-
-        let provIdVal = rel.provinciaid || 0;
-        if (!provIdVal && dom) {
-          const provNombre = dom.descripcionprovincia || dom.provincia || "";
-          if (provNombre) {
-            const match = matchProvinciaAfip(provNombre, opcionesProvincias);
-            if (match) {
-              provIdVal = match.value;
-            }
-          }
-        }
 
         const ahoraStr = getCSharpIsoDate();
         const payloadRel = {
