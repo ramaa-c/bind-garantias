@@ -1,0 +1,504 @@
+.contenedor {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── Botón: el color dice la gravedad sin tener que abrirlo ── */
+.boton {
+  --tono-rgb: 255, 193, 7;
+  --tono: #ffc107;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2.5rem;
+  padding: 0 0.6rem 0 0.3rem;
+  border: 1px solid rgba(var(--tono-rgb), 0.45);
+  border-radius: 0.75rem;
+  background: rgba(var(--tono-rgb), 0.1);
+  color: var(--tono);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+button.boton:hover,
+.botonAbierto {
+  background: rgba(var(--tono-rgb), 0.16);
+  border-color: rgba(var(--tono-rgb), 0.7);
+}
+
+.boton:focus-visible {
+  outline: 2px solid var(--tono);
+  outline-offset: 2px;
+}
+
+.tono_bloqueo {
+  --tono-rgb: 255, 107, 107;
+  --tono: #ff8a8a;
+  box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.08);
+}
+
+.tono_espera {
+  --tono-rgb: 138, 159, 255;
+  --tono: var(--color-azul-bind-300, #8a9fff);
+}
+
+.tono_ok {
+  --tono-rgb: 61, 220, 132;
+  --tono: var(--success-green, #3ddc84);
+  cursor: default;
+  animation: aparecer 0.25s ease;
+}
+
+:global([data-theme="light"]) .tono_bloqueo {
+  --tono: #c62828;
+}
+
+:global([data-theme="light"]) .tono_pendiente {
+  --tono: #8a6100;
+}
+
+:global([data-theme="light"]) .tono_ok {
+  --tono: #0f7a42;
+}
+
+.botonIcono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.55rem;
+  background: rgba(var(--tono-rgb), 0.2);
+  color: var(--tono);
+  font-size: 1rem;
+}
+
+.tono_bloqueo .botonIcono {
+  background: #ff6b6b;
+  color: #1a1a1a;
+}
+
+.botonIcono svg {
+  stroke-width: 2.6;
+}
+
+.botonTextos {
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  line-height: 1.15;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.botonTextos small {
+  color: var(--tono);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.botonTextos b {
+  color: var(--white);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.botonCantidad {
+  min-width: 1rem;
+  color: var(--tono);
+  font-size: 0.88rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.botonFlecha {
+  display: none;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  transition: transform 0.2s ease;
+}
+
+.botonAbierto .botonFlecha {
+  transform: rotate(180deg);
+}
+
+.latido {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.3rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: #ff6b6b;
+}
+
+.latido::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #ff6b6b;
+  animation: latir 1.8s ease-out infinite;
+}
+
+@keyframes latir {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .latido::after {
+    animation: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  .boton {
+    gap: 0.6rem;
+    height: 2.85rem;
+    padding: 0 0.75rem 0 0.35rem;
+  }
+
+  .botonIcono {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .botonTextos {
+    display: flex;
+  }
+
+  .botonFlecha {
+    display: block;
+  }
+
+  .botonCantidad {
+    display: none;
+  }
+}
+
+/* ── Aviso la primera vez que aparece un bloqueo ── */
+.avisoBloqueo {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: -3.5rem;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 17rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.8rem;
+  background: #f2f2f0;
+  color: #1a1a1a;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+  animation: aparecer 0.25s ease;
+}
+
+.avisoBloqueo::before {
+  content: "";
+  position: absolute;
+  top: -0.35rem;
+  right: 4.6rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: inherit;
+  transform: rotate(45deg);
+}
+
+.avisoBloqueo strong {
+  font-size: 0.86rem;
+}
+
+.avisoBloqueoAcciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.avisoBloqueoPrincipal,
+.avisoBloqueoSecundario {
+  height: 1.85rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.avisoBloqueoPrincipal {
+  border: 0;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.avisoBloqueoSecundario {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: none;
+  color: #1a1a1a;
+}
+
+@media (min-width: 64rem) {
+  .avisoBloqueo {
+    right: 0;
+  }
+
+  .avisoBloqueo::before {
+    right: 2rem;
+  }
+}
+
+/* ── Panel desplegable ── */
+.panel {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: min(27rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 6rem);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  border-radius: 1rem;
+  background: var(--bg-elevado, #1e1e1e);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: aparecer 0.2s ease;
+}
+
+.panelHoja {
+  position: fixed;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  width: auto;
+  max-height: 85dvh;
+  border-radius: 1.25rem 1.25rem 0 0;
+  border-bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.fondoHoja {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.asa {
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0.6rem auto 0;
+  border-radius: 999px;
+  background: rgba(var(--overlay-rgb), 0.2);
+}
+
+.panelCabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.08);
+}
+
+.panelCabecera strong {
+  flex-shrink: 0;
+  color: var(--white);
+  font-size: 0.95rem;
+}
+
+.panelEmpresa {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cerrar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  border-radius: 0.55rem;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.panelCuerpo {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0.25rem;
+  overflow-y: auto;
+}
+
+.seccion {
+  --nivel-rgb: 255, 193, 7;
+  --nivel: #ffc107;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.65rem 0.25rem;
+}
+
+.nivel_bloqueo {
+  --nivel-rgb: 255, 107, 107;
+  --nivel: #ff8a8a;
+}
+
+.nivel_espera {
+  --nivel-rgb: 138, 159, 255;
+  --nivel: var(--color-azul-bind-300, #8a9fff);
+}
+
+:global([data-theme="light"]) .nivel_bloqueo {
+  --nivel: #c62828;
+}
+
+:global([data-theme="light"]) .nivel_pendiente {
+  --nivel: #8a6100;
+}
+
+.seccionTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0 0.35rem;
+  color: var(--nivel);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.seccionTitulo svg {
+  stroke-width: 3;
+}
+
+.seccionCantidad {
+  display: grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: auto;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(var(--nivel-rgb), 0.16);
+  color: var(--nivel);
+  font-size: 0.7rem;
+  letter-spacing: 0;
+}
+
+.nivel_bloqueo .seccionCantidad {
+  background: #ff6b6b;
+  color: #1a1a1a;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.75rem;
+  background: rgba(var(--overlay-rgb), 0.025);
+  box-shadow: inset 3px 0 0 var(--nivel);
+}
+
+.nivel_bloqueo .item {
+  border-color: rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.07);
+}
+
+.itemIcono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.55rem;
+  background: rgba(var(--nivel-rgb), 0.15);
+  color: var(--nivel);
+  font-size: 0.95rem;
+}
+
+.nivel_bloqueo .itemIcono {
+  background: #ff6b6b;
+  color: #1a1a1a;
+}
+
+.itemTextos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.itemTextos strong {
+  color: var(--white);
+  font-size: 0.85rem;
+}
+
+.itemTextos p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.itemTextos p strong {
+  font-size: inherit;
+}
+
+.itemAccion {
+  margin-top: 0.45rem;
+}
+
+.panelPie {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}

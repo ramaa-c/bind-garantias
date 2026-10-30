@@ -14,6 +14,7 @@ import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import styles from "./Navbar.module.css";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
+import { PendientesEmpresa } from "../../../features/shared/PendientesEmpresa/PendientesEmpresa";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useThemeStore, LIGHT_MODE_ENABLED } from "../../../../store/useThemeStore";
 import { useSidebarStore } from "../../../../store/useSidebarStore";
@@ -146,6 +147,8 @@ const Navbar = ({
 
         {user ? (
           <>
+            <PendientesEmpresa />
+
             {/* Sin contenido de ayuda escrito todavía para algunas pantallas
                 (ej. Seleccionar Empresa) - mejor ocultar el botón ahí que
                 abrir un drawer vacío. */}

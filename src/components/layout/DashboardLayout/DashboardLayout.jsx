@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../Client/Navbar/Navbar";
 import Sidebar from "../Client/Sidebar/Sidebar";
-import { AvisoTelefonoEmpresa } from "../../features/shared/AvisoTelefonoEmpresa/AvisoTelefonoEmpresa";
 import styles from "./DashboardLayout.module.css";
 
 const MARGEN_FINAL_PX = 24;
@@ -101,7 +100,6 @@ export default function DashboardLayout({ children, hideHelpButton = false }) {
         />
         <div className={`${styles.mainColumn} scroll-visible`} ref={columnaRef}>
           <main className={styles.content} ref={contenidoRef}>
-            <AvisoTelefonoEmpresa />
             {children}
           </main>
         </div>

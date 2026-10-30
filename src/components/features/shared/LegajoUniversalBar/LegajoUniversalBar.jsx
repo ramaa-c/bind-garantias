@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/useChannel";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
+import { useSocioWebPorId, useEstadoCdaSocio } from "../../../../hooks/useSocios";
 import { useEstadoValidarSocio } from "../../../../hooks/useSgrPlusCore";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
@@ -262,19 +262,6 @@ export function LegajoUniversalBar({
     }
   }, [adminMode, isValid, isLoading]);
 
-  // Un socio sin Socio/CertificadoPYME generado puede cargar legajo y
-  // documentación igual (ver SociosView/DocumentacionView, que no dependen
-  // de esto) — lo único que el certificado condiciona es la migración a
-  // SGR+. Acá solo se usa para el banner informativo del cliente; el
-  // chequeo que de verdad decide si se migra es uno FRESCO (sin cache),
-  // hecho justo antes de llamar a Socio/Migrar (ver sincronizarConSgrPlus
-  // más abajo) — depender acá de este valor cacheado (hasta 2 minutos)
-  // para bloquear el intento dejaba la migración pegada en "no" aunque el
-  // certificado ya se hubiera generado, sobre todo en admin, que no
-  // refresca esta pantalla tan seguido. Acordado con el equipo el 2026-08-20.
-  const { data: tieneCertificadoPyme = false, isLoading: loadingCertificadoPyme } =
-    useTieneCertificadoPyme(socioIdActivo);
-  const pymeSinCertificado = !adminMode && !loadingCertificadoPyme && !tieneCertificadoPyme;
 
   // OJO: a propósito NO exige totalRequisitos > 0. Antes sí lo hacía, y eso
   // dejaba a una cadena cuya parametrización no tiene NINGÚN documento u
@@ -560,32 +547,21 @@ export function LegajoUniversalBar({
   // Un solo banner para todos los avisos (antes eran dos cajas rojas
   // apiladas, confuso cuando coincidían dos a la vez). CDA y SGRPlusCore
   // (ValidarSocio) son los únicos que además bloquean la carga de datos
-  // (ver useBloqueoLegajo, consumido en SociosView/DocumentacionView) — el
-  // de Certificado PyME solo informa que no se va a poder migrar, nunca
-  // bloquea completar el legajo. Si coinciden CDA y SGRPlusCore, se prioriza
+  // (ver useBloqueoLegajo, consumido en SociosView/DocumentacionView); el
+  // de Certificado PyME vive en el navbar (ver PendientesEmpresa). Si coinciden CDA y SGRPlusCore, se prioriza
   // el mensaje de SGRPlusCore (más específico) para no repetir la misma idea
   // dos veces.
-  const avisoBanner = cdaSocioNoAprobado || sgrCoreNoAprobado || pymeSinCertificado ? (
+  const avisoBanner = cdaSocioNoAprobado || sgrCoreNoAprobado ? (
     <div className={styles.cdaWarningBanner}>
       <FiAlertTriangle className={styles.cdaWarningIcon} />
       <div className={styles.cdaWarningTextGroup}>
-        {(cdaSocioNoAprobado || sgrCoreNoAprobado) && (
-          <span className={styles.cdaWarningText}>
-            Por ahora no podés cargar ni modificar datos del legajo.{" "}
-            {sgrCoreNoAprobado
-              ? sgrCoreMensaje
-              : "No superaste las validaciones de aceptación correspondientes."}{" "}
-            Comunicate con BIND Garantías para que las revisemos.
-          </span>
-        )}
-        {/* Con la carga bloqueada (CDA/SGRPlusCore) el aviso de PyME
-            ("podés completar tu legajo igual") contradice al de arriba:
-            solo se muestra cuando el legajo sí se puede completar. */}
-        {pymeSinCertificado && !(cdaSocioNoAprobado || sgrCoreNoAprobado) && (
-          <span className={styles.cdaWarningText}>
-            Todavía no tenés un Certificado PyME generado. Podés completar tu legajo igual, pero no vamos a poder migrarlo hasta que lo tengas.
-          </span>
-        )}
+        <span className={styles.cdaWarningText}>
+          Por ahora no podés cargar ni modificar datos del legajo.{" "}
+          {sgrCoreNoAprobado
+            ? sgrCoreMensaje
+            : "No superaste las validaciones de aceptación correspondientes."}{" "}
+          Comunicate con BIND Garantías para que las revisemos.
+        </span>
       </div>
     </div>
   ) : null;
