@@ -211,13 +211,16 @@ button.boton:hover,
   flex-direction: column;
   gap: 0.2rem;
   width: 17rem;
-  padding: 0.8rem 0.9rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(255, 107, 107, 0.45);
   border-radius: 0.8rem;
-  background: #f2f2f0;
-  color: #1a1a1a;
+  background: var(--bg-elevado, #1e1e1e);
+  color: var(--text-muted);
   font-size: 0.8rem;
   line-height: 1.4;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 16px 44px rgba(0, 0, 0, 0.55),
+    0 0 0 4px rgba(255, 107, 107, 0.08);
   animation: aparecer 0.25s ease;
 }
 
@@ -228,11 +231,14 @@ button.boton:hover,
   right: 4.6rem;
   width: 0.75rem;
   height: 0.75rem;
+  border-top: 1px solid rgba(255, 107, 107, 0.45);
+  border-left: 1px solid rgba(255, 107, 107, 0.45);
   background: inherit;
   transform: rotate(45deg);
 }
 
 .avisoBloqueo strong {
+  color: var(--white);
   font-size: 0.86rem;
 }
 
@@ -256,14 +262,14 @@ button.boton:hover,
 
 .avisoBloqueoPrincipal {
   border: 0;
-  background: #1a1a1a;
-  color: #ffffff;
+  background: #ff6b6b;
+  color: #1a1a1a;
 }
 
 .avisoBloqueoSecundario {
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(var(--overlay-rgb), 0.15);
   background: none;
-  color: #1a1a1a;
+  color: var(--white);
 }
 
 @media (min-width: 64rem) {
