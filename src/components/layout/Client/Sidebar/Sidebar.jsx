@@ -466,6 +466,7 @@ export default function Sidebar({ isOpen, onClose }) {
                       {icono}
                     </span>
                     <span className={styles.navSecundariaLabel}>{label}</span>
+                    <FiChevronRight className={styles.navSecundariaFlecha} aria-hidden="true" />
                   </button>
                 );
               })}

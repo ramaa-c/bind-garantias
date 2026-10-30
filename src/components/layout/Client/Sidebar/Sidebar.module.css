@@ -412,10 +412,10 @@
   width: 100%;
   min-height: 2.5rem;
   padding: 0 0.7rem;
-  background: none;
-  border: 1px solid transparent;
+  background: rgba(76, 101, 230, 0.06);
+  border: 1px solid rgba(138, 159, 255, 0.35);
   border-radius: 0.7rem;
-  color: var(--white-muted);
+  color: var(--white);
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
@@ -428,8 +428,8 @@
 }
 
 .navSecundariaItem:hover {
-  background: rgba(var(--overlay-rgb), 0.045);
-  color: var(--white);
+  background: rgba(76, 101, 230, 0.12);
+  border-color: rgba(138, 159, 255, 0.6);
 }
 
 .navSecundariaItem:focus-visible {
@@ -440,20 +440,22 @@
 .navSecundariaIcono {
   display: flex;
   flex-shrink: 0;
-  color: var(--text-muted);
+  color: var(--color-azul-bind-300, #8a9fff);
   font-size: 1rem;
-  transition: color 0.15s ease;
-}
-
-.navSecundariaItem:hover .navSecundariaIcono {
-  color: var(--white);
 }
 
 .navSecundariaLabel {
+  flex: 1;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.navSecundariaFlecha {
+  flex-shrink: 0;
+  color: var(--color-azul-bind-300, #8a9fff);
+  font-size: 0.95rem;
 }
 
 .navSecundariaActivo,
@@ -774,7 +776,8 @@
     border-color: rgba(245, 244, 0, 0.18);
   }
 
-  .navSecundariaActivo .navSecundariaIcono {
+  .navSecundariaActivo .navSecundariaIcono,
+  .navSecundariaActivo .navSecundariaFlecha {
     color: var(--badge-amarillo-text);
   }
 
@@ -930,7 +933,12 @@
   }
 
   .compacto .navSecundariaLabel {
+    flex: none;
     font-size: 0.66rem;
+  }
+
+  .compacto .navSecundariaFlecha {
+    display: none;
   }
 
   .compacto .pie {
