@@ -1444,7 +1444,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                             placeholder="0"
                             maxLength={6}
                             onChange={(e) => {
-                              const val = e.target.value.replace(/[^0-9.]/g, "");
+                              const val = e.target.value.replace(",", ".").replace(/[^0-9.]/g, "");
                               const parts = val.split(".");
                               if (parts.length <= 2 && Number(val || 0) <= maximoPermitido) {
                                 if (parts[1] && parts[1].length > 2) return;
