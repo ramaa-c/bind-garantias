@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent, FiXCircle } from "react-icons/fi";
+import { FiUsers, FiPlus, FiMail, FiPhone, FiMapPin, FiPercent } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
+import s from "../TerceroCard/TerceroCard.module.css";
+import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
+import { colorParticipacion, ordenarPendientesPrimero, sugerenciasPara } from "../TerceroCard/terceroCardUtils";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
-import { Spinner } from "../../../../../ui";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
+import { AvisoRevisionTercero } from "../EstadoRevisionChip/EstadoRevisionChip";
 
 const normalizarTexto = (str) =>
   String(str || "")
@@ -14,6 +17,92 @@ const normalizarTexto = (str) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toUpperCase();
+
+// Mismo chequeo que tenía la tarjeta: contacto + domicilio + CUIT y, con CUIT,
+// las fotos de DNI frente (tipo 8) y dorso (tipo 9) buscadas por CUIT o nombre
+// en la descripción del archivo.
+const calcularFaltantes = (socio, archivosBackend) => {
+  const faltantes = [];
+  const sEmail = socio.email || socio.mail || socio.Mail || "";
+  const sCel = socio.celular || socio.telefono || socio.Telefono || "";
+  const sDir = socio.direccion || socio.calle || "";
+  const sProv = socio.provincia || socio.provinciaid || "";
+
+  if (!sEmail) faltantes.push("Email");
+  if (!sCel) faltantes.push("Teléfono");
+  if (!sDir || !sProv) faltantes.push("Domicilio completo");
+
+  const cuitLimpio = String(socio.cuit || "").replace(/\D/g, "");
+  if (!cuitLimpio) {
+    faltantes.push("CUIT válido");
+  } else {
+    const nombreNorm = normalizarTexto(socio.nombre);
+    const tieneDniFrente = (archivosBackend || []).some((a) => {
+      if (a.tipodocumentoarchivoid !== 8) return false;
+      const descNorm = normalizarTexto(a.descripcion);
+      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+    });
+    const tieneDniDorso = (archivosBackend || []).some((a) => {
+      if (a.tipodocumentoarchivoid !== 9) return false;
+      const descNorm = normalizarTexto(a.descripcion);
+      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+    });
+
+    if (!tieneDniFrente) faltantes.push("Foto DNI Frente");
+    if (!tieneDniDorso) faltantes.push("Foto DNI Dorso");
+  }
+  return faltantes;
+};
+
+// Barra apilada (un segmento por accionista, mismo color que el cuadradito
+// de su tarjeta) en vez de una sola barra de progreso: así se ve de un
+// vistazo cómo se reparte el 100%, no solo cuánto falta.
+function ParticipacionResumen({ totalParticipacion, accionistas }) {
+  const total = Number(totalParticipacion) || 0;
+  const completo = total === 100;
+  const restante = Math.max(0, 100 - total);
+
+  return (
+    <div className={s.resumen}>
+      <div className={s.resumenHead}>
+        <span className={s.resumenLabel}>Participación asignada</span>
+        <span className={s.resumenValor}>
+          <strong className={completo ? s.resumenOk : s.resumenPendiente}>{total}%</strong>{" "}
+          de 100%{total < 100 ? ` · faltan ${restante}%` : ""}
+        </span>
+      </div>
+      <div
+        className={s.barra}
+        role="img"
+        aria-label={`Participación asignada: ${total}% de 100%`}
+      >
+        {accionistas.map((socio, i) => {
+          const pct = Number(socio.participacion) || 0;
+          if (pct <= 0) return null;
+          return (
+            <span
+              key={socio.id}
+              className={s.barraSegmento}
+              style={{ flexGrow: pct, background: colorParticipacion(i) }}
+            />
+          );
+        })}
+        {restante > 0 && <span className={s.barraResto} style={{ flexGrow: restante }} />}
+      </div>
+      {accionistas.length > 0 && (
+        <ul className={s.leyenda}>
+          {accionistas.map((socio, i) => (
+            <li key={socio.id} className={s.leyendaItem}>
+              <i className={s.leyendaSwatch} style={{ background: colorParticipacion(i) }} aria-hidden="true" />
+              <span className={s.leyendaNombre}>{socio.nombre}</span>
+              <span>{socio.participacion}%</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function AccionistasSection({
   loadingSocios,
@@ -25,6 +114,8 @@ export function AccionistasSection({
   archivosBackend,
   cargandoArchivos = false,
   dniTerceros,
+  cadenaValorId,
+  personasLegajo = [],
 }) {
   const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
   const [editAccionista, setEditAccionista] = useState(null);
@@ -33,17 +124,28 @@ export function AccionistasSection({
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
-  const { data: estadoCdaMap } = useEstadoCdaTerceros(accionistas.map((a) => a.id));
+  const { data: estadoCdaMap } = useEstadoCdaTerceros(accionistas.map((a) => a.id), cadenaValorId);
+
+  // De mayor a menor participación: la barra, la leyenda y la lista siguen
+  // el mismo orden, y el color se fija por esta posición para que cada
+  // tarjeta coincida con su segmento. ordenarPendientesPrimero es estable,
+  // así que dentro de "pendientes" y de "completos" se mantiene este orden.
+  const accionistasPorParticipacion = [...accionistas].sort(
+    (a, b) => (Number(b.participacion) || 0) - (Number(a.participacion) || 0),
+  );
+  const entradas = ordenarPendientesPrimero(
+    accionistasPorParticipacion.map((socio, i) => ({
+      socio,
+      faltantes: calcularFaltantes(socio, archivosBackend),
+      cdaRechazado: estadoCdaMap?.get(Number(socio.id)) === "rechazado",
+      color: colorParticipacion(i),
+    })),
+  );
 
   return (
     <div className={styles.sociosContainer}>
       {loadingSocios ? (
-        <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
-          <Spinner size={36} />
-          <p className={styles.emptyTitle} style={{ margin: 0 }}>
-            Cargando composición accionaria...
-          </p>
-        </div>
+        <TerceroSkeleton conResumen />
       ) : (
         <div className={styles.sectionBlock}>
           {portalTarget && createPortal(
@@ -61,220 +163,93 @@ export function AccionistasSection({
             portalTarget
           )}
 
-          <div className={styles.progressContainer}>
-            <div className={styles.progressLabelRow}>
-              <span>Total Participación</span>
-              <span
-                style={{
-                  color: totalParticipacion === 100 ? "var(--success-bright)" : "var(--warning-orange)",
-                }}
-              >
-                {totalParticipacion}% / 100%
-              </span>
-            </div>
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressBar}
-                style={{
-                  width: `${Math.min(totalParticipacion, 100)}%`,
-                  backgroundColor:
-                    totalParticipacion === 100 ? "var(--success-bright)" : "var(--warning-orange)",
-                }}
-              />
-            </div>
-          </div>
-
-
+          <ParticipacionResumen
+            totalParticipacion={totalParticipacion}
+            accionistas={accionistasPorParticipacion}
+          />
 
           {accionistas.length === 0 ? (
-            <div
-              className={styles.emptySlot}
-              style={{ minHeight: "6rem", padding: "1.5rem" }}
-            >
-              <p className={styles.emptyTitle}>Sin accionistas registrados</p>
-              <span className={styles.emptyText}>
-                Haga click en "Agregar Accionista" para dar de alta.
-              </span>
-            </div>
+            <TerceroEmpty
+              icon={<FiUsers size={20} />}
+              titulo="Todavía no cargaste accionistas"
+              hint="Sumá a las personas o empresas que tienen participación en tu empresa."
+            />
           ) : (
-            <div className={styles.sociosList}>
-              {accionistas.map((socio) => {
-                const faltantes = [];
-                const sEmail = socio.email || socio.mail || socio.Mail || "";
-                const sCel = socio.celular || socio.telefono || socio.Telefono || "";
-                const sDir = socio.direccion || socio.calle || "";
-                const sProv = socio.provincia || socio.provinciaid || "";
-
-                if (!sEmail) faltantes.push("Email");
-                if (!sCel) faltantes.push("Teléfono");
-                if (!sDir || !sProv) faltantes.push("Domicilio completo");
-
-                const cuitLimpio = String(socio.cuit || "").replace(/\D/g, "");
-                if (!cuitLimpio) {
-                  faltantes.push("CUIT válido");
-                } else {
-                  const nombreNorm = normalizarTexto(socio.nombre);
-                  const tieneDniFrente = (archivosBackend || []).some((a) => {
-                    if (a.tipodocumentoarchivoid !== 8) return false;
-                    const descNorm = normalizarTexto(a.descripcion);
-                    return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
-                  });
-                  const tieneDniDorso = (archivosBackend || []).some((a) => {
-                    if (a.tipodocumentoarchivoid !== 9) return false;
-                    const descNorm = normalizarTexto(a.descripcion);
-                    return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
-                  });
-
-                  if (!tieneDniFrente) faltantes.push("Foto DNI Frente");
-                  if (!tieneDniDorso) faltantes.push("Foto DNI Dorso");
-                }
-
-                const cdaRechazado = estadoCdaMap?.get(Number(socio.id)) === "rechazado";
-
-                return (
-                <div key={socio.id} className={`${styles.socioCard} ${cdaRechazado ? styles.socioCardRejected : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
-                  {cdaRechazado && (
-                    <div className={styles.socioRejectedBanner}>
-                      <FiXCircle size={14} />
-                      <span>Esta persona no superó las validaciones de aceptación correspondientes. Comunicate con nosotros para que la revisemos.</span>
-                    </div>
-                  )}
-                  <div className={styles.socioCardHeaderRow}>
-                    <button
-                      type="button"
-                      className={styles.socioCardBtn}
-                      onClick={() =>
-                        setExpandedSocio(
-                          expandedSocio === socio.id ? null : socio.id,
-                        )
-                      }
-                    >
-                      {faltantes.length > 0 && (
-                        <div className={styles.socioWarningWrapper}>
-                          <FiAlertCircle className={styles.socioWarningIcon} />
-                          <div className={styles.socioWarningTooltip}>
-                            <strong>Faltan datos obligatorios:</strong>
-                            <ul>
-                              {faltantes.map((f, i) => (
-                                <li key={i}>{f}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      )}
-                      <div className={styles.socioAvatar}>
-                        <FiUser size={16} />
-                      </div>
-                      <div className={styles.socioMainInfo}>
-                        <span className={styles.socioName}>{socio.nombre}</span>
-                        <span className={styles.socioCuit}>
-                          CUIT: {socio.cuit}
-                        </span>
-                      </div>
-                      <span className={styles.socioPct}>
-                        {socio.participacion}%
-                      </span>
-                      <FiChevronDown
-                        className={`${styles.socioChevron} ${expandedSocio === socio.id ? styles.socioChevronOpen : ""}`}
-                      />
-                    </button>
-                    <div
-                      className={styles.socioHeaderActions}
-                      style={{ paddingRight: "1rem" }}
-                    >
-                      <button
-                        type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
-                        onClick={() => {
-                          setEditAccionista(socio);
-                          setModalAccionistaOpen(true);
-                        }}
-                        title="Editar Accionista"
-                      >
-                        <FiEdit2 size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
-                        onClick={() => handleEliminarRelacion(socio)}
-                        title="Eliminar Accionista"
-                      >
-                        <FiTrash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`${styles.socioExpand} ${expandedSocio === socio.id ? styles.socioExpandOpen : ""}`}
-                  >
-                    <div className={styles.socioDetailGrid}>
-                      {socio.email && (
-                        <div className={styles.socioDetail}>
-                          <FiMail className={styles.socioDetailIcon} />
-                          <div>
-                            <span className={styles.socioDetailLabel}>
-                              Email
-                            </span>
-                            <span className={styles.socioDetailVal}>
-                              {socio.email}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {socio.telefono && (
-                        <div className={styles.socioDetail}>
-                          <FiPhone className={styles.socioDetailIcon} />
-                          <div>
-                            <span className={styles.socioDetailLabel}>
-                              Teléfono
-                            </span>
-                            <span className={styles.socioDetailVal}>
-                              {socio.telefono}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {socio.direccion && (
-                        <div className={styles.socioDetail}>
-                          <FiMapPin className={styles.socioDetailIcon} />
-                          <div>
-                            <span className={styles.socioDetailLabel}>
-                              Dirección
-                            </span>
-                            <span className={styles.socioDetailVal}>
-                              {socio.direccion}{" "}
-                              {socio.codpos ? ` (${socio.codpos})` : ""}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+            <div className={s.lista}>
+              {entradas.map(({ socio, faltantes, cdaRechazado, color }) => (
+                <TerceroCard
+                  key={socio.id}
+                  nombre={socio.nombre}
+                  detalle={`CUIT ${socio.cuit}`}
+                  faltantes={faltantes}
+                  cdaRechazado={cdaRechazado}
+                  isAdmin={isAdmin}
+                  participacion={socio.participacion}
+                  colorParticipacion={color}
+                  expanded={expandedSocio === socio.id}
+                  onToggle={() =>
+                    setExpandedSocio(expandedSocio === socio.id ? null : socio.id)
+                  }
+                  onEdit={() => {
+                    setEditAccionista(socio);
+                    setModalAccionistaOpen(true);
+                  }}
+                  onDelete={() => handleEliminarRelacion(socio)}
+                  editTitle="Editar Accionista"
+                  deleteTitle="Eliminar Accionista"
+                >
+                  {cdaRechazado && !isAdmin && <AvisoRevisionTercero />}
+                  <div className={styles.socioDetailGrid}>
+                    {socio.email && (
                       <div className={styles.socioDetail}>
-                        <FiPercent className={styles.socioDetailIcon} />
+                        <FiMail className={styles.socioDetailIcon} />
                         <div>
-                          <span className={styles.socioDetailLabel}>
-                            Participación
-                          </span>
+                          <span className={styles.socioDetailLabel}>Email</span>
+                          <span className={styles.socioDetailVal}>{socio.email}</span>
+                        </div>
+                      </div>
+                    )}
+                    {socio.telefono && (
+                      <div className={styles.socioDetail}>
+                        <FiPhone className={styles.socioDetailIcon} />
+                        <div>
+                          <span className={styles.socioDetailLabel}>Teléfono</span>
+                          <span className={styles.socioDetailVal}>{socio.telefono}</span>
+                        </div>
+                      </div>
+                    )}
+                    {socio.direccion && (
+                      <div className={styles.socioDetail}>
+                        <FiMapPin className={styles.socioDetailIcon} />
+                        <div>
+                          <span className={styles.socioDetailLabel}>Dirección</span>
                           <span className={styles.socioDetailVal}>
-                            {socio.participacion}%
+                            {socio.direccion}{" "}
+                            {socio.codpos ? ` (${socio.codpos})` : ""}
                           </span>
                         </div>
                       </div>
-                    </div>
-                    {isAdmin && (
-                      <TerceroCdaEstado
-                        terceroId={socio.id}
-                        socioIdActivo={socioIdActivo}
-                      />
                     )}
+                    <div className={styles.socioDetail}>
+                      <FiPercent className={styles.socioDetailIcon} />
+                      <div>
+                        <span className={styles.socioDetailLabel}>Participación</span>
+                        <span className={styles.socioDetailVal}>{socio.participacion}%</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )})}
+                  {isAdmin && (
+                    <TerceroCdaEstado terceroId={socio.id} socioIdActivo={socioIdActivo} />
+                  )}
+                </TerceroCard>
+              ))}
             </div>
           )}
         </div>
       )}
 
       <SocioAccionistaModal
+        sugerencias={sugerenciasPara(personasLegajo, accionistas)}
         isOpen={modalAccionistaOpen}
         onClose={() => {
           setModalAccionistaOpen(false);

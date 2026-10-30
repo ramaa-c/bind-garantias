@@ -112,6 +112,16 @@ export const sociosAdapter = {
     return {
       SocioID: d.socioid,
       Email: d.email,
+      EsAdministradorCuit: d.esadministradorcuit,
+    };
+  },
+  adaptarRolSocioUsuario: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      UsuarioWebID: d.usuariowebid,
+      SocioID: d.socioid,
+      EsAdministradorCuit: d.esadministradorcuit,
     };
   },
   adaptarPayload4: (data) => {

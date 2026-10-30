@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FiCheck, FiX, FiChevronDown, FiRotateCw, FiHelpCircle, FiBriefcase, FiUser, FiMinus } from "react-icons/fi";
+import { FiCheck, FiX, FiChevronDown, FiRotateCw, FiHelpCircle, FiBriefcase, FiUser, FiMinus, FiShield } from "react-icons/fi";
 import { toast } from "sonner";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
@@ -51,22 +51,13 @@ const estadoDe = (mapa, cdaid) => (mapa.has(cdaid) ? mapa.get(cdaid) : null);
 const ultimaEjecucion = (historial, cdaid) =>
   ordenarEjecucionesCda(historial).find((f) => Number(f.cdaid ?? f.CdaID) === cdaid);
 
-const IconoEstado = ({ estado }) =>
-  estado === true ? (
-    <span className={styles.iconSuccess}><FiCheck /></span>
-  ) : estado === false ? (
-    <span className={styles.iconDanger}><FiX /></span>
-  ) : (
-    <span className={styles.iconPending}><FiMinus /></span>
-  );
-
 const TextoEstado = ({ estado }) =>
   estado === true ? (
-    <span className={styles.statusSuperada}>Superada</span>
+    <span className={`${styles.estado} ${styles.statusSuperada}`}><FiCheck aria-hidden="true" />Superada</span>
   ) : estado === false ? (
-    <span className={styles.statusNoSuperada}>No Superada</span>
+    <span className={`${styles.estado} ${styles.statusNoSuperada}`}><FiX aria-hidden="true" />No superada</span>
   ) : (
-    <span className={styles.statusPendiente}>Sin evaluar</span>
+    <span className={`${styles.estado} ${styles.statusPendiente}`}><FiMinus aria-hidden="true" />Sin evaluar</span>
   );
 
 export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
@@ -79,6 +70,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
   const puedeReevaluar = !cargandoRol && !isRestricted;
 
   const [expandedRows, setExpandedRows] = useState({});
+  const [grupoMovil, setGrupoMovil] = useState("empresa");
   const [reloadingRows, setReloadingRows] = useState({});
 
   // 1. Criterios de la cadena para la empresa y para sus accionistas
@@ -140,8 +132,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
 
   const handleToggleRow = (rowKey) => setExpandedRows((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
 
-  const handleReevaluar = async (e, rowKey, cda, { terceroId, pantalla }) => {
-    e.stopPropagation();
+  const handleReevaluar = async (rowKey, cda, { terceroId, pantalla }) => {
     setReloadingRows((prev) => ({ ...prev, [rowKey]: true }));
     try {
       const { status } = await cdaService.reejecutarCda({
@@ -165,57 +156,107 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
   const isLoading = cargandoEmpresa || cargandoGrupoAcc || cargandoHistorial || (!!socioIdTarget && cargandoAccionistas);
   const getCleanCuit = (c) => String(c || "").replace(/\D/g, "");
 
-  const FilaCriterio = ({ rowKey, cda, estado, ejecucion, terceroId, pantalla }) => {
+  const grupos = [
+    {
+      clave: "empresa",
+      etiqueta: "Empresa solicitante",
+      nombre: solicitud?.cliente || "Cliente Principal",
+      cuit: cuit || "No disponible",
+      icono: <FiBriefcase />,
+      items: cdasEmpresa.map((cda) => ({
+        rowKey: `empresa-${cda.cdaid}`,
+        cda,
+        estado: estadoDe(estadoEmpresa, cda.cdaid),
+        ejecucion: ultimaEjecucion(historialEmpresa, cda.cdaid),
+        pantalla: PANTALLA_EMPRESA,
+      })),
+    },
+    ...(cdasAccionistas.length > 0
+      ? accionistas.map((acc, accIdx) => {
+          const estadoAcc = armarEstadoPorCda(acc.historial, { cadenaValorId: cadenaId });
+          return {
+            clave: `acc-${acc.terceroId}`,
+            etiqueta: "Accionista",
+            nombre: acc.denominacion || acc.Denominacion || acc.nombre || `Accionista ${accIdx + 1}`,
+            cuit: getCleanCuit(acc.cuit || acc.Cuit),
+            icono: <FiUser />,
+            items: cdasAccionistas.map((cda) => ({
+              rowKey: `acc-${acc.terceroId}-${cda.cdaid}`,
+              cda,
+              estado: estadoDe(estadoAcc, cda.cdaid),
+              ejecucion: ultimaEjecucion(acc.historial, cda.cdaid),
+              terceroId: acc.terceroId,
+              pantalla: PANTALLA_ACCIONISTAS,
+            })),
+          };
+        })
+      : []),
+  ];
+
+  const todos = grupos.flatMap((g) => g.items);
+  const contar = (estado) => todos.filter((i) => i.estado === estado).length;
+  const grupoMovilActivo = grupos.find((g) => g.clave === grupoMovil) || grupos[0];
+  const ultimaEvaluacion = ordenarEjecucionesCda(historialEmpresa)[0];
+  const reevaluandoGrupo = grupoMovilActivo?.items.some((i) => reloadingRows[i.rowKey]);
+
+  const reevaluarGrupo = async () => {
+    for (const item of grupoMovilActivo?.items || []) {
+      await handleReevaluar(item.rowKey, item.cda, { terceroId: item.terceroId, pantalla: item.pantalla });
+    }
+  };
+
+  const regla = (cda) => [cda.expresion, cda.simbolocomparacion, cda.valorcomparacion].filter(Boolean).join(" ");
+
+  const renderFila = ({ rowKey, cda, estado, ejecucion, terceroId, pantalla }) => {
     const isExpanded = !!expandedRows[rowKey];
     const isReloading = !!reloadingRows[rowKey];
+    const valor = ejecucion?.valorresultado ?? ejecucion?.ValorResultado;
     return (
-      <div className={styles.cdaCard}>
-        <div className={styles.cdaHeader} onClick={() => handleToggleRow(rowKey)}>
-          <div className={styles.cdaHeaderLeft}>
-            <IconoEstado estado={estado} />
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-              <span className={styles.cdaTitleText}>{cda.descripcion}</span>
-              {cda.valorcomparacion && (
-                <span className={styles.ruleBadge}>
-                  {[cda.expresion, cda.simbolocomparacion, cda.valorcomparacion].filter(Boolean).join(" ")}
-                </span>
-              )}
-            </div>
-          </div>
-          <FiChevronDown className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`} />
+      <div key={rowKey} className={styles.fila}>
+        <div className={styles.filaCabecera}>
+          <span className={`${styles.punto} ${estado === true ? styles.puntoOk : estado === false ? styles.puntoMal : ""}`} />
+          <button
+            type="button"
+            className={styles.filaTextos}
+            onClick={() => handleToggleRow(rowKey)}
+            aria-expanded={isExpanded}
+          >
+            <span className={styles.cdaTitleText}>{cda.descripcion}</span>
+            {regla(cda) && <code className={styles.ruleBadge}>{regla(cda)}</code>}
+          </button>
+          <TextoEstado estado={estado} />
+          {puedeReevaluar && (
+            <button
+              type="button"
+              className={styles.btnHistory}
+              onClick={() => handleReevaluar(rowKey, cda, { terceroId, pantalla })}
+              title="Volver a evaluar el criterio"
+              aria-label={`Volver a evaluar ${cda.descripcion}`}
+              disabled={isReloading}
+            >
+              <FiRotateCw className={isReloading ? styles.btnHistoryActive : ""} />
+            </button>
+          )}
+          <button
+            type="button"
+            className={styles.chevronBtn}
+            onClick={() => handleToggleRow(rowKey)}
+            aria-label={isExpanded ? "Ocultar detalle" : "Ver detalle"}
+          >
+            <FiChevronDown className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`} />
+          </button>
         </div>
-
-        {isExpanded && (
-          <div className={styles.cdaDetails}>
-            <div className={styles.detailsLeft}>
-              <div className={styles.detailRow}>
-                <span className={styles.detailBold}>Estado: </span>
-                <TextoEstado estado={estado} />
-              </div>
-              {ejecucion?.valorresultado || ejecucion?.ValorResultado ? (
-                <div className={styles.detailRow}>
-                  <span className={styles.detailBold}>Valor evaluado: </span>
-                  <span>{ejecucion.valorresultado ?? ejecucion.ValorResultado}</span>
-                </div>
-              ) : null}
-              <div className={styles.detailRow}>
-                <span className={styles.detailBold}>Última evaluación: </span>
-                <span>{ejecucion ? formatearMomentoControl(ejecucion.momentocontrol ?? ejecucion.MomentoControl) : "Sin evaluar"}</span>
-              </div>
-            </div>
-            {puedeReevaluar && (
-              <button
-                type="button"
-                className={styles.btnHistory}
-                onClick={(e) => handleReevaluar(e, rowKey, cda, { terceroId, pantalla })}
-                title="Volver a evaluar el criterio"
-                disabled={isReloading}
-              >
-                <FiRotateCw className={isReloading ? styles.btnHistoryActive : ""} />
-              </button>
-            )}
-          </div>
-        )}
+        <div className={`${styles.cdaDetails} ${isExpanded ? styles.cdaDetailsAbierto : ""}`}>
+          {valor !== undefined && valor !== null && valor !== "" && (
+            <span className={styles.detalleDato}>
+              Valor evaluado <code className={estado === false ? styles.valorMal : ""}>{valor}</code>
+            </span>
+          )}
+          <span className={styles.detalleDato}>
+            Última evaluación{" "}
+            <strong>{ejecucion ? formatearMomentoControl(ejecucion.momentocontrol ?? ejecucion.MomentoControl) : "Sin evaluar"}</strong>
+          </span>
+        </div>
       </div>
     );
   };
@@ -224,8 +265,10 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Criterios De Aceptación"
-      maxWidth="650px"
+      title="Criterios de aceptación"
+      subtitle={[solicitud?.id && `Solicitud N° ${solicitud.id}`, solicitud?.cliente].filter(Boolean).join(" · ")}
+      icono={<FiShield />}
+      maxWidth="700px"
       variant="blue"
       headerActions={
         <button
@@ -233,106 +276,120 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
           className={styles.helpButton}
           onClick={() => toast.info("Los criterios de aceptación definen las reglas de negocio y riesgo evaluadas para esta operación.")}
           title="Ayuda"
+          aria-label="Ayuda"
         >
-          <FiHelpCircle size={20} />
+          <FiHelpCircle size={17} />
         </button>
+      }
+      footer={
+        <>
+          {ultimaEvaluacion && (
+            <span className={styles.pieAyuda}>
+              Última evaluación: {formatearMomentoControl(ultimaEvaluacion.momentocontrol ?? ultimaEvaluacion.MomentoControl)}
+            </span>
+          )}
+          {puedeReevaluar && !isLoading && grupoMovilActivo?.items.length > 0 && (
+            <Button
+              variant="adminSuave"
+              className={styles.soloMovil}
+              onClick={reevaluarGrupo}
+              isLoading={reevaluandoGrupo}
+              disabled={reevaluandoGrupo}
+            >
+              Reevaluar todos
+            </Button>
+          )}
+          <Button variant="adminNeutro" onClick={onClose}>
+            Cerrar
+          </Button>
+        </>
       }
     >
       <div className={styles.modalBody}>
         {isLoading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.75rem" }}>
-              <Skeleton width="2.2rem" height="2.2rem" radius="0.5rem" />
-              <div style={{ flex: 1 }}>
-                <Skeleton width="30%" height="0.7rem" />
-                <Skeleton width="50%" height="0.95rem" style={{ marginTop: "0.4rem" }} />
-              </div>
-            </div>
+          <div className={styles.grupo}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.65rem" }}>
-                <Skeleton width="1.4rem" height="1.4rem" radius="50%" />
+              <div key={i} className={styles.filaCabecera} style={{ padding: "0.75rem 0.85rem" }}>
+                <Skeleton width="0.5rem" height="0.5rem" radius="50%" />
                 <Skeleton width="45%" height="0.85rem" />
-                <Skeleton width="9rem" height="1.2rem" radius="pill" style={{ marginLeft: "auto" }} />
+                <Skeleton width="6rem" height="1.2rem" radius="pill" style={{ marginLeft: "auto" }} />
               </div>
             ))}
           </div>
         ) : (
           <>
-            {/* 1. EMPRESA SOLICITANTE */}
-            <div className={styles.cuitGroup}>
-              <div className={styles.cuitCardHeader}>
-                <div className={styles.cuitCardIcon}>
-                  <FiBriefcase size={14} />
-                </div>
-                <div className={styles.cuitCardInfo}>
-                  <span className={styles.cuitCardLabel}>Empresa Solicitante</span>
-                  <div className={styles.cuitCardMain}>
-                    <strong className={styles.cuitCardName}>{solicitud?.cliente || "Cliente Principal"}</strong>
-                    <span className={styles.cuitCardNumber}>CUIT: {cuit || "No disponible"}</span>
-                  </div>
-                </div>
+            <div className={styles.resumen}>
+              <div className={styles.resumenItem}>
+                <span className={`${styles.resumenIcono} ${styles.resumenOk}`}><FiCheck /></span>
+                <span className={styles.resumenTextos}>
+                  <strong>{contar(true)} {contar(true) === 1 ? "superada" : "superadas"}</strong>
+                  <span>de {todos.length} criterios</span>
+                </span>
               </div>
-              {cdasEmpresa.length === 0 && (
-                <div className={styles.cdaCard}>
-                  <div className={styles.cdaHeader}>
-                    <span className={styles.cdaTitleText}>La cadena no tiene criterios configurados para la empresa.</span>
-                  </div>
-                </div>
-              )}
-              {cdasEmpresa.map((cda) => (
-                <FilaCriterio
-                  key={`empresa-${cda.cdaid}`}
-                  rowKey={`empresa-${cda.cdaid}`}
-                  cda={cda}
-                  estado={estadoDe(estadoEmpresa, cda.cdaid)}
-                  ejecucion={ultimaEjecucion(historialEmpresa, cda.cdaid)}
-                  pantalla={PANTALLA_EMPRESA}
-                />
-              ))}
+              <div className={styles.resumenItem}>
+                <span className={`${styles.resumenIcono} ${styles.resumenMal}`}><FiX /></span>
+                <span className={styles.resumenTextos}>
+                  <strong>{contar(false)} {contar(false) === 1 ? "no superada" : "no superadas"}</strong>
+                </span>
+              </div>
+              <div className={styles.resumenItem}>
+                <span className={styles.resumenIcono}><FiMinus /></span>
+                <span className={styles.resumenTextos}>
+                  <strong>{contar(null)} sin evaluar</strong>
+                </span>
+              </div>
             </div>
 
-            {/* 2. ACCIONISTAS (solo los reales) */}
-            {cdasAccionistas.length > 0 &&
-              accionistas.map((acc, accIdx) => {
-                const accCuit = getCleanCuit(acc.cuit || acc.Cuit);
-                const accName = acc.denominacion || acc.Denominacion || acc.nombre || `Accionista ${accIdx + 1}`;
-                const estadoAcc = armarEstadoPorCda(acc.historial, { cadenaValorId: cadenaId });
-                return (
-                  <div key={acc.terceroId} className={styles.cuitGroup}>
-                    <div className={styles.cuitCardHeader}>
-                      <div className={styles.cuitCardIcon}>
-                        <FiUser size={14} />
-                      </div>
-                      <div className={styles.cuitCardInfo}>
-                        <span className={styles.cuitCardLabel}>Accionista</span>
-                        <div className={styles.cuitCardMain}>
-                          <strong className={styles.cuitCardName}>{accName}</strong>
-                          <span className={styles.cuitCardNumber}>CUIT: {accCuit}</span>
-                        </div>
-                      </div>
-                    </div>
-                    {cdasAccionistas.map((cda) => (
-                      <FilaCriterio
-                        key={`acc-${acc.terceroId}-${cda.cdaid}`}
-                        rowKey={`acc-${acc.terceroId}-${cda.cdaid}`}
-                        cda={cda}
-                        estado={estadoDe(estadoAcc, cda.cdaid)}
-                        ejecucion={ultimaEjecucion(acc.historial, cda.cdaid)}
-                        terceroId={acc.terceroId}
-                        pantalla={PANTALLA_ACCIONISTAS}
-                      />
-                    ))}
+            {grupos.length > 1 && (
+              <label className={styles.selectorMovil}>
+                <span className={styles.srOnly}>Persona</span>
+                <select value={grupoMovilActivo?.clave} onChange={(e) => setGrupoMovil(e.target.value)}>
+                  {grupos.map((g) => {
+                    const ok = g.items.filter((i) => i.estado === true).length;
+                    return (
+                      <option key={g.clave} value={g.clave}>
+                        {g.nombre} · {g.etiqueta} · {ok}/{g.items.length}
+                      </option>
+                    );
+                  })}
+                </select>
+                <FiChevronDown aria-hidden="true" />
+              </label>
+            )}
+
+            {grupos.map((g) => {
+              const ok = g.items.filter((i) => i.estado === true).length;
+              const conFallas = g.items.some((i) => i.estado === false);
+              return (
+                <div
+                  key={g.clave}
+                  className={`${styles.grupo} ${g.clave !== grupoMovilActivo?.clave ? styles.ocultoMovil : ""}`}
+                >
+                  <div className={styles.grupoCabecera}>
+                    <span className={styles.cuitCardIcon} aria-hidden="true">{g.icono}</span>
+                    <span className={styles.cuitCardInfo}>
+                      <span className={styles.cuitCardLabel}>{g.etiqueta}</span>
+                      <span className={styles.cuitCardMain}>
+                        <strong className={styles.cuitCardName}>{g.nombre}</strong>
+                        <span className={styles.cuitCardNumber}>CUIT {g.cuit}</span>
+                      </span>
+                    </span>
+                    {g.items.length > 0 && (
+                      <span className={`${styles.grupoConteo} ${conFallas ? styles.grupoConteoMal : ""}`}>
+                        {ok}/{g.items.length} {ok === 1 ? "superada" : "superadas"}
+                      </span>
+                    )}
                   </div>
-                );
-              })}
+                  {g.items.length === 0 ? (
+                    <p className={styles.grupoVacio}>La cadena no tiene criterios configurados para la empresa.</p>
+                  ) : (
+                    g.items.map(renderFila)
+                  )}
+                </div>
+              );
+            })}
           </>
         )}
-      </div>
-
-      <div className={styles.modalFooter}>
-        <Button variant="outlineBlue" onClick={onClose}>
-          Cerrar
-        </Button>
       </div>
     </Modal>
   );

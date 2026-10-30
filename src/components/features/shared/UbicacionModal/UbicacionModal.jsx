@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FiMapPin, FiMap } from "react-icons/fi";
+import { FiMapPin, FiMap, FiLock, FiHome } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
@@ -222,133 +222,178 @@ export default function UbicacionModal({
     }
   };
 
+  const CAMPOS_VISIBLES = [
+    "calle",
+    "numero",
+    "piso",
+    "departamento",
+    "provincia",
+    "localidadid",
+    "ciudadid",
+    "codpos",
+  ];
+  const cantidadErrores = CAMPOS_VISIBLES.filter((c) => getError(c)).length;
+
+  const sinNumero = watch("sinNumero");
+  const toggleSinNumero = (e) => {
+    setValue("sinNumero", e.target.checked, { shouldValidate: true, shouldDirty: true });
+    // Al marcar o desmarcar no se valida el número: queda vacío sin error
+    // hasta que se intente guardar (handleGuardar corre el trigger). Antes,
+    // desmarcar disparaba trigger("numero") y aparecía "requerido" al
+    // instante, y ese error viejo quedaba aunque después se tipeara.
+    if (e.target.checked) {
+      setValue("numero", "", { shouldDirty: true });
+    }
+    clearErrors("numero");
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="45rem">
-      <form className={styles.body} onSubmit={handleGuardar}>
-          <div className={styles.iconWrapper}>
-            <FiMapPin size={30} />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="45rem"
+      footer={
+        <div className={styles.footer}>
+          <span
+            className={`${styles.footerTexto} ${cantidadErrores > 0 ? styles.footerTextoError : ""}`}
+          >
+            {cantidadErrores > 0
+              ? `Revisá ${cantidadErrores === 1 ? "el campo marcado" : `los ${cantidadErrores} campos marcados`}.`
+              : "Piso y depto. son opcionales."}
+          </span>
+          <div className={styles.footerAcciones}>
+            <Button type="button" variant="outline" onClick={onClose} className={styles.footerBtn}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="ubicacion-form"
+              variant="primary"
+              disabled={guardarDeshabilitado}
+              className={styles.footerBtn}
+            >
+              Guardar datos
+            </Button>
           </div>
+        </div>
+      }
+    >
+      {/* El submit vive en el footer del Modal (fuera de este <form>), por
+          eso va con form="ubicacion-form". */}
+      <form id="ubicacion-form" className={styles.body} onSubmit={handleGuardar}>
+        <div className={styles.header}>
+          <span className={styles.iconWrapper} aria-hidden="true">
+            <FiMapPin size={20} />
+          </span>
+          <div className={styles.headerTexto}>
+            <h2 className={styles.title}>Datos de ubicación</h2>
+            <p className={styles.description}>
+              Ingresá el domicilio fiscal de la empresa.
+            </p>
+          </div>
+        </div>
 
-          <h2 className={styles.title}>Datos de Ubicación</h2>
-          <p className={styles.description}>
-            Ingresá el domicilio fiscal de la empresa.
-          </p>
+        <div className={styles.formSection}>
+          <p className={styles.seccion}>Dirección</p>
+          <InputSocioMasked
+            name="calle"
+            control={control}
+            label="Calle / Avenida"
+            icon={<FiMapPin />}
+            error={getError("calle")}
+            esValido={getEsValido("calle")}
+          />
 
-          <div className={styles.formSection}>
+          <div className={styles.inputRow3}>
+            {/* "Sin número" va adentro del propio campo (endAdornment) y no
+                debajo: ahí abajo vive el mensaje de error del campo y se
+                pisaban. */}
             <InputSocioMasked
-              name="calle"
+              name="numero"
               control={control}
-              label="Calle / Avenida"
-              icon={<FiMapPin />}
-              error={getError("calle")}
-              esValido={getEsValido("calle")}
-            />
-
-            <div className={styles.inputRow3}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <InputSocioMasked
-                  name="numero"
-                  control={control}
-                  label="Número de calle"
-                  type="number"
-                  error={getError("numero")}
-                  esValido={getEsValido("numero")}
-                  disabled={watch("sinNumero")}
-                />
-                <label className={styles.checkboxLabel}>
+              label="Número"
+              type="number"
+              error={getError("numero")}
+              esValido={getEsValido("numero")}
+              disabled={sinNumero}
+              endAdornment={
+                <label className={styles.sinNumero}>
                   <input
                     type="checkbox"
                     className={styles.customCheckbox}
-                    checked={watch("sinNumero")}
-                    onChange={(e) => {
-                      setValue("sinNumero", e.target.checked, { shouldValidate: true, shouldDirty: true });
-                      if (e.target.checked) {
-                        setValue("numero", "", { shouldValidate: true, shouldDirty: true });
-                        clearErrors("numero");
-                      } else {
-                        trigger("numero");
-                      }
-                    }}
+                    checked={!!sinNumero}
+                    onChange={toggleSinNumero}
                   />
-                  Sin número
+                  S/N
                 </label>
-              </div>
+              }
+            />
 
-              <InputSocioMasked
-                name="piso"
-                control={control}
-                label="Piso"
-                error={getError("piso")}
-                esValido={getEsValido("piso")}
-              />
+            <InputSocioMasked
+              name="piso"
+              control={control}
+              label="Piso"
+              error={getError("piso")}
+              esValido={getEsValido("piso")}
+            />
 
-              <InputSocioMasked
-                name="departamento"
-                control={control}
-                label="Depto / Oficina"
-                error={getError("departamento")}
-                esValido={getEsValido("departamento")}
-              />
-            </div>
-
-            <div className={styles.inputRow}>
-              <SelectSocio
-                name="provincia"
-                control={control}
-                label={cargandoProvincias ? "Cargando..." : "Provincia"}
-                icon={<FiMap />}
-                options={opcionesProvincias}
-                disabled={cargandoProvincias}
-                error={getError("provincia")}
-                esValido={getEsValido("provincia")}
-              />
-
-              <SelectSocio
-                name="localidadid"
-                control={control}
-                label={cargandoPartidos ? "Cargando..." : "Localidad"}
-                icon={<FiMap />}
-                options={opcionesLocalidades}
-                isLoading={cargandoPartidos}
-                disabled
-                error={getError("localidadid")}
-                esValido={getEsValido("localidadid")}
-              />
-            </div>
-
-            <div className={styles.inputRow}>
-              <SelectSocio
-                name="ciudadid"
-                control={control}
-                label={cargandoCiudades ? "Cargando..." : "Ciudad"}
-                icon={<FiMap />}
-                options={opcionesCiudades}
-                isLoading={cargandoCiudades}
-                error={getError("ciudadid")}
-                esValido={getEsValido("ciudadid")}
-              />
-
-              <InputSocioMasked
-                name="codpos"
-                control={control}
-                label="Código Postal"
-                error={getError("codpos")}
-                esValido={getEsValido("codpos")}
-              />
-            </div>
+            <InputSocioMasked
+              name="departamento"
+              control={control}
+              label="Depto / Oficina"
+              error={getError("departamento")}
+              esValido={getEsValido("departamento")}
+            />
           </div>
 
-          <div className={styles.btnSave}>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={guardarDeshabilitado}
-              style={{ width: "100%", minHeight: "3rem" }}
-            >
-              GUARDAR DATOS
-            </Button>
+          <p className={styles.seccion}>Localidad</p>
+          <div className={styles.inputRow}>
+            <SelectSocio
+              name="provincia"
+              control={control}
+              label={cargandoProvincias ? "Cargando..." : "Provincia"}
+              icon={<FiMap />}
+              options={opcionesProvincias}
+              disabled={cargandoProvincias}
+              error={getError("provincia")}
+              esValido={getEsValido("provincia")}
+            />
+
+            <SelectSocio
+              name="localidadid"
+              control={control}
+              label={cargandoPartidos ? "Cargando..." : "Localidad"}
+              icon={<FiLock />}
+              options={opcionesLocalidades}
+              isLoading={cargandoPartidos}
+              disabled
+              error={getError("localidadid")}
+              esValido={getEsValido("localidadid")}
+            />
           </div>
-        </form>
+
+          <div className={styles.inputRow}>
+            <SelectSocio
+              name="ciudadid"
+              control={control}
+              label={cargandoCiudades ? "Cargando..." : "Ciudad"}
+              icon={<FiHome />}
+              options={opcionesCiudades}
+              isLoading={cargandoCiudades}
+              error={getError("ciudadid")}
+              esValido={getEsValido("ciudadid")}
+            />
+
+            <InputSocioMasked
+              name="codpos"
+              control={control}
+              label="Código postal"
+              error={getError("codpos")}
+              esValido={getEsValido("codpos")}
+            />
+          </div>
+        </div>
+      </form>
     </Modal>
   );
 }

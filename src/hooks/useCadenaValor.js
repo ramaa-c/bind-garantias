@@ -4,6 +4,15 @@ import { cadenaValorService } from '../services/cadenaValorService';
 import { cdaService } from '../services/cdaService';
 import { esCadenaAprobadaYVigente, esCadenaOperativaParaWeb, obtenerCadenaValorId } from '../utils/cadenaValorUtils';
 import { esCdaActivo } from '../utils/cdaUtils';
+import { esAdminGeneralToken } from '../api/tokenApi';
+
+const CLAVES_MONTO_MAXIMO_CORE = ['montomaximocv', 'montomaximo', 'tope', 'monto_maximo'];
+
+const montoMaximoCoreDe = (cadenaCore) => {
+    if (!cadenaCore) return 0;
+    const clave = Object.keys(cadenaCore).find((k) => CLAVES_MONTO_MAXIMO_CORE.includes(k.toLowerCase()));
+    return parseFloat(cadenaCore[clave] || 0) || 0;
+};
 
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
     return useQuery({
@@ -80,17 +89,42 @@ export const useObtenerPorCadenaValorIdWeb = (cadenaValorId) => {
 // { grupo: null, cdas: [] } en vez de crearlo — la creación queda para el
 // momento de guardar (ver resolverGrupoCda en grupoCdaUtils), nunca como
 // efecto secundario de abrir una pantalla de solo consulta/edición.
+export const consultaGrupoCdaConCdas = (cadenaId, pantalla) => ({
+    queryKey: ['cadenaValor', 'grupoCdaConCdas', pantalla, cadenaId],
+    queryFn: async () => {
+        const grupo = await cdaService.obtenerGrupoCda(pantalla, cadenaId);
+        const grupoList = Array.isArray(grupo) ? grupo : grupo?.items || grupo?.data || (grupo ? [grupo] : []);
+        const grupoRow = grupoList[0] || null;
+        if (!grupoRow?.grupocdaid) return { grupo: null, cdas: [] };
+        // El catálogo global (cda/Cda) es solo para Admin: el resto recibiría 403 en cada consulta
+        const [vinculados, catalogo] = await Promise.all([
+            cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid),
+            esAdminGeneralToken() ? cdaService.obtenerTodosCdas().catch(() => null) : null,
+        ]);
+        const listaCatalogo = Array.isArray(catalogo) ? catalogo : catalogo?.items || catalogo?.data || [];
+        const activoGlobalPorId = new Map(
+            listaCatalogo.map((c) => [Number(c.cdaid ?? c.CdaID), String(c.activo ?? c.Activo ?? "") === "1"]),
+        );
+        const listaVinculados = Array.isArray(vinculados) ? vinculados : vinculados?.items || vinculados?.data || [];
+        const cdas = listaVinculados.map((c) => {
+            const id = Number(c.cdaid ?? c.CdaID);
+            return activoGlobalPorId.has(id) ? { ...c, activoglobal: activoGlobalPorId.get(id) } : c;
+        });
+        return { grupo: grupoRow, cdas };
+    },
+});
+
+export const esCdaVigenteEnGrupo = (cda) => esCdaActivo(cda) && cda?.activoglobal !== false;
+
+export const idsCdasActivos = (grupoConCdas) =>
+    (grupoConCdas?.cdas || [])
+        .filter(esCdaVigenteEnGrupo)
+        .map((c) => Number(c.cdaid ?? c.CdaID))
+        .filter((id) => !Number.isNaN(id));
+
 export const useObtenerGrupoCdaConCdas = (cadenaId, pantalla) => {
     return useQuery({
-        queryKey: ['cadenaValor', 'grupoCdaConCdas', pantalla, cadenaId],
-        queryFn: async () => {
-            const grupo = await cdaService.obtenerGrupoCda(pantalla, cadenaId);
-            const grupoList = Array.isArray(grupo) ? grupo : grupo?.items || grupo?.data || (grupo ? [grupo] : []);
-            const grupoRow = grupoList[0] || null;
-            if (!grupoRow?.grupocdaid) return { grupo: null, cdas: [] };
-            const cdas = await cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid);
-            return { grupo: grupoRow, cdas };
-        },
+        ...consultaGrupoCdaConCdas(cadenaId, pantalla),
         enabled: !!cadenaId && !!pantalla
     });
 };
@@ -136,6 +170,7 @@ export const useObtenerTodasWebConEstado = () => {
             return {
                 ...item,
                 aprobadaVigente: esCadenaAprobadaYVigente(cadenaCore),
+                montoMaximoCore: montoMaximoCoreDe(cadenaCore),
                 activaOperativa: esCadenaOperativaParaWeb(item, cadenaCore),
             };
         });

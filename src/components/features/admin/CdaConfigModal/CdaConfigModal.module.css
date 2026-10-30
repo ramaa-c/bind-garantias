@@ -1,0 +1,213 @@
+.ayuda {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.pestanas {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid #21262d;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-bottom: -1px;
+  padding: 0.6rem 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #8b949e;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pestana:hover {
+  color: #ffffff;
+}
+
+.pestanaActiva,
+.pestanaActiva:hover {
+  color: #ffffff;
+  border-bottom-color: var(--color-azul-bind, #4c65e6);
+}
+
+.contador {
+  min-width: 1.3rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #9aa4b0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.contadorOk {
+  background: rgba(61, 220, 132, 0.12);
+  color: #3ddc84;
+}
+
+.contadorCargando {
+  width: 1.3rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cargando,
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.combinacion {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  background: rgba(76, 101, 230, 0.07);
+  color: #c9d1d9;
+  font-size: 0.8rem;
+}
+
+.combinacion svg {
+  color: var(--color-azul-bind-300, #8a9fff);
+  flex-shrink: 0;
+}
+
+.combinacion strong {
+  color: #ffffff;
+}
+
+.codigo {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: #a5b4ff;
+  font-variant-ligatures: none;
+  word-break: break-word;
+}
+
+.tabla {
+  border: 1px solid #21262d;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #111620;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr);
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid #1c2128;
+  font-size: 0.8rem;
+}
+
+.fila:last-child {
+  border-bottom: 0;
+}
+
+.cabecera {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: #7d8590;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.criterio {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.condicion {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: #a5b4ff;
+  font-variant-ligatures: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.condicion em {
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-style: normal;
+}
+
+.mensaje {
+  color: #8b949e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.75rem 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  color: #8b949e;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.vacioIcono {
+  font-size: 1.25rem;
+}
+
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-azul-bind-300, #8a9fff);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.enlace:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 47.99rem) {
+  .ayuda,
+  .cabecera {
+    display: none;
+  }
+
+  .fila {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.3rem;
+  }
+
+  .mensaje {
+    white-space: normal;
+  }
+}

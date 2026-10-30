@@ -24,6 +24,7 @@ import {
   FiCheck,
   FiFile,
   FiX,
+  FiCalendar,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import {
@@ -55,6 +56,7 @@ import {
   FORMATOS_ARCHIVO,
 } from "../../../../utils/fileUtils";
 import { ESTRUCTURA_LEGAJO } from "./DocumentosLegajo.constants";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 // Ícono de los botones de descarga en ZIP según en qué fase esté
 // (ver useDescargaConFeedback). A diferencia de la descarga de un archivo
@@ -153,8 +155,8 @@ export function DocumentosLegajo({
   // detectar (historial viejo o inexistente), useRequisitos cae solo al
   // fallback por tipo de persona/sociedad — sigue siendo mejor que mostrar
   // el legajo completo sin ningún criterio.
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : cadenaActivaId;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const estructuraFiltrada = useMemo(() => {
@@ -201,7 +203,7 @@ export function DocumentosLegajo({
   // reimportado) recién se veía después de un F5 (SGRPLUSPLA-203).
   const { data: archivosBackendData, isLoading: cargandoArchivos } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
-    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
+    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo, true),
     enabled: !!socioIdActivo,
   });
   const archivosBackend = useMemo(
@@ -417,8 +419,6 @@ export function DocumentosLegajo({
         return;
       }
 
-      setValue(key, file, { shouldValidate: true, shouldDirty: true });
-
       if (!socioIdActivo) {
         toast.error("No se pudo identificar la empresa activa.");
         return;
@@ -430,14 +430,14 @@ export function DocumentosLegajo({
           : null;
 
       setUploadingKey(key);
+      let subido = false;
       try {
-        let resultado;
         if (specificId) {
           const existente = archivosBackend.find(
             (a) => a.socioarchivoid === Number(specificId)
           );
           if (existente) {
-            resultado = await socioArchivoService.actualizarArchivo(
+            await socioArchivoService.actualizarArchivo(
               existente,
               file,
               key,
@@ -451,7 +451,7 @@ export function DocumentosLegajo({
             throw new Error("No se encontró el archivo a actualizar.");
           }
         } else {
-          resultado = await socioArchivoService.subirArchivo(
+          await socioArchivoService.subirArchivo(
             socioIdActivo,
             file,
             key,
@@ -462,34 +462,38 @@ export function DocumentosLegajo({
             fchArchivoManual
           );
         }
-
-        if (resultado) {
-          // Se espera a que termine el refetch de "socioArchivos" (dispara
-          // uno porque la query está activa, ver el comentario de
-          // archivosBackendData más arriba) antes de mover la subpestaña:
-          // categoryFiles sale de ese mismo query, así que sin este await
-          // selectSubTab(key, 0) corría contra la lista todavía vieja (sin
-          // el archivo recién subido) - en una categoría que arrancaba
-          // vacía (ej. "Otros documentos"), categoryFiles[0] todavía no
-          // existía y el dropzone se veía vacío un instante hasta que el
-          // refetch en segundo plano terminaba (reportado el 2026-10-06).
-          // handleFileDelete de más abajo no tiene este problema porque ya
-          // actualiza la cache a mano con setQueryData antes de moverse.
-          await queryClient.invalidateQueries({
-            queryKey: ["socioArchivos", socioIdActivo],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ["socioLegajoCompleto", socioIdActivo],
-          });
-
-          toast.success("Documento subido exitosamente");
-          selectSubTab(key, 0);
-        }
+        subido = true;
       } catch (error) {
         console.error("Fallo al subir el archivo:", error);
-        toast.error("Error al subir el documento. Por favor, reintente.");
-      } finally {
-        setUploadingKey(null);
+        toast.error(
+          error?.esValidacionArchivo
+            ? error.message
+            : mensajeNegocio(error, "No se pudo subir el documento. Reintentá en unos minutos."),
+        );
+      }
+
+      // Se espera a que termine el refetch de "socioArchivos" (dispara
+      // uno porque la query está activa, ver el comentario de
+      // archivosBackendData más arriba) antes de mover la subpestaña:
+      // categoryFiles sale de ese mismo query, así que sin este await
+      // selectSubTab(key, 0) corría contra la lista todavía vieja (sin
+      // el archivo recién subido) - en una categoría que arrancaba
+      // vacía (ej. "Otros documentos"), categoryFiles[0] todavía no
+      // existía y el dropzone se veía vacío un instante hasta que el
+      // refetch en segundo plano terminaba (reportado el 2026-10-06).
+      // handleFileDelete de más abajo no tiene este problema porque ya
+      // actualiza la cache a mano con setQueryData antes de moverse.
+      await queryClient.invalidateQueries({
+        queryKey: ["socioArchivos", socioIdActivo],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["socioLegajoCompleto", socioIdActivo],
+      });
+      setUploadingKey(null);
+
+      if (subido) {
+        toast.success("Documento subido exitosamente");
+        selectSubTab(key, 0);
       }
     }
   };
@@ -609,6 +613,9 @@ export function DocumentosLegajo({
       name: activeFile.nombrearchivo,
       size: activeFile.contenido ? formatBase64Size(activeFile.contenido) : "Disponible",
       vialufe: activeFile.vialufe || activeFile.Vialufe || "0",
+      // Si el archivo es una imagen (ej. alguno histórico o vía LUFE), el
+      // base64 ya está acá y da la miniatura real; si es PDF, la hoja.
+      contenido: activeFile.contenido,
     } : null;
 
     const hasError =
@@ -739,11 +746,11 @@ export function DocumentosLegajo({
             );
 
             const bloqueDropzone = (
-              <div className={styles.dropzoneContainer}>
+              <div className={`${styles.dropzoneContainer} ${activeFile ? styles.dropzoneContainerCargado : ""}`}>
                 <CargaArchivos
-                  title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
-                  subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
+                  title={currentSubTab === "nuevo" ? `Otro archivo de ${doc.title}` : doc.title}
                   formatos={FORMATOS_ARCHIVO.pdf.etiqueta}
+                  admin={adminMode}
                   hasError={hasError}
                   isUploading={uploadingKey === doc.key}
                   faseDescarga={faseDe(doc.key)}
@@ -922,38 +929,67 @@ export function DocumentosLegajo({
   // Se referencia igual desde el return desktop y el mobile (ver más abajo)
   // en vez de duplicar el JSX: es un Modal con Portal, así que no importa
   // en qué punto del árbol se monte.
+  const archivoBalance = pendingBalanceUpload?.file;
   const fechaBalanceModal = (
     <Modal
       isOpen={!!pendingBalanceUpload}
       onClose={cancelarFechaBalanceModal}
-      title="Fecha del período del balance"
-      maxWidth="420px"
+      maxWidth="440px"
+      variant="confirm"
       preventClose={confirmandoFechaBalance}
     >
-      <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
-        Para subir este balance necesitamos saber a qué período corresponde.
-      </p>
-      <SelectFecha
-        label=""
-        placeholder="Seleccionar fecha"
-        value={fechaModalValue}
-        onChange={setFechaModalValue}
-        variant="compact"
-        minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-        maxDate={new Date()}
-      />
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
-        <Button variant="outline" onClick={cancelarFechaBalanceModal} disabled={confirmandoFechaBalance}>
-          Cancelar
-        </Button>
-        <Button
-          variant="primary"
-          onClick={confirmarFechaBalanceModal}
-          disabled={confirmandoFechaBalance}
-          isLoading={confirmandoFechaBalance}
-        >
-          Confirmar y subir
-        </Button>
+      <div className={styles.fbBody}>
+        <div className={styles.fbHead}>
+          <span className={styles.fbTile} aria-hidden="true">
+            <FiCalendar />
+          </span>
+          <div className={styles.fbTexto}>
+            <h2 className={styles.fbTitulo}>¿A qué período corresponde?</h2>
+            <p className={styles.fbDescripcion}>
+              Para subir este balance necesitamos la fecha de cierre del período.
+            </p>
+          </div>
+        </div>
+
+        {archivoBalance && (
+          <div className={styles.fbArchivo}>
+            <span className={styles.fbArchivoBadge} aria-hidden="true">
+              {(archivoBalance.name?.split(".").pop() || "").slice(0, 4).toUpperCase()}
+            </span>
+            <span className={styles.fbArchivoTexto}>
+              <strong>{archivoBalance.name}</strong>
+              {pendingBalanceUpload?.docTitle && <span>{pendingBalanceUpload.docTitle}</span>}
+            </span>
+          </div>
+        )}
+
+        <div className={styles.fbCampo}>
+          <span className={styles.fbLabel}>Fecha de cierre del período</span>
+          <SelectFecha
+            label=""
+            placeholder="Seleccionar fecha"
+            value={fechaModalValue}
+            onChange={setFechaModalValue}
+            variant="compact"
+            minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+            maxDate={new Date()}
+          />
+          <span className={styles.fbHint}>No puede ser una fecha futura.</span>
+        </div>
+
+        <div className={styles.fbFooter}>
+          <Button variant="outline" onClick={cancelarFechaBalanceModal} disabled={confirmandoFechaBalance}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={confirmarFechaBalanceModal}
+            disabled={confirmandoFechaBalance}
+            isLoading={confirmandoFechaBalance}
+          >
+            Confirmar y subir
+          </Button>
+        </div>
       </div>
     </Modal>
   );
@@ -971,8 +1007,19 @@ export function DocumentosLegajo({
         setArchivoAEliminar(null);
       }}
       titulo="Eliminar archivo"
-      mensaje={`¿Estás seguro de que deseas eliminar el archivo "${archivoAEliminar?.nombreArchivo}"?`}
+      mensaje="Si lo eliminás, vas a tener que volver a subirlo para completar este requisito."
       tone="danger"
+      variant={adminMode ? "blue" : "default"}
+      icono={<FiTrash2 />}
+      detalle={
+        archivoAEliminar
+          ? {
+            badge: (archivoAEliminar.nombreArchivo?.split(".").pop() || "").slice(0, 4).toUpperCase(),
+            titulo: archivoAEliminar.nombreArchivo,
+            subtitulo: archivoAEliminar.docTitle,
+          }
+          : undefined
+      }
       confirmText="Eliminar"
       cancelText="Cancelar"
     />
@@ -1063,8 +1110,8 @@ export function DocumentosLegajo({
       {fechaBalanceModal}
       {confirmarEliminarArchivoModal}
       {legajoToolbar}
-      <div className={styles.workspace}>
-        <div className={styles.sidebar}>
+      <div className={`${styles.workspace} ${adminMode ? "legajoAdmin" : styles.workspaceCliente}`}>
+        <div className={`${styles.sidebar} scroll-visible`}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =
               index === 0 ||
@@ -1134,7 +1181,9 @@ export function DocumentosLegajo({
             );
           })}
         </div>
-        <div className={styles.viewerContainer}>{renderViewer(activeDoc)}</div>
+        <div className={`${styles.viewerContainer} scroll-visible`}>
+          {renderViewer(activeDoc)}
+        </div>
       </div>
       </>
     );

@@ -1031,3 +1031,165 @@
   font-size: 0.75rem;
   color: #8b949e;
 }
+
+.formProducto {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.campoConAyuda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ayudaCampo {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.productosLista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 0.875rem;
+  background: #111620;
+  border: 1px solid #21262d;
+  overflow: hidden;
+}
+
+.productoFila {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #1c2128;
+}
+
+.productoFila:last-child {
+  border-bottom: 0;
+}
+
+.productoIcono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  background: rgba(76, 101, 230, 0.15);
+  color: var(--color-azul-bind-300);
+}
+
+.productoTextos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.productoTextos strong {
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.productosVacio {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed #30363d;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ── Modal de línea de crédito ──────────────────────────────────────────── */
+.formLinea {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lineaGrilla2,
+.lineaGrilla3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 0.75rem;
+  align-items: start;
+}
+
+.lineaBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem 0.25rem;
+  border-radius: 0.875rem;
+  background: #111620;
+  border: 1px solid #21262d;
+}
+
+.lineaBloque .uniqueAmountCard {
+  margin-bottom: 0.65rem;
+  background: none;
+  border-color: #21262d;
+}
+
+.lineaBloqueTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  color: var(--white);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.lineaBloqueIcono {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.55rem;
+  background: rgba(76, 101, 230, 0.15);
+  color: var(--color-azul-bind-300);
+}
+
+.pieAyuda {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+@media (min-width: 36rem) {
+  .lineaGrilla2 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .lineaGrilla3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 35.99rem) {
+  .pieAyuda {
+    display: none;
+  }
+}
+
+.pieAyudaError {
+  color: #ff7b72;
+}
+
+@media (max-width: 35.99rem) {
+  .pieAyuda.pieAyudaError {
+    display: block;
+    flex: 1 1 100%;
+  }
+}

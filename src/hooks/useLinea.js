@@ -1,15 +1,6 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lineaService } from '../services/lineaService';
-
-export const useObtenerCambiosEstadoLinea = (lineaId) => {
-    return useQuery({
-        queryKey: ['linea', 'cambiosEstado', lineaId],
-        queryFn: () => lineaService.obtenerCambiosEstado(lineaId),
-        enabled: !!lineaId,
-        staleTime: 1000 * 60 * 2,
-        placeholderData: keepPreviousData
-    });
-};
+import { normalizarHistorialLinea } from '../utils/executeCda';
 
 export const useObtenerLimitesPorSocio = (socioId) => {
     return useQuery({
@@ -52,6 +43,26 @@ export const useObtenerLimitesCadenaValor = (cadenavalorid) => {
         queryKey: ['linea', 'limitesCadenaValor', String(cadenavalorid)],
         queryFn: () => lineaService.obtenerLimitesCadenaValor(cadenavalorid),
         enabled: !!cadenavalorid,
+    });
+};
+
+export const useLimitesDeCadenas = (cadenaIds) => {
+    const ids = [...new Set((cadenaIds || []).filter(Boolean).map(String))];
+    return useQueries({
+        queries: ids.map((id) => ({
+            queryKey: ['linea', 'limitesCadenaValor', id],
+            queryFn: () => lineaService.obtenerLimitesCadenaValor(id),
+            staleTime: 1000 * 60,
+        })),
+        combine: (resultados) => {
+            const porCadena = new Map();
+            resultados.forEach((r, i) => {
+                if (!r.isSuccess) return;
+                const lista = Array.isArray(r.data) ? r.data : r.data?.items || r.data?.data || [];
+                porCadena.set(ids[i], lista);
+            });
+            return porCadena;
+        },
     });
 };
 
@@ -112,13 +123,32 @@ export const useActualizarProductoLimite = () => {
     });
 };
 
-export const useDesasociarProductoLimite = (tipolimiteid) => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: lineaService.desasociarProductoLimite,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', String(tipolimiteid)] });
-        }
+
+export const useHistorialCdaLinea = (tipoLimiteSocioId, enabled = true) => {
+    return useQuery({
+        queryKey: ['linea', 'executeCda', String(tipoLimiteSocioId)],
+        queryFn: () => lineaService.obtenerExecuteCda(tipoLimiteSocioId),
+        enabled: enabled && !!tipoLimiteSocioId,
     });
 };
 
+export const useHistorialesCdaLineas = (tipoLimiteSocioIds = []) => {
+    const ids = [...new Set((tipoLimiteSocioIds || []).filter(Boolean).map(Number))].sort((a, b) => a - b);
+    return useQuery({
+        queryKey: ['linea', 'executeCdaBulk', ids.join(',')],
+        queryFn: async () => {
+            const entradas = await Promise.all(
+                ids.map(async (id) => {
+                    try {
+                        return [id, normalizarHistorialLinea(await lineaService.obtenerExecuteCda(id))];
+                    } catch (err) {
+                        console.warn('[useHistorialesCdaLineas] Error obteniendo historial de CDA para la línea', id, err);
+                        return [id, null];
+                    }
+                }),
+            );
+            return new Map(entradas);
+        },
+        enabled: ids.length > 0,
+    });
+};

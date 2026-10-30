@@ -1,0 +1,31 @@
+.pie {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem -1.25rem -1.125rem;
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
+}
+
+.ayuda {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 35.99rem) {
+  .pie {
+    margin: 0.5rem -1rem -1rem;
+    padding: 0.75rem 1rem 1.25rem;
+  }
+
+  .pie > :not(.ayuda) {
+    flex: 1 1 auto;
+    white-space: nowrap;
+  }
+
+  .ayuda {
+    display: none;
+  }
+}

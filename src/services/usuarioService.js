@@ -2,12 +2,22 @@ import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
 import { guardarTokenApi, cerrarSesionApi } from "../api/tokenApi";
 
+const cadenaDelPath = () => {
+  const primerSegmento = window.location.pathname.split("/")[1];
+  return /^\d+$/.test(primerSegmento) ? Number(primerSegmento) : undefined;
+};
+
 const obtenerTokenDeUsuario = async ({ email, password }) => {
-  const { data } = await api.post("api/auth/login", null, {
-    sinToken: true,
-    noRetry: true,
-    headers: { jwtusername: email, jwtpassword: password },
-  });
+  const { data } = await api.post(
+    "api/auth/login",
+    {
+      jwtusername: email,
+      jwtpassword: password,
+      host: window.location.hostname,
+      cadenaId: cadenaDelPath(),
+    },
+    { sinToken: true, noRetry: true },
+  );
   const token = data?.token;
   if (!token) throw new Error("La API no devolvió un token de acceso");
   cerrarSesionApi();
@@ -89,58 +99,8 @@ export const usuarioService = {
       )
     ).data,
 
-  obtenerPorNombreOEmail: async (identificador) => {
-    try {
-      const response = await api.get(`api/usuario/${identificador}/pornombre`);
-      return response.data;
-    } catch (error) {
-      if (identificador && identificador.includes("@")) {
-        try {
-          const resSearch = await api.get("api/usuarios", {
-            params: { page: 1, page_size: 1, Email: identificador },
-          });
-          const listData = resSearch.data;
-          const list = Array.isArray(listData)
-            ? listData
-            : (listData?.items || listData?.data || listData?.resultados || listData?.list || []);
-          if (list.length > 0 && list[0]) {
-            const encontrado = list[0];
-            // ⚠️ GET api/usuarios devuelve Denominacion corrompida (a veces
-            // el ID de una cadena en vez del nombre real cargado al dar de
-            // alta al usuario — reportado al backend, confirmado en vivo el
-            // 2026-09-04). Esta rama solo existe para ubicar el
-            // UsuarioWebID cuando /pornombre falla; con ese id se pide el
-            // registro real por api/usuario/{id} (misma fuente confiable
-            // que /pornombre) en vez de confiar en nada de esta búsqueda.
-            const usuarioWebId =
-              encontrado.usuariowebid ?? encontrado.UsuarioWebID ?? encontrado.id;
-            if (usuarioWebId) {
-              try {
-                return await usuarioService.obtenerUsuarioPorId(usuarioWebId);
-              } catch (porIdErr) {
-                console.warn(
-                  "[usuarioService] No se pudo confirmar el usuario por id tras el fallback de api/usuarios:",
-                  porIdErr,
-                );
-              }
-            }
-            // Si ni el id resolvió, se devuelve igual para no romper a
-            // quien solo necesita estado/usuariowebid — pero sin
-            // Denominacion, que en esta fuente no es confiable.
-            const { Denominacion: _d1, denominacion: _d2, ...sinDenominacion } =
-              encontrado;
-            return sinDenominacion;
-          }
-        } catch (searchErr) {
-          console.warn(
-            "[usuarioService] Fallback by email search failed:",
-            searchErr.message,
-          );
-        }
-      }
-      throw error;
-    }
-  },
+  obtenerPorNombreOEmail: async (identificador) =>
+    (await api.get(`api/usuario/${encodeURIComponent(identificador)}/pornombre`)).data,
 
   listarUsuarios: async ({ page = 1, pageSize = 1000 } = {}) =>
     (await api.get("api/usuarios", { params: { page, page_size: pageSize } })).data,

@@ -10,17 +10,16 @@ import { useSocioWebPorId, useActualizarSocio } from "../../../../hooks/useSocio
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
 import {
   FiExternalLink,
-  FiUsers,
   FiChevronDown,
-  FiActivity,
   FiEdit2,
   FiMail,
   FiPhone,
+  FiUserMinus,
   FiFileText,
   FiMapPin,
-  FiShare2,
-  FiCalendar,
+  FiBriefcase,
 } from "react-icons/fi";
+import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import {
@@ -40,6 +39,7 @@ import { RepresentantesSection } from "../DocumentosLegajo/components/Representa
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
+import { CadenaLegajoContext } from "../../../../context/cadenaLegajoContextObject";
 import { TerceroRelacionSection } from "../DocumentosLegajo/components/TerceroRelacionSection/TerceroRelacionSection";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 import { useTiposRelacionSocioActivos } from "../../../../hooks/useTipoRelacionSocio";
@@ -56,6 +56,7 @@ import {
   resolverRelacionesBaseActivas,
 } from "../../../../utils/relacionesTercerosUtils";
 import { ESTRUCTURA_SOCIOS } from "./SociosLegajo.constants";
+import { soloDigitos } from "../DocumentosLegajo/components/TerceroCard/terceroCardUtils";
 
 const ID_POR_CLAVE_BASE = Object.fromEntries(
   RELACIONES_TERCEROS_BASE.map((r) => [r.clave, r.tipoRelacionSocioId]),
@@ -109,8 +110,8 @@ export function SociosLegajo({
   // CDAs del socio, ver detectarCadenaValorId). Sin detección, useRequisitos
   // cae solo al fallback por tipo de persona/sociedad (ver mismo criterio en
   // DocumentosLegajo).
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : cadenaActivaId;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   // Reutiliza la misma validación que ya decide si el legajo está completo,
@@ -402,6 +403,31 @@ export function SociosLegajo({
   const apoderados = representantesYApoderados.filter((r) => Number(r.rolId) === RELACION_APODERADO_ID);
   const agentesBolsa = socioLegajoData?.agentesBolsa || [];
 
+  // Todas las personas ya cargadas en el legajo (sin agentes de bolsa, que
+  // son sociedades), una sola vez por CUIT con todos sus roles. Alimenta el
+  // atajo "O elegí a alguien que ya está en tu legajo" de los modales de alta.
+  const personasLegajo = useMemo(() => {
+    const porCuit = new Map();
+    const sumar = (lista, rol) =>
+      (lista || []).forEach((p) => {
+        const cuit = soloDigitos(p.cuit);
+        if (cuit.length !== 11) return;
+        const previa = porCuit.get(cuit);
+        if (previa) {
+          if (!previa.roles.includes(rol)) previa.roles.push(rol);
+        } else {
+          porCuit.set(cuit, { cuit, nombre: p.nombre || "", roles: [rol] });
+        }
+      });
+    sumar(accionistas, "Accionista");
+    sumar(representantes, "Representante legal");
+    sumar(apoderados, "Apoderado");
+    tabsDisponibles
+      .filter((doc) => Number.isInteger(Number(doc.key)) && Number(doc.key) > 0)
+      .forEach((doc) => sumar(socioLegajoData?.porTipoRelacion?.[doc.key], doc.title));
+    return Array.from(porCuit.values());
+  }, [accionistas, representantes, apoderados, tabsDisponibles, socioLegajoData]);
+
   // `actualizando` cubre la ventana entre "se guardó algo" y "las queries ya
   // refetchearon de verdad" — antes, la modal (SocioAccionistaModal/
   // RepresentanteModal) cerraba apenas terminaba el guardado y la card de la
@@ -449,7 +475,7 @@ export function SociosLegajo({
     if (!socioIdActivo) return;
     setCargandoArchivos(true);
     try {
-      const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
+      const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo, true);
       if (Array.isArray(archivos)) {
         setArchivosBackend(archivos);
       }
@@ -577,7 +603,8 @@ export function SociosLegajo({
   };
 
   return (
-    <div className={styles.workspace}>
+    <CadenaLegajoContext.Provider value={adminMode ? cadenaId : null}>
+    <div className={`${styles.workspace} ${adminMode ? "legajoAdmin" : styles.workspaceCliente}`}>
       <div className={styles.sidebarBg} />
       {/* Columna de navegación propia de escritorio (ver .sidebarNav en el
           CSS): a diferencia de la lista de acá abajo (intercalada con el
@@ -588,7 +615,7 @@ export function SociosLegajo({
           de espacio terminaba comprimiendo toda la columna en vez de
           scrollear (reportado el 2026-09-30). Oculta en mobile (ver el
           mismo comentario del lado del CSS). */}
-      <div className={styles.sidebarNav}>
+      <div className={`${styles.sidebarNav} scroll-visible`}>
         {tabsDisponibles.map((doc, index) => renderCategoriaYBoton(doc, index))}
       </div>
       {tabsDisponibles.map((doc, index) => {
@@ -613,19 +640,16 @@ export function SociosLegajo({
             {renderCategoriaYBoton(doc, index, { inlineOnly: true })}
 
             {isActive && (
-              <section className={styles.viewer}>
+              <section className={`${styles.viewer} scroll-visible`}>
                 {/* La categoría ("Legajo") y el nombre de la pestaña ya se ven
                     resaltados en el botón activo del sidebar, a centímetros de
                     acá: repetirlos como badge + título aparte era puro relleno
                     visual. Se deja solo el título (con la acción propia de la
                     pestaña, si la tiene, a la derecha) y la descripción.
-                    Perfil corporativo es la excepción: su título y botón de
-                    Editar viven DENTRO de la tarjeta (.perfilTopBar, más
-                    abajo) en vez de en este header genérico compartido con
-                    el resto de las pestañas - separarlos en 2 piezas
-                    (header flotando arriba + tarjeta abajo, con su propia
-                    descripción repetida) era la pieza que más "plano y
-                    desarmado" hacía sentir al panel entero. */}
+                    Perfil corporativo es la excepción: su acción de
+                    Editar vive en la propia columna de identidad (ver
+                    .perfilIdentidad, más abajo) en vez de en este header
+                    genérico compartido con el resto de las pestañas. */}
                 {!isPerfil && (
                   <header className={styles.viewerHeader}>
                     <div className={styles.viewerMeta}>
@@ -650,161 +674,137 @@ export function SociosLegajo({
 
                 {isPerfil ? (
                   <div className={styles.perfilPanel}>
-                    {/* Rediseño completo (2026-09-14): antes era el header
-                        genérico (título+descripción, común a todas las
-                        pestañas) flotando arriba + una tarjeta abajo con
-                        hero/grilla de campos con un color de etiqueta por
-                        grupo (amarillo/celeste/azul) - se leía "plano y
-                        sobrecargado de colores". Ahora es UNA sola pieza:
-                        título+botón de Editar fusionados como cabecera de
-                        la tarjeta (.perfilTopBar), identidad, un bloque de
-                        2 datos clave en tiles con valor grande (mismo
-                        recurso que un resumen tipo "cliente" de cualquier
-                        dashboard fintech: no todo el contenido al mismo
-                        peso visual) y una lista de filas simples
-                        etiqueta/valor con una sola tonalidad de gris para
-                        las etiquetas - el amarillo de marca queda
-                        reservado para el avatar y el botón de Editar, no
-                        repartido por toda la tarjeta. */}
-                    <div className={styles.perfilCard}>
-                      <div className={styles.perfilTopBar}>
-                        <h4 className={styles.perfilCardTitle}>{tituloTab(doc)}</h4>
-                        <button
-                          type="button"
-                          className={styles.addButton}
-                          onClick={() => setPerfilModalOpen(true)}
-                        >
-                          <FiEdit2 size={14} /> Editar mi perfil
-                        </button>
-                      </div>
-
-                      <div className={styles.perfilIdentity}>
-                        <div className={styles.perfilAvatar}>
+                    {/* Rediseño 2026-10 (opción C): identidad + acción
+                        principal en su propia columna y los datos en
+                        tarjetas cortas por tema (facturación, ubicación,
+                        datos comerciales) en vez de una sola tarjeta larga.
+                        En mobile se apilan; desde 64rem la identidad queda
+                        a la izquierda, del mismo alto que la columna de datos (ver .perfilIdentidad). El
+                        título de la pestaña no se repite acá: ya está
+                        resaltado en el botón activo del sidebar. */}
+                    <div className={styles.perfilFila}>
+                      <aside className={styles.perfilIdentidad}>
+                        <div className={styles.perfilAvatar} aria-hidden="true">
                           {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
                         </div>
-                        <div className={styles.perfilIdentityInfo}>
-                          <span className={styles.perfilHeroName}>{nombreEmpresa || "—"}</span>
-                          <span className={styles.perfilHeroMeta}>
-                            {formatCuit(cuitActivo) || "CUIT no disponible"}
-                            {tipoPersonaLabel && <> · {tipoPersonaLabel}</>}
-                          </span>
-                        </div>
+                        <h4 className={styles.perfilNombre}>{nombreEmpresa || "—"}</h4>
+                        <span className={styles.perfilMeta}>
+                          {formatCuit(cuitActivo) || "CUIT no disponible"}
+                          {tipoPersonaLabel && <> · {tipoPersonaLabel}</>}
+                        </span>
                         {estadoSocioLabel && (
                           <span className={styles.perfilEstadoBadge}>{estadoSocioLabel}</span>
                         )}
-                      </div>
-
-                      {/* Los 2 datos de contacto más importantes en tiles con
-                          valor grande - el resto (teléfono, ubicación,
-                          datos comerciales) baja a la lista simple de
-                          abajo. El chip de Editar es una acción de esquina
-                          del bloque entero (ver .perfilEditarChip en el
-                          CSS), no pegado al valor de facturación - y solo
-                          vive acá, no se repite en la lista de abajo. */}
-                      <div className={styles.perfilStatGroup}>
-                        <span className={styles.perfilStatGroupLabel}>Contacto</span>
-                        <div className={styles.perfilStatTiles}>
-                          {/* Acción de esquina del contenedor entero (no
-                              pegada al valor adentro del tile): mismo
-                              patrón que un botón de editar/menú en la
-                              esquina de una card de datos - .perfilStatTiles
-                              tiene el padding-top de sobra para que no
-                              choque con las etiquetas de los tiles. */}
-                          <button
-                            type="button"
-                            className={styles.perfilEditarChip}
-                            onClick={() => setFacturacionModalOpen(true)}
-                            aria-label="Editar email de facturación"
-                          >
-                            <FiEdit2 size={11} /> Editar
-                          </button>
-                          <div className={styles.perfilStatTile}>
-                            <span className={styles.perfilStatLabel}><FiMail size={11} /> Email</span>
+                        <ul className={styles.perfilContacto}>
+                          <li className={styles.perfilContactoItem}>
+                            <FiMail size={13} role="img" aria-label="Email" />
                             <span
-                              className={`${styles.perfilStatValue} ${email ? "" : styles.perfilVacio}`}
+                              className={email ? "" : styles.perfilVacio}
                               title={email || undefined}
                             >
                               {email || "—"}
                             </span>
-                          </div>
-                          <div className={styles.perfilStatTileDivider} />
-                          <div className={styles.perfilStatTile}>
-                            <span className={styles.perfilStatLabel}><FiFileText size={11} /> Email de facturación</span>
+                          </li>
+                          <li className={styles.perfilContactoItem}>
+                            <FiPhone size={13} role="img" aria-label="Teléfono" />
                             <span
-                              className={`${styles.perfilStatValue} ${emailFacturacion ? "" : styles.perfilVacio}`}
-                              title={emailFacturacion || undefined}
+                              className={[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}
                             >
-                              {emailFacturacion || "—"}
+                              {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
                             </span>
-                          </div>
-                        </div>
-                      </div>
+                          </li>
+                        </ul>
+                        {/* Al pie de la tarjeta (margin-top:auto): la tarjeta
+                            mide lo mismo que la columna de datos, así el botón
+                            queda alineado con el final de "Datos comerciales". */}
+                        <button
+                          type="button"
+                          className={styles.perfilEditarBtn}
+                          onClick={() => setPerfilModalOpen(true)}
+                        >
+                          <FiEdit2 size={14} /> Editar perfil
+                        </button>
+                      </aside>
 
-                      <div className={styles.perfilRowsList}>
-                        <span className={styles.perfilRowsGroupLabel}>Contacto</span>
-                        <div className={styles.perfilRow}>
-                          <span className={styles.perfilRowLabel}><FiPhone size={11} /> Teléfono</span>
-                          <span className={`${styles.perfilRowValue} ${[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}`}>
-                            {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
-                          </span>
-                        </div>
+                      <div className={styles.perfilDetalle}>
+                        <section className={styles.perfilCard}>
+                          <header className={styles.perfilCardHeader}>
+                            <h5 className={styles.perfilCardTitle}>
+                              <span className={styles.perfilCardIcono} aria-hidden="true"><FiFileText size={13} /></span>
+                              Facturación
+                            </h5>
+                            <button
+                              type="button"
+                              className={styles.perfilEditarLink}
+                              onClick={() => setFacturacionModalOpen(true)}
+                              aria-label="Editar email de facturación"
+                            >
+                              <FiEdit2 size={13} aria-hidden="true" /> Editar
+                            </button>
+                          </header>
+                          <dl className={styles.perfilRows}>
+                            <div className={styles.perfilRow}>
+                              <dt className={styles.perfilRowLabel}>Email de facturación</dt>
+                              <dd
+                                className={`${styles.perfilRowValue} ${emailFacturacion ? "" : styles.perfilVacio}`}
+                              >
+                                {emailFacturacion || "—"}
+                              </dd>
+                            </div>
+                          </dl>
+                        </section>
 
-                        <span className={styles.perfilRowsGroupLabel}>Ubicación</span>
-                        <div className={styles.perfilRow}>
-                          <span className={styles.perfilRowLabel}><FiMapPin size={11} /> Dirección</span>
-                          <span className={`${styles.perfilRowValue} ${domicilioCompleto ? "" : styles.perfilVacio}`}>{domicilioCompleto || "—"}</span>
-                        </div>
+                        <section className={styles.perfilCard}>
+                          <header className={styles.perfilCardHeader}>
+                            <h5 className={styles.perfilCardTitle}>
+                              <span className={styles.perfilCardIcono} aria-hidden="true"><FiMapPin size={13} /></span>
+                              Ubicación
+                            </h5>
+                          </header>
+                          <dl className={styles.perfilRows}>
+                            <div className={styles.perfilRow}>
+                              <dt className={styles.perfilRowLabel}>Dirección</dt>
+                              <dd className={`${styles.perfilRowValue} ${domicilioCompleto ? "" : styles.perfilVacio}`}>
+                                {domicilioCompleto || "—"}
+                              </dd>
+                            </div>
+                          </dl>
+                        </section>
 
-                        <span className={styles.perfilRowsGroupLabel}>Datos comerciales</span>
-                        <div className={styles.perfilRow}>
-                          <span className={styles.perfilRowLabel}><FiUsers size={11} /> Tamaño de empresa</span>
-                          <span className={`${styles.perfilRowValue} ${tamanioEmpresaLabel ? "" : styles.perfilVacio}`}>{tamanioEmpresaLabel || "—"}</span>
-                        </div>
-                        <div className={styles.perfilRow}>
-                          <span className={styles.perfilRowLabel}><FiActivity size={11} /> Situación BCRA</span>
-                          <span className={`${styles.perfilRowValue} ${situacionBcraLabel ? "" : styles.perfilVacio}`}>{situacionBcraLabel || "—"}</span>
-                        </div>
-                        <div className={styles.perfilRow}>
-                          <span className={styles.perfilRowLabel}><FiShare2 size={11} /> Canal de comercialización</span>
-                          <span className={`${styles.perfilRowValue} ${canalComercializacionLabel ? "" : styles.perfilVacio}`}>{canalComercializacionLabel || "—"}</span>
-                        </div>
-                        <div className={styles.perfilRow}>
-                          <span className={styles.perfilRowLabel}><FiCalendar size={11} /> Inicio de actividades</span>
-                          <span className={`${styles.perfilRowValue} ${formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}`}>
-                            {formatFecha(fechaInicioActividades) || "—"}
-                          </span>
-                        </div>
-                        <div className={styles.perfilRow}>
-                          <span className={styles.perfilRowLabel}><FiCalendar size={11} /> Cierre de ejercicio</span>
-                          <span className={`${styles.perfilRowValue} ${formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}`}>
-                            {formatFecha(fechaCierreEjercicio) || "—"}
-                          </span>
-                        </div>
+                        <section className={styles.perfilCard}>
+                          <header className={styles.perfilCardHeader}>
+                            <h5 className={styles.perfilCardTitle}>
+                              <span className={styles.perfilCardIcono} aria-hidden="true"><FiBriefcase size={13} /></span>
+                              Datos comerciales
+                            </h5>
+                          </header>
+                          <dl className={styles.perfilRows}>
+                            {[
+                              ["Tamaño de empresa", tamanioEmpresaLabel],
+                              ["Situación BCRA", situacionBcraLabel],
+                              ["Canal de comercialización", canalComercializacionLabel],
+                              ["Inicio de actividades", formatFecha(fechaInicioActividades)],
+                              ["Cierre de ejercicio", formatFecha(fechaCierreEjercicio)],
+                            ].map(([label, valor]) => (
+                              <div key={label} className={styles.perfilRow}>
+                                <dt className={styles.perfilRowLabel}>{label}</dt>
+                                <dd className={`${styles.perfilRowValue} ${valor ? "" : styles.perfilVacio}`}>
+                                  {valor || "—"}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </section>
+
                       </div>
                     </div>
 
-                    {/* "Vincular usuarios" vivía como pestaña propia
-                        (categoría "Accesos", ver tabsDisponibles más abajo);
-                        ahora cuelga de Mi Perfil como una tarjeta aparte,
-                        mismo criterio que cualquier settings page (Stripe,
-                        Linear, etc.): la gestión de accesos de la cuenta
-                        vive junto al resto de "mi perfil", no como un ítem
-                        de navegación de primer nivel - sigue siendo un
-                        componente propio (no .perfilCard anidada, ver
-                        .perfilExtraSection) para no caer en tarjeta-dentro-
-                        de-tarjeta. Solo en modo cliente: en adminMode esta
-                        sección entera no se renderiza (ver el filtro de
-                        "perfil" en tabsDisponibles), así que acá no hace
-                        falta repetir el chequeo. */}
-                    <div className={styles.perfilExtraSection}>
-                      <span className={styles.perfilExtraSectionLabel}>Accesos</span>
-                      <VincularUsuarioSection socioIdActivo={socioIdActivo} />
-                    </div>
                   </div>
                 ) : isUsuarios ? (
                   <VincularUsuarioSection socioIdActivo={socioIdActivo} />
                 ) : isAccionistas ? (
                   <AccionistasSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     totalParticipacion={totalParticipacion}
                     accionistas={accionistas}
@@ -814,22 +814,27 @@ export function SociosLegajo({
                     archivosBackend={archivosBackend}
                     cargandoArchivos={cargandoArchivos}
                     dniTerceros={dniTerceros}
+                    cadenaValorId={cadenaId}
                   />
                 ) : isRepresentantes ? (
                   <RepresentantesSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     representantes={representantes}
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    cadenaValorId={cadenaId}
                   />
                 ) : isApoderados ? (
                   <ApoderadosSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     apoderados={apoderados}
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    cadenaValorId={cadenaId}
                   />
                 ) : isAgentesBolsa ? (
                   <AgentesBolsaSection
@@ -841,6 +846,7 @@ export function SociosLegajo({
                   />
                 ) : isExtra ? (
                   <TerceroRelacionSection
+                    personasLegajo={personasLegajo}
                     loadingSocios={loadingSocios}
                     items={
                       idRelacionExtra === RELACION_FIADOR_ID && accionistaUnico
@@ -862,6 +868,7 @@ export function SociosLegajo({
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    cadenaValorId={cadenaId}
                     evitarCoincidenciaCon={
                       idRelacionExtra === RELACION_FIADOR_ID && accionistaUnico
                         ? { cuit: accionistaUnico.cuit, email: accionistaUnico.email }
@@ -889,6 +896,13 @@ export function SociosLegajo({
             : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
         }
         tone="danger"
+        variant={adminMode ? "blue" : "default"}
+        icono={<FiUserMinus />}
+        detalle={
+          deleteTarget?.nombre
+            ? { badge: obtenerInicialesEmpresa(deleteTarget.nombre), titulo: deleteTarget.nombre }
+            : undefined
+        }
         confirmText={deleteTarget?.rolId === RELACION_AGENTE_BOLSA_ID ? "Desvincular" : "Eliminar"}
         isLoading={loadingDelete}
       />
@@ -904,5 +918,6 @@ export function SociosLegajo({
         />
       </FormProvider>
     </div>
+    </CadenaLegajoContext.Provider>
   );
 }

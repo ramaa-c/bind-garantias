@@ -1,3 +1,5 @@
+import { importeOriginalDeLimite } from "./monedaUtils";
+
 // El SQL compara el CUIT contra un VARCHAR(11), así que va sin guiones ni
 // espacios (y "—", el placeholder que usa la UI cuando no encontró al
 // socio, queda en "" y cae como faltante).
@@ -99,7 +101,7 @@ const describirFaltantes = (faltantes) => {
 const construirContextoSolicitud = (solicitud) => ({
   tipoLimiteSocioId: solicitud?.id,
   cuit: solicitud?.cuit,
-  importe: solicitud?.raw?.importelimite ?? solicitud?.raw?.ImporteLimite,
+  importe: solicitud?.raw ? importeOriginalDeLimite(solicitud.raw) : undefined,
   monedaId: solicitud?.raw?.monedaid ?? solicitud?.raw?.MonedaId ?? solicitud?.raw?.MonedaID,
   cadenaValorId: solicitud?.cadenavalorid,
 });

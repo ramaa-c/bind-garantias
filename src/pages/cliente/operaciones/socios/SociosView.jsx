@@ -20,8 +20,8 @@ import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 export default function SociosView() {
   const queryClient = useQueryClient();
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = cadenaActivaId;
   const { socioIdActivo, cuitActivo } = useEmpresaActiva();
 
   // Único caso que NO bloquea la carga (ver useBloqueoLegajo): sin
@@ -178,7 +178,9 @@ export default function SociosView() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleRefrescarLufe}
         titulo="Consultar a LUFE"
-        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y ARCA? Esta acción actualizará la información de las personas vinculadas a tu empresa."
+        mensaje="Vamos a actualizar la información de las personas vinculadas a tu empresa con los datos más recientes."
+        icono={<FiRefreshCw />}
+        confirmText="Consultar"
       />
 
       <AvisoBloqueoLegajoModal

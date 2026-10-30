@@ -1,0 +1,681 @@
+/* Tarjetas de terceros (Accionistas, Representantes, Apoderados, Agentes de
+   bolsa y relaciones genéricas) + resumen de participación y estado vacío.
+   Mobile first: la base es para pantallas chicas y se refina desde 36rem.
+   Rango 2 = (max-width: 1440px) o (max-height: 716px), umbral único. */
+
+/* ── LISTA ─────────────────────────────────────────────────────────────── */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* ── TARJETA ───────────────────────────────────────────────────────────── */
+
+/* --tc es el color del estado en formato "r, g, b" para poder derivar
+   borde, tinte y franja izquierda de una sola variable. Sin clase de estado
+   (agentes de bolsa) la tarjeta queda neutra. */
+.card {
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 1rem;
+  background: var(--bg-elevado);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.estadoCompleto,
+.estadoPendiente,
+.estadoRevision,
+.estadoRechazado {
+  border-color: rgba(var(--tc), 0.3);
+  background: linear-gradient(90deg, rgba(var(--tc), 0.09), var(--bg-elevado) 50%);
+  box-shadow: inset 3px 0 0 rgb(var(--tc));
+}
+
+.estadoCompleto {
+  --tc: 61, 220, 132;
+}
+
+.estadoPendiente {
+  --tc: 245, 244, 0;
+}
+
+.estadoRevision {
+  --tc: 138, 159, 255;
+}
+
+/* Solo admin: mantiene el rojo de "CDA rechazado" que ya usaba el panel. */
+.estadoRechazado {
+  --tc: 239, 68, 68;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.625rem;
+  padding: 0.75rem;
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.mainClickable {
+  cursor: pointer;
+  border-radius: 0.6rem;
+}
+
+.mainClickable:focus-visible {
+  outline: 2px solid var(--color-azul-bind-300);
+  outline-offset: 3px;
+}
+
+/* Un solo estilo de avatar para todos (aprobado): el color por persona
+   queda reservado a la participación, si no compite con el estado. */
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  background: rgba(76, 101, 230, 0.18);
+  color: var(--color-azul-bind-300);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Wrap: en pantallas angostas el chip baja debajo del nombre. */
+.nameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  min-width: 0;
+}
+
+.name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--white);
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sub {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0.15rem 0.55rem;
+  border-radius: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.chip svg {
+  flex-shrink: 0;
+}
+
+.chipOk {
+  background: rgba(61, 220, 132, 0.12);
+  color: var(--success-green);
+}
+
+.chipFalta {
+  background: rgba(245, 244, 0, 0.12);
+  color: var(--color-amarillo-bind);
+}
+
+.revisionSlot {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+/* EstadoRevisionChip trae su variante cliente en amarillo; acá la llevamos
+   al azul de "en revisión" del diseño sin tocar el componente (lo usan
+   otras vistas). */
+.revisionCliente > span {
+  padding: 0.15rem 0.55rem;
+  border-color: transparent;
+  background: rgba(138, 159, 255, 0.13);
+  color: var(--color-azul-bind-300);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  color: var(--white);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pctDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+/* ── ACCIONES ──────────────────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.iconBtn {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.5625rem;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+}
+
+.iconBtn:focus-visible,
+.btnEditarPendiente:focus-visible {
+  outline: 2px solid var(--color-azul-bind-300);
+  outline-offset: 2px;
+}
+
+.iconBtnEdit:hover {
+  border-color: rgba(245, 244, 0, 0.3);
+  background: rgba(245, 244, 0, 0.08);
+  color: var(--color-amarillo-bind);
+}
+
+.iconBtnEditAdmin:hover {
+  border-color: rgba(76, 101, 230, 0.35);
+  background: rgba(76, 101, 230, 0.1);
+  color: var(--color-azul-bind-300);
+}
+
+.iconBtnDelete:hover {
+  border-color: rgba(255, 82, 82, 0.3);
+  background: rgba(255, 82, 82, 0.08);
+  color: var(--danger-bright);
+}
+
+.chevronBtn {
+  border-color: transparent;
+}
+
+.chevronBtn:hover {
+  background: rgba(var(--overlay-rgb), 0.05);
+  color: var(--white);
+}
+
+.chevron {
+  transition: transform 0.3s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Con datos faltantes el editar deja de ser un ícono suelto: es la acción
+   que destraba la tarjeta, así que se nombra y lleva el puntito tipo
+   notificación. */
+.btnEditarPendiente {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 2rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(245, 244, 0, 0.45);
+  border-radius: 0.5625rem;
+  background: rgba(245, 244, 0, 0.1);
+  color: var(--color-amarillo-bind);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnEditarPendiente:hover {
+  background: rgba(245, 244, 0, 0.18);
+}
+
+.btnEditarDot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-amarillo-bind);
+  box-shadow: 0 0 0 2px var(--bg-elevado);
+}
+
+/* ── DETALLE DESPLEGABLE ───────────────────────────────────────────────── */
+
+/* grid-template-rows 0fr→1fr en vez de max-height: el detalle del admin
+   (TerceroCdaEstado) puede ser largo y con max-height quedaba cortado. */
+.expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.3s ease,
+    opacity 0.2s ease;
+}
+
+.expandOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.expandInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.expandBody {
+  margin: 0 0.75rem;
+  padding: 0 0 0.875rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
+}
+
+/* ── ESTADO VACÍO ──────────────────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1.25rem;
+  border: 1.5px dashed rgba(var(--overlay-rgb), 0.12);
+  border-radius: 1rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: 0.25rem;
+  border-radius: 0.8rem;
+  background: rgba(76, 101, 230, 0.12);
+  color: var(--color-azul-bind-300);
+}
+
+.emptyTitle {
+  margin: 0;
+  color: var(--white);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.emptyHint {
+  max-width: 22rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* ── RESUMEN DE PARTICIPACIÓN (solo Accionistas) ───────────────────────── */
+
+.resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 1rem;
+  background: var(--bg-elevado);
+}
+
+.resumenHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+
+.resumenLabel {
+  color: var(--white);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.resumenValor {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.resumenValor strong {
+  font-weight: 700;
+}
+
+.resumenOk {
+  color: var(--success-green);
+}
+
+.resumenPendiente {
+  color: var(--color-amarillo-bind);
+}
+
+/* Segmentos separados por 2px de gap (deja ver el fondo de la tarjeta);
+   el tramo sin asignar es un relleno gris con su propio flex-grow. */
+.barra {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barraSegmento {
+  flex-basis: 0;
+  min-width: 2px;
+  height: 100%;
+}
+
+.barraResto {
+  flex-basis: 0;
+  height: 100%;
+  background: rgba(var(--overlay-rgb), 0.08);
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leyendaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.leyendaNombre {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.leyendaSwatch {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+/* ── MODO CLARO ────────────────────────────────────────────────────────── */
+
+/* El azul 300 se lava sobre blanco; en claro usamos un tono más profundo. */
+:global(:root[data-theme="light"]) .avatar,
+:global(:root[data-theme="light"]) .emptyIcon,
+:global(:root[data-theme="light"]) .revisionCliente > span {
+  color: var(--color-azul-bind-600);
+}
+
+/* ── ≥ 36rem ───────────────────────────────────────────────────────────── */
+
+@media (min-width: 36rem) {
+  .header {
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .main {
+    gap: 0.75rem;
+  }
+
+  .chip {
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .pct {
+    min-width: 3.75rem;
+    font-size: 0.9375rem;
+  }
+
+  /* Alineado con el texto, no con el avatar. */
+  .expandBody {
+    margin: 0 0.875rem 0 3.875rem;
+  }
+
+  .resumen {
+    padding: 0.875rem 1rem;
+  }
+
+  .resumenLabel,
+  .resumenValor {
+    font-size: 0.8125rem;
+  }
+}
+
+/* ── ≥ 48rem ───────────────────────────────────────────────────────────── */
+
+@media (min-width: 48rem) {
+  .lista {
+    gap: 0.75rem;
+  }
+
+  .empty {
+    padding: 2.5rem 1.5rem;
+  }
+}
+
+/* ── Rango 2: notebooks / pantallas bajas ──────────────────────────────── */
+
+@media (min-width: 64rem) and (max-width: 1440px),
+  (min-width: 64rem) and (max-height: 716px) {
+  .lista {
+    gap: 0.5rem;
+  }
+
+  .header {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .expandBody {
+    margin-right: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .resumen {
+    gap: 0.5rem;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .empty {
+    padding: 1.75rem 1.25rem;
+  }
+}
+
+/* ── Carga inicial (TerceroSkeleton) ── */
+.skeletonResumen,
+.skeletonCard {
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
+  border-radius: 0.875rem;
+  background: var(--bg-elevado);
+}
+
+.skeletonResumen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+
+.skeletonFila {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.skeletonCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.skeletonTexto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* ── Sugerencias del modal de alta (SugerenciasTerceros) ── */
+.sugerencias {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
+}
+
+.sugerenciasTitulo {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sugerenciasLista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.sugerencia {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--bg-elevado);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
+}
+
+.sugerenciaTexto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.sugerenciaTexto strong {
+  font-size: 0.875rem;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sugerenciaTexto span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sugerenciaUsar {
+  flex-shrink: 0;
+  min-height: 2rem;
+  padding: 0 0.85rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(138, 159, 255, 0.35);
+  background: rgba(138, 159, 255, 0.08);
+  color: var(--color-azul-bind-300);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sugerenciaUsar:hover:not(:disabled) {
+  background: rgba(138, 159, 255, 0.16);
+}
+
+.sugerenciaUsar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sugerenciaUsar:focus-visible {
+  outline: 2px solid var(--color-azul-bind-300);
+  outline-offset: 2px;
+}
+
+.sugerenciaUsarAdmin {
+  color: var(--color-azul-bind, #4c65e6);
+}

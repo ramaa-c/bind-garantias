@@ -1,0 +1,316 @@
+/* Estilos compartidos por los listados del panel admin (Cadenas de valor,
+   Empresas, Usuarios, CDAs globales, Variables): encabezado, barra de
+   filtros y tabla. */
+
+/* ── ENCABEZADO ─────────────────────────────────────────── */
+.encabezado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.encabezado h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.resumen {
+  color: #8b949e;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.accionPrincipal {
+  margin-left: auto;
+}
+
+/* ── FILTROS ────────────────────────────────────────────── */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1 1 16rem;
+  max-width: 30rem;
+  height: 2.5rem;
+  padding: 0 0.85rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 12, 20, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.buscador:focus-within {
+  border-color: rgba(76, 101, 230, 0.55);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(76, 101, 230, 0.15);
+}
+
+.buscador svg {
+  color: #8b949e;
+  flex-shrink: 0;
+}
+
+.buscador input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: #ffffff;
+  font-size: 0.88rem;
+}
+
+.buscador input::placeholder {
+  color: var(--text-muted);
+}
+
+.segmentado {
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.segOpcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  height: 1.95rem;
+  padding: 0 0.7rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: none;
+  color: #8b949e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segOpcion:hover {
+  color: #ffffff;
+}
+
+.segCantidad {
+  min-width: 1.25rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #9aa4b0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.segActiva,
+.segActiva:hover {
+  background: rgba(76, 101, 230, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(76, 101, 230, 0.45);
+  color: #ffffff;
+}
+
+.segActiva .segCantidad {
+  background: var(--color-azul-bind, #4c65e6);
+  color: #ffffff;
+}
+
+.limpiar {
+  padding: 0 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--color-azul-bind-300, #8a9fff);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.limpiar:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 47.99rem) {
+  .buscador {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .segmentado {
+    flex: 1 1 100%;
+  }
+
+  .segOpcion {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ── TABLA (contenedor translúcido, cabecera tintada, filas de 4rem) ──── */
+.tablaCaja {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .tablaCaja {
+    flex: 0 0 auto;
+  }
+}
+
+.tablaScroll {
+  min-height: 0;
+  overflow: auto;
+}
+
+.tablaScroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tablaScroll::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--scrollbar-thumb);
+}
+
+.tabla {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tabla th,
+.tabla td {
+  padding: 0.55rem 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 2.4rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  background: #141922;
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+  color: #7d8590;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tabla td {
+  height: 4rem;
+  color: #c9d1d9;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabla tbody tr {
+  transition: background 0.15s ease;
+}
+
+.tabla tbody tr:hover td {
+  background: rgba(76, 101, 230, 0.05);
+}
+
+.filaClickeable {
+  cursor: pointer;
+}
+
+.filaClickeable:active td {
+  background: rgba(76, 101, 230, 0.1);
+}
+
+/* Botón de acción con texto dentro de una fila (Editar, Actividad...). */
+.accionFila {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 2rem;
+  padding: 0 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  color: #c9d1d9;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.accionFila svg {
+  color: var(--color-azul-bind-300, #8a9fff);
+  flex-shrink: 0;
+}
+
+.accionFila:hover:not(:disabled) {
+  border-color: rgba(76, 101, 230, 0.5);
+  background: rgba(76, 101, 230, 0.1);
+  color: #ffffff;
+}
+
+@media (max-width: 48rem) {
+  .textoAccion {
+    display: none;
+  }
+}
+
+.accionFila:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 3rem 1rem;
+  color: #8b949e;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.vacio svg {
+  font-size: 1.6rem;
+}

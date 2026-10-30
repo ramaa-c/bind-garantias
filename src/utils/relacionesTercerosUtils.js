@@ -4,6 +4,25 @@ import {
   IDS_RELACIONES_TERCEROS_BASE,
 } from "../constants/tiposRelacionSocio";
 
+export const esRelacionVigente = (rel) => {
+  const fechaHasta = rel?.fechahasta || rel?.FechaHasta;
+  if (!fechaHasta) return true;
+  const vencimiento = new Date(fechaHasta);
+  vencimiento.setHours(0, 0, 0, 0);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return vencimiento >= hoy;
+};
+
+export const buscarRelacionVigente = (relaciones, terceroId, tipoRelacionSocioId) =>
+  (Array.isArray(relaciones) ? relaciones : []).find(
+    (r) =>
+      Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroID ?? r.TerceroRelacionadoID) ===
+        Number(terceroId) &&
+      Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID) === Number(tipoRelacionSocioId) &&
+      esRelacionVigente(r),
+  ) || null;
+
 // La respuesta de api/TipoRelacionSocio (ver tipoRelacionSocioService) llega
 // en distintas formas según el endpoint devuelva un array plano o uno
 // envuelto - se normaliza acá una sola vez para no repetir el mismo

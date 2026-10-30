@@ -1,7 +1,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.75rem;
 }
 
 /* ── HERO ────────────────────────────────────────────────────────────────── */
@@ -68,170 +68,247 @@
   line-height: 1.4;
 }
 
-/* Reemplaza al hero cuando falta completar algo: ese estado ya se explica
-   en LegajoUniversalBar (containerInvalid), así que acá alcanza con un
-   renglón chico que introduzca el checklist de abajo, sin repetir título ni
-   mensaje. */
-.pendingLead {
+/* ── RESUMEN (reemplaza al hero mientras falte algo) ─────────────────────── */
+.resumen {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #ffd000;
+  gap: 1rem;
+  padding: 0.25rem 0 0.5rem;
 }
 
-/* ── PROGRESO GLOBAL ─────────────────────────────────────────────────────── */
-.progressRow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0 0.1rem;
+.gauge {
+  position: relative;
+  flex-shrink: 0;
+  width: 4.75rem;
+  height: 2.85rem;
 }
 
-.progressTrack {
-  flex: 1 1 auto;
-  height: 0.4rem;
-  border-radius: 999px;
-  background: rgba(var(--overlay-rgb), 0.06);
-  overflow: hidden;
-}
-
-.progressFill {
+.gaugeChart {
+  display: block;
   width: 100%;
   height: 100%;
-  border-radius: 999px;
-  transform-origin: left;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
 }
 
-.fill-success {
-  background: var(--success-green, #3ddc84);
+.gaugeTrack,
+.gaugeFill {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
 }
 
-.fill-ready {
-  background: var(--yellow, #f5f400);
+.gaugeTrack {
+  stroke: rgba(var(--overlay-rgb), 0.1);
 }
 
-.fill-pending {
-  background: rgba(var(--overlay-rgb), 0.32);
+.gaugeFill {
+  stroke: var(--warning);
+  filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.45));
 }
 
-.progressLabel {
-  font-size: 0.75rem;
+.gaugeLabel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.05rem;
+  text-align: center;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: var(--white-muted);
+  color: var(--white);
   font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
 }
 
-/* ── CHECKLISTS (Documentación / Legajo) ────────────────────────────────── */
+.resumenTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.resumenTexto strong {
+  font-size: 0.9375rem;
+  color: var(--white);
+}
+
+/* ── SECCIONES ───────────────────────────────────────────────────────────── */
 .section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  background: var(--bg-elevado);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
+}
+
+.sectionCompleta {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .sectionHeader {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .sectionTitle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.72rem;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9375rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted, #a3a3a3);
+  color: var(--white);
 }
 
 .sectionTally {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--white-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tallyOk {
+  color: var(--success-green);
 }
 
 .checklist {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
 }
 
 .checklistItem {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.55rem 0.75rem;
-  background: rgba(var(--overlay-rgb), 0.02);
-  border: 1px solid rgba(var(--overlay-rgb), 0.05);
-  border-radius: 0.6rem;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  min-width: 0;
 }
 
-.iconDone {
-  color: var(--success-green, #3ddc84);
+.okBadge,
+.pendBadge,
+.lockBadge {
+  width: 1.125rem;
+  height: 1.125rem;
   flex-shrink: 0;
+  border-radius: 999px;
+  box-sizing: border-box;
 }
 
-.iconPending {
-  color: var(--text-muted);
-  flex-shrink: 0;
+.okBadge {
+  display: grid;
+  place-items: center;
+  background: rgba(61, 220, 132, 0.15);
+  color: var(--success-green);
+}
+
+.okBadge svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  stroke-width: 3.4;
+}
+
+/* Pendiente en neutro: el amarillo queda para los botones y la barra de
+   progreso, si no la lista entera se veía "en alerta". */
+.pendBadge {
+  border: 1.5px solid rgba(var(--overlay-rgb), 0.35);
+}
+
+.lockBadge {
+  border: 1.5px solid rgba(var(--overlay-rgb), 0.18);
 }
 
 .labelDone {
-  font-size: 0.82rem;
-  color: var(--white-muted);
+  color: var(--text-muted);
 }
 
 .labelPending {
-  font-size: 0.82rem;
-  color: var(--white, #fffefe);
-  font-weight: 600;
-}
-
-.sectionBloqueada {
-  opacity: 0.55;
-}
-
-.lockIcon {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.iconBloqueado {
-  color: var(--text-muted);
-  flex-shrink: 0;
+  color: var(--white);
+  font-weight: 500;
 }
 
 .labelBloqueado {
-  font-size: 0.82rem;
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.itemAccion {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-azul-bind-300);
+  cursor: pointer;
+}
+
+.itemAccion:hover {
+  text-decoration: underline;
+}
+
+.itemAccion:focus-visible {
+  outline: 2px solid rgba(245, 244, 0, 0.55);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.toggleCompletos {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.125rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.toggleCompletos:hover {
+  color: var(--white);
+}
+
+.sectionBloqueada {
+  opacity: 0.6;
+}
+
+.sectionBloqueada .sectionTally {
+  color: var(--text-muted);
+}
+
+.lockIcon {
+  width: 0.8rem;
+  height: 0.8rem;
   color: var(--text-muted);
 }
 
 .notaBloqueo {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  font-style: italic;
   margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
-/* ── CTA ─────────────────────────────────────────────────────────────────── */
-.ctaRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  padding-top: 0.15rem;
-}
-
-.ctaRow > * {
-  flex: 1 1 180px;
-  justify-content: center;
+[data-theme="light"] .itemAccion {
+  color: var(--color-azul-bind-600);
 }

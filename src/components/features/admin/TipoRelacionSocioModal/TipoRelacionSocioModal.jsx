@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { FiUsers } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
 import styles from "./TipoRelacionSocioModal.module.css";
 import { Button } from "../../../ui/Button/Button";
@@ -40,7 +41,11 @@ export const TipoRelacionSocioModal = ({
   );
 
   const opcionesCatalogo = useMemo(() => {
-    const opciones = catalogoReal?.opciones || [];
+    const opciones = (catalogoReal?.opciones || []).map((o) => ({
+      ...o,
+      label: `#${o.value} · ${o.label}`,
+      descripcion: o.label,
+    }));
     if (esEdicion) return opciones;
     return opciones.filter((o) => !idsActivosSet.has(String(o.value)));
   }, [catalogoReal, esEdicion, idsActivosSet]);
@@ -93,27 +98,26 @@ export const TipoRelacionSocioModal = ({
           ? "Solo se puede modificar la descripción que ve la web. El ID del catálogo no cambia."
           : "Elegí un vínculo del catálogo real de SGR+ y escribí cómo se va a mostrar en la web."
       }
-      maxWidth="480px"
+      icono={<FiUsers />}
+      maxWidth="520px"
       variant="blue"
       preventClose={isGuardando}
       footer={
         <>
           <Button
-            variant="outlineBlue"
-            size="sm"
+            variant="adminNeutro"
             onClick={onClose}
             disabled={isGuardando}
           >
-            CANCELAR
+            Cancelar
           </Button>
           <Button
             variant="blue"
-            size="sm"
             onClick={handleGuardar}
             isLoading={isGuardando}
             disabled={isGuardando || !puedeGuardar}
           >
-            GUARDAR
+            {esEdicion ? "Guardar" : "Agregar"}
           </Button>
         </>
       }
@@ -132,7 +136,7 @@ export const TipoRelacionSocioModal = ({
             onChange={(value) => {
               setTipoRelacionSocioId(value);
               const opcion = opcionesCatalogo.find((o) => String(o.value) === String(value));
-              if (opcion && !descripcion.trim()) setDescripcion(opcion.label);
+              if (opcion && !descripcion.trim()) setDescripcion(opcion.descripcion);
             }}
             options={opcionesCatalogo}
             isSearchable

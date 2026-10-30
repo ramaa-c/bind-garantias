@@ -63,8 +63,8 @@ export default function DocumentacionView() {
   // y de nuevo adentro de DocumentosLegajo no duplica el pedido de red.
   // Mientras requisitos todavía no cargó, se asume que sí hay documentación
   // (default más seguro que ocultar el botón y hacerlo aparecer después).
-  const { cadenaSlug } = useCadenaActiva();
-  const cadenaId = Number(cadenaSlug) || 1;
+  const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const cadenaId = cadenaActivaId;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
   const hayDocumentacionRequerida = ESTRUCTURA_LEGAJO.some(
     (item) => requisitos?.documentos?.[item.key] !== 0,
@@ -197,7 +197,9 @@ export default function DocumentacionView() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleActualizarLufe}
         titulo="Consultar a LUFE"
-        mensaje="¿Estás seguro de que deseas actualizar los documentos de esta empresa desde LUFE? Esta acción puede agregar documentos nuevos al legajo."
+        mensaje="Vamos a buscar la documentación más reciente de tu empresa. Esto puede sumar documentos nuevos al legajo."
+        icono={<FiRefreshCw />}
+        confirmText="Consultar"
       />
     </section>
   );

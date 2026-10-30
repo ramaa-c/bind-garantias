@@ -7,6 +7,8 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_APROBADA,
   esRechazoAutomatico,
+  procesosVigentes,
+  procesosDeOtraPlataforma,
 } from "../utils/estadoLimiteSocio";
 
 // Gate central del nuevo flujo "con línea activa": si la cadena tiene
@@ -38,7 +40,7 @@ export const useAccesoDashboardCliente = () => {
     useObtenerLimitesSocio(socioIdActivo || 0);
   const { data: solicitudesEnProceso, isLoading: cargandoProceso } =
     useObtenerSolicitudesEnProceso(cuitActivo);
-  const { faltanLegajo, isLoading: cargandoLegajo } = useValidacionLegajo();
+  const { faltanLegajo, faltanDocumentos, isLoading: cargandoLegajo } = useValidacionLegajo();
 
   const tieneSolicitudActiva = useMemo(() => {
     const huboSolicitudLegitima =
@@ -49,15 +51,21 @@ export const useAccesoDashboardCliente = () => {
         return !esRechazoAutomatico(s.observaciones ?? s.Observaciones);
       });
     const hayProcesoActivo =
-      Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
+      procesosVigentes(solicitudesEnProceso, limitesSocio).length > 0;
     return huboSolicitudLegitima || hayProcesoActivo;
   }, [limitesSocio, solicitudesEnProceso]);
 
-  const legajoDesbloqueado = !hayLineaActiva || tieneSolicitudActiva;
+  const solicitudEnOtraPlataforma =
+    hayLineaActiva && procesosDeOtraPlataforma(solicitudesEnProceso).length > 0;
+
+  const legajoDesbloqueado =
+    !solicitudEnOtraPlataforma && (!hayLineaActiva || tieneSolicitudActiva);
   const documentacionDesbloqueada = legajoDesbloqueado && !faltanLegajo;
 
   return {
     hayLineaActiva,
+    solicitudEnOtraPlataforma,
+    faltanDocumentos: !cargandoLegajo && !!faltanDocumentos,
     legajoDesbloqueado,
     documentacionDesbloqueada,
     cargando:

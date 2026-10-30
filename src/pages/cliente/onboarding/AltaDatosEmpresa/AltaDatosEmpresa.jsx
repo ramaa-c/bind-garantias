@@ -9,6 +9,9 @@ import { LoadingScreen } from "../../../../components/ui";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
+import { usuarioService } from "../../../../services/usuarioService";
+import { avisarBloqueoPorSeguridad } from "../../../../utils/usuarioUtils";
+import { borrarTokenApi } from "../../../../api/tokenApi";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { requisitosService } from "../../../../services/requisitosService";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
@@ -20,11 +23,14 @@ import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCui
 import {
   leerSocioPendiente,
   limpiarSocioPendiente,
+  guardarAltaBloqueada,
+  leerAltaBloqueada,
 } from "../../../../utils/altaEmpresaPendiente";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/useChannel";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./AltaDatosEmpresa.module.css";
+import { FiAlertCircle, FiMail, FiLock, FiLogOut } from "react-icons/fi";
 import { toast } from "sonner";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
@@ -89,6 +95,10 @@ export const AltaDatosEmpresa = () => {
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
   const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
   const user = useAuthStore((state) => state.user);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const [altaBloqueada, setAltaBloqueada] = useState(() =>
+    leerAltaBloqueada(cadenaSlug, user?.email),
+  );
 
   // location.state.socioParaCompletar es lo que manda OnboardingGuard
   // cuando resuelve desde el servidor que el socio ya cruzó el umbral. Si
@@ -299,7 +309,7 @@ export const AltaDatosEmpresa = () => {
         ciudadid: data.ciudadid ? Number(data.ciudadid) : null,
         telefono: data.celular,
         fax: "",
-        email: user?.email,
+        email: isVendor ? "" : user?.email,
         tipopersonaid: data.tipopersonaid,
         tipocarteraid: 2,
         sectorcontableid: 700,
@@ -343,7 +353,7 @@ export const AltaDatosEmpresa = () => {
           cadenaObj?.tipocanalcomercializacionid ||
           cadenaObj?.TipoCanalComercializacionID ||
           0,
-        emailfacturacion: data.emailfacturacion || user?.email || "",
+        emailfacturacion: data.emailfacturacion || (isVendor ? "" : user?.email) || "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,
         jsoncondicionfianza: "",
@@ -363,7 +373,18 @@ export const AltaDatosEmpresa = () => {
         "[AltaDatosEmpresa] PUT a /Socio con payload:",
         { ...payloadSocio, socioid: socioId },
       );
-      await sociosService.actualizarSocio({ ...payloadSocio, socioid: socioId });
+      // El cliente no puede cambiar estos campos: la API los ignora y registra cada diferencia, así que se reenvía lo guardado
+      const respuestaGuardado = await sociosService.obtenerSocioPorId(socioId).catch(() => null);
+      const socioGuardado = Array.isArray(respuestaGuardado) ? respuestaGuardado[0] : respuestaGuardado;
+      await sociosService.actualizarSocio({
+        ...payloadSocio,
+        socioid: socioId,
+        ...(socioGuardado && {
+          email: socioGuardado.email ?? "",
+          tamanioempresaid: socioGuardado.tamanioempresaid ?? 0,
+          tipoactividadglobalid: socioGuardado.tipoactividadglobalid ?? 0,
+        }),
+      });
 
       // sociosService.actualizarSocio se llama acá directo (no vía
       // useActualizarSocio) porque este componente ya maneja su propio
@@ -420,7 +441,7 @@ export const AltaDatosEmpresa = () => {
           queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioId] }),
           queryClient.prefetchQuery({
             queryKey: ["socioArchivos", socioId],
-            queryFn: () => socioArchivoService.obtenerArchivos(socioId),
+            queryFn: () => socioArchivoService.obtenerArchivos(socioId, true),
             retry: 0,
           }),
           queryClient.prefetchQuery({
@@ -486,14 +507,19 @@ export const AltaDatosEmpresa = () => {
       case 1:
         return {
           badge: "Alta de empresa",
-          t: "Necesitamos conocer los datos de tu empresa",
-          s: "Completá el CUIT de tu empresa para comenzar.",
+          // Vendor: da de alta una empresa que va a gestionar, no la propia.
+          t: isVendor ? "¿Cuál es el CUIT de la empresa?" : "¿Cuál es el CUIT de tu empresa?",
+          s: isVendor
+            ? "Validamos su información fiscal y crediticia en tiempo real para agilizar el alta de la empresa."
+            : "Validamos tu información fiscal y crediticia en tiempo real para agilizar el registro de tu empresa.",
         };
       case 2:
         return {
           badge: "Alta de empresa",
           t: "Completá los datos de la empresa",
-          s: "Verificá y completá la información faltante.",
+          s: isVendor
+            ? "Solo faltan estos datos para crear su legajo."
+            : "Solo faltan estos datos para crear tu legajo.",
         };
       default:
         return { badge: "Alta de empresa", t: "Datos de la empresa", s: "" };
@@ -514,9 +540,14 @@ export const AltaDatosEmpresa = () => {
           isVendor={isVendor}
           vendorCuit={vendorCuit}
           onValidar={handleValidarCuitSuccess}
-          onSocioExistente={(socioData, reason) =>
-            setSocioExistenteModal({ isOpen: true, socioData, reason })
-          }
+          onSocioExistente={(socioData, reason) => {
+            if (reason === "email_mismatch" && !isVendor) {
+              guardarAltaBloqueada(cadenaSlug, user?.email);
+              bloquearCuentaPorSeguridad();
+              return;
+            }
+            setSocioExistenteModal({ isOpen: true, socioData, reason });
+          }}
           onSocioCreado={(id) => setSocioId(Number(id))}
         />
       );
@@ -532,6 +563,7 @@ export const AltaDatosEmpresa = () => {
             }
           }}
           isSubmitting={enviandoSolicitud}
+          pedirTelefono={!isVendor}
         />
       );
     }
@@ -563,9 +595,94 @@ export const AltaDatosEmpresa = () => {
   if (cargandoDatosCompletar) {
     return (
       <LoadingScreen
-        title="Recuperando tus datos"
-        message="Estamos actualizando la información de tu empresa..."
+        title={isVendor ? "Recuperando los datos" : "Recuperando tus datos"}
+        message={
+          isVendor
+            ? "Estamos actualizando la información de la empresa..."
+            : "Estamos actualizando la información de tu empresa..."
+        }
       />
+    );
+  }
+
+  // Cerrar (Escape / click afuera) solo cierra; "Entendido" además limpia
+  // el formulario para cargar otro CUIT - mismo comportamiento de antes.
+  const cerrarSocioExistente = () =>
+    setSocioExistenteModal({ isOpen: false, socioData: null, reason: null });
+
+  const entendidoSocioExistente = () => {
+    cerrarSocioExistente();
+    reset();
+  };
+
+  const bloquearCuentaPorSeguridad = async () => {
+    try {
+      if (!usuariowebidReal) throw new Error("Sin usuario");
+      await usuarioService.bloquearUsuario(usuariowebidReal);
+    } catch {
+      setAltaBloqueada(true);
+      return;
+    }
+    avisarBloqueoPorSeguridad();
+    borrarTokenApi();
+    clearAuth();
+    queryClient.clear();
+    navigate(`${basePath}/login`, { replace: true });
+  };
+
+  const cerrarSesionAltaBloqueada = () => {
+    clearAuth();
+    navigate(`${basePath}/login`);
+  };
+
+  if (altaBloqueada) {
+    return (
+      <div className={styles.pageContainer}>
+        <div className={styles.formMainContainer}>
+          <div className={styles.contentWrapper}>
+            <div className={styles.contenedorPrincipal}>
+              <div className={styles.columnaFormulario}>
+                <section className={styles.bloqueo} aria-labelledby="alta-bloqueada-titulo">
+                  <div className={styles.modalCabecera}>
+                    <span className={`${styles.modalIcono} ${styles.bloqueoIcono}`} aria-hidden="true">
+                      <FiLock />
+                    </span>
+                    <div className={styles.modalCabeceraTexto}>
+                      <span className={`${styles.modalBadge} ${styles.bloqueoBadge}`}>Alta bloqueada</span>
+                      <h1 id="alta-bloqueada-titulo" className={styles.modalTitle}>
+                        No podemos continuar con el alta
+                      </h1>
+                    </div>
+                  </div>
+
+                  <p className={styles.modalText}>
+                    La empresa que ingresaste ya está registrada con otro correo electrónico. Por seguridad, no podemos asociarla a tu cuenta ni seguir con el alta desde acá.
+                  </p>
+
+                  <p className={styles.modalSoporte}>
+                    Si formás parte de esta empresa o creés que se trata de un error, escribinos a{" "}
+                    <a href="mailto:soporte@bind.com.ar" className={styles.linkText}>
+                      soporte@bind.com.ar
+                    </a>{" "}
+                    y te ayudamos a resolverlo.
+                  </p>
+
+                  <div className={styles.modalActions}>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={cerrarSesionAltaBloqueada}
+                      className={styles.modalBoton}
+                    >
+                      <FiLogOut aria-hidden="true" /> Cerrar sesión
+                    </Button>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -606,7 +723,9 @@ export const AltaDatosEmpresa = () => {
                 onReiniciar={null}
               />
 
-              <div className={styles.bienvenidaHeader}>
+              <div
+                className={`${styles.bienvenidaHeader} ${pasoActual === 2 ? styles.headerCompacto : ""}`}
+              >
                 {/* La identidad de vendor (usuario/correo/plataforma) se
                     muestra en el Sidebar (ver Sidebar.jsx) — visible ahí
                     durante todo el wizard sin duplicarla acá. */}
@@ -618,7 +737,6 @@ export const AltaDatosEmpresa = () => {
                 <h1 className={styles.tituloBienvenida}>
                   {obtenerTextosCabecera().t}
                 </h1>
-                <div className={styles.titleAccent} />
                 {obtenerTextosCabecera().s && (
                   <p className={styles.subtituloBienvenida}>
                     {obtenerTextosCabecera().s}
@@ -652,72 +770,94 @@ export const AltaDatosEmpresa = () => {
 
       <Modal
         isOpen={socioExistenteModal.isOpen}
-        onClose={() =>
-          setSocioExistenteModal({
-            isOpen: false,
-            socioData: null,
-            reason: null,
-          })
-        }
-        maxWidth="28rem"
-      >
-        <div className={styles.modalContent}>
-          <span className={styles.modalBadge}>Atención</span>
-          <h3 className={styles.modalTitle}>Empresa ya registrada</h3>
-
-          <p className={styles.modalText}>
-            {socioExistenteModal.reason === "email_mismatch" ? (
-              <>
-                El correo electrónico con el que estás intentando registrarte no
-                coincide con el registrado en SGRPlus para esta empresa. Por
-                favor, contactá a{" "}
-                <a
-                  href="mailto:soporte@bind.com.ar"
-                  className={styles.linkText || ""}
-                >
-                  soporte@bind.com.ar
-                </a>{" "}
-                para más información.
-              </>
-            ) : (
-              'El CUIT ingresado ya se encuentra registrado en la plataforma por otro usuario. Para operar con esta empresa, solicitale al administrador que te brinde acceso desde la sección "Documentación".'
+        onClose={cerrarSocioExistente}
+        maxWidth="31.25rem"
+        hideCloseButton
+        footer={
+          <div className={styles.modalActions}>
+            {socioExistenteModal.reason === "email_mismatch" && (
+              <a
+                href="mailto:soporte@bind.com.ar"
+                className={styles.modalBotonSecundario}
+              >
+                Escribir a soporte
+              </a>
             )}
-          </p>
-
-          <div className={styles.modalHighlight}>
-            {socioExistenteModal.socioData?.denominacion && (
-              <strong className={styles.modalHighlightTitle}>
-                {socioExistenteModal.socioData.denominacion}
-              </strong>
-            )}
-            <span className={styles.modalHighlightSubtitle}>
-              CUIT {socioExistenteModal.socioData?.cuit}
-            </span>
-          </div>
-
-          <div className={styles.modalActionsSingle}>
             <Button
               variant="primary"
-              onClick={() => {
-                setSocioExistenteModal({
-                  isOpen: false,
-                  socioData: null,
-                  reason: null,
-                });
-                reset();
-              }}
+              onClick={entendidoSocioExistente}
+              className={styles.modalBoton}
             >
               Entendido
             </Button>
           </div>
+        }
+      >
+        <div className={styles.modalContent}>
+          <div className={styles.modalCabecera}>
+            <span className={styles.modalIcono} aria-hidden="true">
+              {socioExistenteModal.reason === "email_mismatch" ? (
+                <FiMail />
+              ) : (
+                <FiAlertCircle />
+              )}
+            </span>
+            <div className={styles.modalCabeceraTexto}>
+              <span className={styles.modalBadge}>Empresa ya registrada</span>
+              <h3 className={styles.modalTitle}>
+                {socioExistenteModal.reason === "email_mismatch"
+                  ? "El correo no coincide"
+                  : "La empresa ya tiene usuario"}
+              </h3>
+            </div>
+          </div>
+
+          <p className={styles.modalText}>
+            {socioExistenteModal.reason === "email_mismatch"
+              ? "El correo con el que ingresaste no es el que tenemos registrado para esta empresa, así que no podemos vincularla a tu usuario."
+              : 'El CUIT ingresado ya se encuentra registrado en la plataforma por otro usuario. Para operar con esta empresa, pedile una invitación a un administrador de la empresa.'}
+          </p>
+
+          <div className={styles.modalHighlight}>
+            <span className={styles.modalAvatar} aria-hidden="true">
+              {(socioExistenteModal.socioData?.denominacion || "?")
+                .trim()
+                .charAt(0)
+                .toUpperCase()}
+            </span>
+            <div className={styles.modalHighlightTexto}>
+              {socioExistenteModal.socioData?.denominacion && (
+                <strong className={styles.modalHighlightTitle}>
+                  {socioExistenteModal.socioData.denominacion}
+                </strong>
+              )}
+              <span className={styles.modalHighlightSubtitle}>
+                CUIT {socioExistenteModal.socioData?.cuit}
+              </span>
+            </div>
+          </div>
+
+          {socioExistenteModal.reason === "email_mismatch" && (
+            <p className={styles.modalSoporte}>
+              Escribinos a{" "}
+              <a href="mailto:soporte@bind.com.ar" className={styles.linkText}>
+                soporte@bind.com.ar
+              </a>{" "}
+              y te ayudamos a resolverlo.
+            </p>
+          )}
         </div>
       </Modal>
 
       {/* ── PANTALLA DE CARGA ────────────────────────────────────────── */}
       {enviandoSolicitud && (
         <LoadingScreen
-          title="Configurando tu entorno"
-          message="Registrando los datos de tu empresa en el sistema..."
+          title={isVendor ? "Configurando la empresa" : "Configurando tu entorno"}
+          message={
+            isVendor
+              ? "Registrando los datos de la empresa en el sistema..."
+              : "Registrando los datos de tu empresa en el sistema..."
+          }
         />
       )}
     </div>

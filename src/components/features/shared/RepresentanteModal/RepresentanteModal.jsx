@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useContext } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiPhone, FiUser, FiMapPin, FiMap } from "react-icons/fi";
+import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
 import { Button } from "../../../ui/Button/Button";
 import { Modal } from "../../../ui/Modal/Modal";
@@ -13,18 +14,21 @@ import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
-import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../utils/executeCda";
+import { decidirReejecucionCdaTercero } from "../../../../hooks/useTerceros";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../hooks/useValidarDomicilioRequerido";
+import { SugerenciasTerceros } from "../DocumentosLegajo/components/TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
 import { parseAddress, armarDireccion } from "../../../../utils/direccionParser";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { RELACION_FIADOR_ID } from "../../../../constants/tiposRelacionSocio";
+import { buscarRelacionVigente } from "../../../../utils/relacionesTercerosUtils";
 
 import styles from "./RepresentanteModal.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+import { CadenaLegajoContext } from "../../../../context/cadenaLegajoContextObject";
 
 // El botón de submit vive en el footer del Modal (ver prop `footer`), fuera
 // del <form> en el DOM - se asocian por este id vía el atributo HTML
@@ -52,10 +56,12 @@ export function RepresentanteModal({
   tipoRelacionSocioId,    // TipoRelacionSocioID a usar para la relación (fijo, no editable)
   etiquetaRol,            // Nombre a mostrar (viene de api/TipoRelacionSocio para relaciones dinámicas)
   evitarCoincidenciaCon,  // { cuit, email } a rechazar si coinciden (ver Fiador con accionista único, SGRPLUSPLA-137)
+  sugerencias = [],       // Personas ya cargadas en otras pestañas que se pueden reutilizar (ver SugerenciasTerceros)
   itemsExistentes = [],   // Resto de los items ya cargados para este mismo tipoRelacionSocioId (ver duplicado de email entre Fiadores, SGRPLUSPLA-137)
 }) {
   const { cadenaSlug } = useCadenaActiva();
-  const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const cadenaLegajo = useContext(CadenaLegajoContext);
+  const cadenaValorIdParam = Number(cadenaLegajo ?? cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
@@ -84,6 +90,7 @@ export function RepresentanteModal({
   // null cuando la relación ya existía de antes o cuando el alta se
   // confirmó, que son los dos casos en los que no hay que tocar nada.
   const stubRelacionRef = useRef(null);
+  const cdaNoAprobadoRef = useRef(false);
   useRegistrarModalLegajo(isOpen);
 
   const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
@@ -117,6 +124,7 @@ export function RepresentanteModal({
       setAfipValidado(!!(representante || representanteInicial));
       setShowConfirm(false);
       stubRelacionRef.current = null;
+      cdaNoAprobadoRef.current = false;
 
       if (representante) {
         // Legajo mode edit — ver useObtenerDatosSocioLegajo (useTerceros.js):
@@ -254,8 +262,12 @@ export function RepresentanteModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emailValue, clearErrors]);
 
-  const handleAfipLookup = async () => {
-    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+  // `cuitElegido`: CUIT de una persona elegida en SugerenciasTerceros. Desde
+  // el botón "Validar" llega el evento del click, por eso el chequeo de tipo.
+  const handleAfipLookup = async (cuitElegido) => {
+    const cuitLimpio = String(
+      (typeof cuitElegido === "string" ? cuitElegido : cuitValue) || "",
+    ).replace(/\D/g, "");
     
     if (!cuitLimpio || cuitLimpio.length !== 11) {
       setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
@@ -354,11 +366,7 @@ export function RepresentanteModal({
 
         const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
-        const relacionExistente = arrRel.find(
-          (r) =>
-            Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
-            Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
-        );
+        const relacionExistente = buscarRelacionVigente(arrRel, stubTerceroId, tipoRelacionSocioId);
 
         if (!relacionExistente) {
           const ahoraStub = new Date().toISOString().split(".")[0];
@@ -394,11 +402,7 @@ export function RepresentanteModal({
           // cierra sin confirmar.
           const relacionesPost = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
           const arrPost = Array.isArray(relacionesPost) ? relacionesPost : relacionesPost?.data || [];
-          stubRelacionRef.current = arrPost.find(
-            (r) =>
-              Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
-              Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
-          ) || null;
+          stubRelacionRef.current = buscarRelacionVigente(arrPost, stubTerceroId, tipoRelacionSocioId);
         }
         // A propósito NO se llama a onSuccess acá (mismo criterio que
         // SocioAccionistaModal): refrescar la lista en este punto hace que
@@ -650,6 +654,8 @@ export function RepresentanteModal({
     queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", terceroIdValidacion] });
     queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
 
+    cdaNoAprobadoRef.current = !result.success && !result.errors.some((e) => e.isSystemError);
+
     if (!result.success) {
       // hasError:true acá muestra el botón "Continuar" del ProcesamientoModal
       // y NO se auto-cierra (a diferencia del caso exitoso, más abajo): sin
@@ -683,6 +689,15 @@ export function RepresentanteModal({
     const relacion = stubRelacionRef.current;
     if (!relacion) return;
     stubRelacionRef.current = null;
+
+    if (cdaNoAprobadoRef.current) {
+      cdaNoAprobadoRef.current = false;
+      toast.info(`El ${etiquetaRol.toLowerCase()} quedó cargado y en revisión.`, {
+        description: "Podés completar o corregir sus datos editándolo desde la lista.",
+      });
+      if (onSuccess) onSuccess();
+      return;
+    }
 
     try {
       await tercerosService.darDeBajaRelacionDeSocio(relacion);
@@ -798,15 +813,14 @@ export function RepresentanteModal({
   // guardado ya quedó hecho, y la persona queda marcada en rojo en la
   // lista para que un admin la reintente después.
   const validarCdaTerceroExistente = async (terceroIdValidacion) => {
-    let yaAprobado = false;
+    let reejecutar = true;
     try {
-      const historial = await tercerosService.obtenerExecuteCda(terceroIdValidacion);
-      yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
+      reejecutar = await decidirReejecucionCdaTercero(queryClient, terceroIdValidacion, cadenaValorIdParam);
     } catch (histErr) {
       console.warn("[RepresentanteModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
     }
 
-    if (yaAprobado) return;
+    if (!reejecutar) return;
 
     setProcesoModal({
       isOpen: true,
@@ -958,11 +972,7 @@ export function RepresentanteModal({
         try {
           const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
           const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
-          relacionExistente = arrRel.find(
-            (r) =>
-              Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
-              Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId) === Number(tipoRelacionSocioId)
-          );
+          relacionExistente = buscarRelacionVigente(arrRel, terceroId, tipoRelacionSocioId);
         } catch (relErr) {
           console.warn("[RepresentanteModal] Error consultando relaciones del socio:", relErr);
         }
@@ -1015,11 +1025,7 @@ export function RepresentanteModal({
           try {
             const relacionesPost = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
             const arrRelPost = Array.isArray(relacionesPost) ? relacionesPost : relacionesPost?.data || [];
-            relacionGuardada = arrRelPost.find(
-              (r) =>
-                Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
-                Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
-            );
+            relacionGuardada = buscarRelacionVigente(arrRelPost, terceroId, tipoRelacionSocioId);
           } catch (postRelErr) {
             console.warn("[RepresentanteModal] No se pudo refrescar la relación recién creada:", postRelErr);
           }
@@ -1093,27 +1099,37 @@ export function RepresentanteModal({
         isOpen={isOpen}
         onClose={handleCerrar}
         title={representante || representanteInicial ? `Editar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
-        maxWidth="800px"
+        // El paso de búsqueda es una sola columna: con los 800px del
+        // formulario quedaba mucho aire a los lados.
+        maxWidth={!afipValidado && !representante && !representanteInicial ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={
           (afipValidado || representante || representanteInicial) && (
-            <Button type="submit" form={REPRESENTANTE_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
-              {representante || representanteInicial ? "Guardar Cambios" : `Agregar ${etiquetaRol}`}
-            </Button>
+            <>
+              <Button type="button" variant={isAdmin ? "outlineBlue" : "outline"} onClick={handleCerrar} disabled={validando}>
+                Cancelar
+              </Button>
+              <Button type="submit" form={REPRESENTANTE_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
+                {representante || representanteInicial ? "Guardar cambios" : `Agregar ${etiquetaRol.toLowerCase()}`}
+              </Button>
+            </>
           )
         }
       >
         <form id={REPRESENTANTE_FORM_ID} onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !representante && !representanteInicial ? (
             <div className={styles.cuitSearchStep}>
-              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
-                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
-                  <FiShield />
-                </div>
-                <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Validación segura con ARCA</p>
-                  <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del {etiquetaRol.toLowerCase()}</p>
+              {/* Mismo patrón que el paso 1 del alta (Paso1Cuit): el CUIT es
+                  lo protagonista y "Validar" vive dentro del input. Admin
+                  conserva el botón aparte en azul. */}
+              <div className={styles.cuitSearchHead}>
+                <span className={`${styles.cuitSearchIcon} ${isAdmin ? styles.cuitSearchIconAdmin : ""}`} aria-hidden="true">
+                  <FiUser />
+                </span>
+                <div className={styles.cuitSearchHeadText}>
+                  <p className={styles.cuitSearchTitle}>¿Quién va a ser {etiquetaRol.toLowerCase()}?</p>
+                  <p className={styles.cuitSearchSub}>Ingresá su CUIT y completamos sus datos.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1124,52 +1140,72 @@ export function RepresentanteModal({
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText="VALIDAR CUIT"
+                  buttonText={isAdmin ? "VALIDAR CUIT" : "Validar"}
                   isLoading={validando}
+                  inline={!isAdmin}
                 />
+                <p className={styles.cuitSearchAyuda}>Son 11 números, sin guiones.</p>
               </div>
+              <SugerenciasTerceros
+                sugerencias={sugerencias}
+                isAdmin={isAdmin}
+                disabled={validando}
+                onUsar={(persona) => {
+                  setValue("cuit", persona.cuit, { shouldDirty: true });
+                  handleAfipLookup(persona.cuit);
+                }}
+              />
             </div>
           ) : (
             <>
-              <div className={styles.summaryCard}>
-                <div className={styles.summaryTop}>
-                  <div className={styles.summaryLeft}>
+              <h4 className={styles.sectionTitle}>
+                <span className={`${styles.sectionNum} ${styles.sectionNumOk}`} aria-hidden="true"><FiCheck /></span>
+                {etiquetaRol}
+              </h4>
+              <div className={styles.identidadCard}>
+                <span className={styles.identidadAvatar} aria-hidden="true">
+                  {obtenerInicialesEmpresa(nombreValue || "") || <FiUser />}
+                </span>
+                <div className={styles.identidadTexto}>
+                  <div className={styles.identidadNombreFila}>
+                    <strong className={styles.identidadNombre}>{nombreValue || etiquetaRol}</strong>
                     <span className={styles.summaryStatus}>
                       {enriqueciendoAuto ? (
                         <>
-                          <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
-                          Enriqueciendo datos...
+                          <Spinner size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />
+                          Completando datos...
                         </>
                       ) : (
-                        <>
-                          <FiCheckCircle size={11} /> {etiquetaRol} validado con ARCA
-                        </>
+                        "Validado"
                       )}
                     </span>
-                    <h2 className={styles.summaryName}>{nombreValue || etiquetaRol}</h2>
-                    <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                    {representante || representanteInicial ? (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={handleAfipLookup}
-                        disabled={validando || enriqueciendoAuto}
-                      >
-                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar ARCA"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={() => setAfipValidado(false)}
-                      >
-                        <FiEdit2 size={12} /> Cambiar CUIT
-                      </button>
-                    )}
                   </div>
+                  <span className={styles.summaryCuit}>CUIT {cuitValue}</span>
                 </div>
+                {representante || representanteInicial ? (
+                  <button
+                    type="button"
+                    className={styles.editLink}
+                    onClick={handleAfipLookup}
+                    disabled={validando || enriqueciendoAuto}
+                  >
+                    <FiRefreshCw size={12} aria-hidden="true" /> {validando ? "Actualizando..." : "Actualizar datos"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.editLink}
+                    onClick={() => setAfipValidado(false)}
+                  >
+                    <FiEdit2 size={12} aria-hidden="true" /> Cambiar CUIT
+                  </button>
+                )}
               </div>
 
+              {/* El nombre viene de la fuente al validar el CUIT: el cliente
+                  no lo edita a mano, salvo que no haya llegado ninguno (sigue
+                  siendo obligatorio). Admin conserva la edición. */}
+              {(isAdmin || !String(nombreValue || "").trim()) && (
               <div className={styles.modalRow}>
                 <Controller
                   name="nombre"
@@ -1187,7 +1223,12 @@ export function RepresentanteModal({
                   )}
                 />
               </div>
+              )}
 
+              <h4 className={styles.sectionTitle}>
+                <span className={styles.sectionNum} aria-hidden="true">2</span>
+                Contacto
+              </h4>
               <div className={styles.modalRow2}>
                 <Controller
                   name="email"
@@ -1241,7 +1282,10 @@ export function RepresentanteModal({
                   cuando esta misma persona ya es accionista, se precargan
                   solos desde el tercero existente (ver handleAfipLookup),
                   para que quede consistente entre los dos roles. */}
-              <h4 className={styles.sectionTitle}>Domicilio</h4>
+              <h4 className={styles.sectionTitle}>
+                <span className={styles.sectionNum} aria-hidden="true">3</span>
+                Domicilio
+              </h4>
 
               <div className={styles.modalRow}>
                 <Controller
@@ -1361,6 +1405,7 @@ export function RepresentanteModal({
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
         titulo={representante || representanteInicial ? `Actualizar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
+        variant={isAdmin ? "blue" : "default"}
         mensaje={representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : `¿Estás seguro de que deseas agregar este ${etiquetaRol.toLowerCase()}?`}
       />
 

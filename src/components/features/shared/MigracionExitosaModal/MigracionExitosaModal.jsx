@@ -19,7 +19,7 @@ export function MigracionExitosaModal({ isOpen, onClose, adminMode = false }) {
     : "Completaste todos los datos y documentos de tu empresa. Tu legajo ya está al día.";
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="440px">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="440px" variant="confirm" className={styles.modal}>
       <div className={styles.content}>
         <div className={styles.iconWrap}>
           <span className={styles.ring} />

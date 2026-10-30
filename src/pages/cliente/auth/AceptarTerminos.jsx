@@ -12,6 +12,7 @@ import {
   useObtenerSocioUsuarioPorUsuarioId,
   useEmpresasCompletas,
 } from "../../../hooks/useSocios";
+import { useAsistenciaInterna, separarEmpresasAsistidas } from "../../../hooks/useAsistenciaInterna";
 import {
   useObtenerTerminosVigentes,
   useConfirmarTyC,
@@ -42,8 +43,13 @@ export default function AceptarTerminos() {
 
   const usuarioWebId = useUsuarioWebIdActual();
   const { data: socioUsuarios } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
-  const { empresasCompletas } = useEmpresasCompletas(socioUsuarios);
-  const tieneEmpresas = empresasCompletas.length > 0;
+  const { vigentesQueAtiendo, cargando: cargandoAsistencias } = useAsistenciaInterna();
+  const { propias, asistidas } = separarEmpresasAsistidas(
+    Array.isArray(socioUsuarios) ? socioUsuarios : [],
+    vigentesQueAtiendo,
+  );
+  const { empresasCompletas } = useEmpresasCompletas(cargandoAsistencias ? [] : propias);
+  const tieneEmpresas = empresasCompletas.length > 0 || asistidas.length > 0;
 
   const { data: terminosVigentes, isLoading: isLoadingTerminos } =
     useObtenerTerminosVigentes();

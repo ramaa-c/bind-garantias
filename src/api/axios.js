@@ -2,9 +2,16 @@ import axios from "axios";
 import { toast } from "sonner";
 import { queryClient } from "./queryClient";
 import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
-import { obtenerTokenApi, borrarTokenApi } from "./tokenApi";
+import {
+  obtenerTokenApi,
+  borrarTokenApi,
+  esperarFinRenovacion,
+  esRenovacionDeLaMismaSesion,
+  hayRenovacionEnCurso,
+} from "./tokenApi";
 import { CABECERAS_BASE_API } from "./cabecerasApi";
 import { useAuthStore } from "../store/useAuthStore";
+import { esMensajeUtil } from "../utils/mensajesError";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -41,13 +48,26 @@ const redirigirAFueraDeServicio = () => {
   setTimeout(() => window.location.assign("/fuera-de-servicio"), 900);
 };
 
-const agregarTokenApi = (config) => {
+// Sin token, la API responde 401 "Authorization Required" a todo lo que no
+// es público (lo público va con sinToken): se corta acá para no llenar el
+// log del backend, típicamente con las consultas que se refrescan justo
+// después de cerrar sesión o de que venció el token en otra pestaña.
+const agregarTokenApi = async (config) => {
   if (config.sinToken) return config;
-  const token = obtenerTokenApi();
-  if (token) {
-    config.__conToken = true;
-    config.headers.Authorization = `Bearer ${token}`;
+  let token = obtenerTokenApi();
+  if (!token && hayRenovacionEnCurso()) {
+    await esperarFinRenovacion();
+    token = obtenerTokenApi();
   }
+  if (!token) {
+    const error = new Error("No hay una sesión activa");
+    error.isSinSesion = true;
+    error.config = config;
+    throw error;
+  }
+  config.__conToken = true;
+  config.__tokenUsado = token;
+  config.headers.Authorization = `Bearer ${token}`;
   return config;
 };
 
@@ -89,6 +109,7 @@ const isPoolExhaustionError = (error) => {
 
 const RUTAS_CON_401_DE_NEGOCIO = [
   /auth\/login/i,
+  /auth\/refresh/i,
   /usuario\/(?:[^/]+\/)?(?:login|password)/i,
   /usuario\/notificar/i,
   /Socio\/ValidarCuit/i,
@@ -103,6 +124,16 @@ const esSesionVencida = (error) => {
   const url = config?.url || "";
   if (RUTAS_CON_401_DE_NEGOCIO.some((ruta) => ruta.test(url))) return false;
   return Boolean(config?.__conToken) || useAuthStore.getState().isAuthenticated;
+};
+
+const reintentarConTokenRenovado = async (config) => {
+  if (!config.__tokenUsado || config.__reintentoPorRenovacion) return false;
+  await esperarFinRenovacion();
+  const tokenActual = obtenerTokenApi();
+  if (!tokenActual || tokenActual === config.__tokenUsado) return false;
+  if (!esRenovacionDeLaMismaSesion(config.__tokenUsado, tokenActual)) return false;
+  config.__reintentoPorRenovacion = true;
+  return true;
 };
 
 const RUTAS_CON_LIMITE_POR_CUIT =
@@ -172,11 +203,17 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    if (error?.isSinSesion) {
+      if (useAuthStore.getState().isAuthenticated) cerrarSesionLocal();
+      return Promise.reject(error);
+    }
+
     const config = error.config;
 
     if (!config) return Promise.reject(error);
 
     if (esSesionVencida(error)) {
+      if (await reintentarConTokenRenovado(config)) return api(config);
       cerrarSesionLocal();
       return Promise.reject(error);
     }
@@ -194,8 +231,11 @@ api.interceptors.response.use(
 
     const isNetworkError = !error.response;
     const isServerError = error.response && error.response.status >= 500;
+    // Solo lecturas: un POST/PUT que respondió 5xx (o se cortó) puede haberse
+    // aplicado igual, y reintentarlo duplica altas en la API.
+    const esLectura = (config.method || "get").toLowerCase() === "get";
     const isSafeToRetry =
-      (isNetworkError || isServerError) && !isPoolExhaustionError(error);
+      esLectura && (isNetworkError || isServerError) && !isPoolExhaustionError(error);
 
     if (isSafeToRetry && !config.noRetry && config.__retryCount < MAX_RETRIES) {
       config.__retryCount += 1;
@@ -208,7 +248,7 @@ api.interceptors.response.use(
     }
 
     // Si ya no se reintenta y hubo un error de red en métodos de escritura
-    if (isNetworkError) {
+    if (isNetworkError && !config.silencioso) {
       const method = config.method?.toUpperCase();
       if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
         toast.error("Error de red. Verifica tu conexión e intenta nuevamente.");
@@ -224,7 +264,7 @@ api.interceptors.response.use(
     if ([400, 403, 409, 429].includes(statusRechazo)) {
       const cuerpo = error.response?.data;
       const motivo = typeof cuerpo === "string" ? cuerpo : cuerpo?.message;
-      if (typeof motivo === "string" && motivo.trim() && motivo.length < 300) {
+      if (esMensajeUtil(motivo)) {
         error.message = motivo;
       }
     }

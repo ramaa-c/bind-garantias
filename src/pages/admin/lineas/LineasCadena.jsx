@@ -8,6 +8,8 @@ import {
   FiCreditCard,
   FiFileText,
   FiCalendar,
+  FiLink,
+  FiPackage,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -115,18 +117,27 @@ const ProductosVinculadosModal = ({ isOpen, onClose, tipolimiteid }) => {
   const listVinculados = vinculaciones || [];
   const opciones = obligaciones?.opciones || [];
 
+  const cargando = isLoading || isObligacionesLoading;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Productos Vinculados"
+      title="Productos vinculados"
+      subtitle={cargando ? undefined : `${listVinculados.length} ${listVinculados.length === 1 ? "producto" : "productos"} en esta línea`}
+      icono={<FiLink />}
       variant="blue"
-      maxWidth="500px"
+      maxWidth="540px"
+      footer={
+        <Button type="button" variant="adminNeutro" onClick={onClose}>
+          Cerrar
+        </Button>
+      }
     >
-      {isLoading || isObligacionesLoading ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      {cargando ? (
+        <div className={styles.productosLista}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.6rem" }}>
+            <div key={i} className={styles.productoFila}>
               <Skeleton width="2rem" height="2rem" radius="0.5rem" />
               <div style={{ flex: 1 }}>
                 <Skeleton width="55%" height="0.85rem" />
@@ -136,61 +147,30 @@ const ProductosVinculadosModal = ({ isOpen, onClose, tipolimiteid }) => {
           ))}
         </div>
       ) : listVinculados.length === 0 ? (
-        <div style={{ padding: "1rem", textAlign: "center", color: "var(--text-secondary)" }}>
-          No hay productos vinculados a esta línea.
-        </div>
+        <p className={styles.productosVacio}>No hay productos vinculados a esta línea.</p>
       ) : (
-        <ul
-          style={{
-            listStyle: "none",
-            padding: 0,
-            margin: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.5rem",
-          }}
-        >
+        <ul className={styles.productosLista}>
           {listVinculados.map((v, idx) => {
-            const obl = opciones.find(
-              (o) => String(o.value) === String(v.tipoobligacionid)
-            );
+            const obl = opciones.find((o) => String(o.value) === String(v.tipoobligacionid));
             const productoBase = obl ? obl.label : `Producto #${v.tipoobligacionid}`;
             const descripcionCustom = v.descripcion || productoBase;
-
             return (
-              <li
-                key={v.tipoobligaciontipolimiteid || v.tipoobligacionid || idx}
-                style={{
-                  padding: "0.75rem",
-                  background: "var(--surface-darker, #121212)",
-                  borderRadius: "0.5rem",
-                  border: "1px solid var(--border-dark, #2a2a2a)",
-                  color: "var(--text-primary)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.25rem",
-                }}
-              >
-                <div style={{ fontSize: "0.95rem", fontWeight: "600", color: "var(--blue-light, #a5b4fc)" }}>
-                  {descripcionCustom}
-                </div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                  Base: {productoBase}
-                </div>
+              <li key={v.tipoobligaciontipolimiteid || v.tipoobligacionid || idx} className={styles.productoFila}>
+                <span className={styles.productoIcono} aria-hidden="true">
+                  <FiPackage />
+                </span>
+                <span className={styles.productoTextos}>
+                  <strong>{descripcionCustom}</strong>
+                  <span>Base: {productoBase}</span>
+                </span>
               </li>
             );
           })}
         </ul>
       )}
-      <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "flex-end" }}>
-        <Button type="button" variant="outlineBlue" onClick={onClose}>
-          CERRAR
-        </Button>
-      </div>
     </Modal>
   );
 };
-
 
 // --- CHILD COMPONENT: LINE CARD ---
 const LineaCard = ({
@@ -364,7 +344,6 @@ export default function LineasCadena() {
   const [activeLinea, setActiveLinea] = useState(null);
   const [activeLineaProductosId, setActiveLineaProductosId] = useState(null);
   const [togglingLineas, setTogglingLineas] = useState(new Set());
-  const [formErrors, setFormErrors] = useState({});
   // Snapshot del formData al abrir el modal en modo edición: permite
   // deshabilitar "GUARDAR CAMBIOS" si no se modificó nada (estándar de UX
   // para evitar PUTs sin cambios reales). null en modo creación, donde no
@@ -491,12 +470,6 @@ export default function LineasCadena() {
 
   const handleInputChange = (field, val) => {
     setFormData((prev) => ({ ...prev, [field]: val }));
-    setFormErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
   };
 
   const handleToggleStatus = (linea, field, isChecked) => {
@@ -535,7 +508,6 @@ export default function LineasCadena() {
 
   const handleOpenCreateModal = () => {
     setActiveLinea(null);
-    setFormErrors({});
     setFormDataInicial(null);
     setFormData({
       tipolimiteid: "",
@@ -555,12 +527,11 @@ export default function LineasCadena() {
 
   const handleOpenEditModal = (linea) => {
     setActiveLinea(linea);
-    setFormErrors({});
 
     const datosLinea = {
       tipolimiteid: String(linea.tipolimiteid),
-      monedaLineaId: String(linea.monedalineaid),
-      monedaContratoId: String(linea.monedacontratoid),
+      monedaLineaId: Number(linea.monedalineaid) > 0 ? String(linea.monedalineaid) : "",
+      monedaContratoId: Number(linea.monedacontratoid) > 0 ? String(linea.monedacontratoid) : "",
       descripcion: linea.descripcion || "",
       montoLinea: String(linea.montolinea),
       montoContrato: linea.montocontrato != null ? String(linea.montocontrato) : "",
@@ -602,31 +573,34 @@ export default function LineasCadena() {
     if (formData.monedaLineaId) {
       if (!formData.montoLinea || montoLineaIngresado <= 0) {
         errores.montoLinea = "Ingresá el monto de la línea";
-      } else if (montoMaximoCV > 0 && montoLineaIngresado > montoMaximoCV) {
-        errores.montoLinea = `Supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
       }
     }
 
     if (formData.monedaContratoId) {
       if (!formData.montoContrato || montoContratoIngresado <= 0) {
         errores.montoContrato = "Ingresá el monto del contrato";
-      } else if (
-        montoLineaIngresado > 0 &&
-        montoLineaIngresado > montoContratoIngresado
-      ) {
-        errores.montoContrato = "El monto de línea no puede ser mayor al del contrato";
       }
     }
 
     return errores;
   };
 
+  const reglaIncumplida = () => {
+    if (montoMaximoCV > 0 && montoLineaIngresado > montoMaximoCV) {
+      return `El monto de la línea supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
+    }
+    if (montoLineaIngresado > 0 && montoContratoIngresado > 0 && montoLineaIngresado > montoContratoIngresado) {
+      return "El monto de la línea no puede ser mayor al del contrato";
+    }
+    return null;
+  };
+
+  const errorRegla = reglaIncumplida();
+  const faltanObligatorios = Object.keys(validarFormulario()).length > 0;
+
   const handleSubmitForm = (e) => {
     e.preventDefault();
-
-    const errores = validarFormulario();
-    setFormErrors(errores);
-    if (Object.keys(errores).length > 0) return;
+    if (faltanObligatorios || errorRegla) return;
 
     const rawMontoLinea = limpiarMonto(formData.montoLinea);
     const rawMontoContrato = limpiarMonto(formData.montoContrato);
@@ -693,12 +667,14 @@ export default function LineasCadena() {
         </div>
         <div className={styles.actionsTop}>
           <Button
-            variant="primary"
+            type="button"
+            variant="blue"
+            size="md"
             onClick={handleOpenCreateModal}
             disabled={!selectedCadenaId || isCadenaInactiva}
-            title={isCadenaInactiva ? "No podés operar nuevas líneas en una cadena inactiva" : "Nueva Línea"}
+            title={isCadenaInactiva ? "No podés operar nuevas líneas en una cadena inactiva" : "Nueva línea"}
           >
-            <FiPlus /> NUEVA LÍNEA
+            <FiPlus /> Nueva línea
           </Button>
         </div>
       </div>
@@ -747,71 +723,87 @@ export default function LineasCadena() {
       <Modal
         isOpen={isLineaModalOpen}
         onClose={() => setIsLineaModalOpen(false)}
-        title={
-          activeLinea ? "EDITAR LÍNEA DE CRÉDITO" : "NUEVA LÍNEA DE CRÉDITO"
-        }
-        maxWidth="660px"
+        title={activeLinea ? "Editar línea de crédito" : "Nueva línea de crédito"}
+        subtitle={selectedCadena?.denominacion}
+        icono={<FiCreditCard />}
+        maxWidth="780px"
         variant="blue"
-      >
-        <div style={{ position: "relative" }}>
-          {(crearMutation.isPending || actualizarMutation.isPending) && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(13, 17, 23, 0.7)",
-                zIndex: 10,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                borderRadius: "0.5rem",
-                backdropFilter: "blur(2px)",
-              }}
+        preventClose={crearMutation.isPending || actualizarMutation.isPending}
+        footer={
+          <>
+            <span className={`${styles.pieAyuda} ${errorRegla ? styles.pieAyudaError : ""}`}>
+              {errorRegla || "Los campos con * son obligatorios"}
+            </span>
+            <Button
+              type="button"
+              variant="adminNeutro"
+              onClick={() => setIsLineaModalOpen(false)}
+              disabled={crearMutation.isPending || actualizarMutation.isPending}
             >
-              <Spinner size={50} />
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="form-linea-credito"
+              variant="blue"
+              isLoading={crearMutation.isPending || actualizarMutation.isPending}
+              disabled={
+                crearMutation.isPending ||
+                actualizarMutation.isPending ||
+                sinCambios ||
+                faltanObligatorios ||
+                !!errorRegla
+              }
+              title={
+                sinCambios
+                  ? "No hay cambios para guardar"
+                  : faltanObligatorios
+                    ? "Completá los campos obligatorios"
+                    : errorRegla || undefined
+              }
+            >
+              {activeLinea ? "Guardar cambios" : "Crear línea"}
+            </Button>
+          </>
+        }
+      >
+        <form id="form-linea-credito" onSubmit={handleSubmitForm} className={styles.formLinea}>
+          {montoMaximoCV > 0 && (
+            <div className={`${styles.cvUsageCard} ${styles.formGroupFull}`}>
+              <div className={styles.cvUsageTop}>
+                <span className={styles.cvUsageLabel}>
+                  Disponible de la cadena
+                </span>
+                <span className={styles.cvUsageAmount}>
+                  {monedaSimbolo} {disponibleCV.toLocaleString("es-AR")}
+                </span>
+              </div>
+              <div className={styles.cvUsageTrack}>
+                <div
+                  className={`${styles.cvUsageFill} ${
+                    pctUsadoCV >= 90
+                      ? styles.cvUsageFillDanger
+                      : pctUsadoCV >= 70
+                        ? styles.cvUsageFillWarning
+                        : ""
+                  }`}
+                  style={{
+                    transform: `scaleX(${Math.min(100, pctUsadoCV) / 100})`,
+                  }}
+                />
+              </div>
+              <div className={styles.cvUsageBottom}>
+                <span>
+                  Usado {monedaSimbolo} {utilizadoCV.toLocaleString("es-AR")}
+                </span>
+                <span>
+                  Máximo {monedaSimbolo} {montoMaximoCV.toLocaleString("es-AR")}
+                </span>
+              </div>
             </div>
           )}
-          <form onSubmit={handleSubmitForm} className={styles.formGrid}>
-            <div className={styles.formSectionDivider}>
-              <FiCreditCard size={12} />
-              <span>Línea</span>
-            </div>
 
-            {montoMaximoCV > 0 && (
-              <div className={`${styles.cvUsageCard} ${styles.formGroupFull}`}>
-                <div className={styles.cvUsageTop}>
-                  <span className={styles.cvUsageLabel}>
-                    Disponible de la cadena
-                  </span>
-                  <span className={styles.cvUsageAmount}>
-                    {monedaSimbolo} {disponibleCV.toLocaleString("es-AR")}
-                  </span>
-                </div>
-                <div className={styles.cvUsageTrack}>
-                  <div
-                    className={`${styles.cvUsageFill} ${
-                      pctUsadoCV >= 90
-                        ? styles.cvUsageFillDanger
-                        : pctUsadoCV >= 70
-                          ? styles.cvUsageFillWarning
-                          : ""
-                    }`}
-                    style={{
-                      transform: `scaleX(${Math.min(100, pctUsadoCV) / 100})`,
-                    }}
-                  />
-                </div>
-                <div className={styles.cvUsageBottom}>
-                  <span>
-                    Usado {monedaSimbolo} {utilizadoCV.toLocaleString("es-AR")}
-                  </span>
-                  <span>
-                    Máximo {monedaSimbolo} {montoMaximoCV.toLocaleString("es-AR")}
-                  </span>
-                </div>
-              </div>
-            )}
-
+          <div className={styles.lineaGrilla2}>
             <div className={styles.formGroup}>
               <SelectSimple
                 label="Tipo de Límite (Línea) *"
@@ -830,10 +822,9 @@ export default function LineasCadena() {
                   }
                 }}
                 disabled={!!activeLinea}
-                error={formErrors.tipolimiteid}
+                hideErrorSpace
               />
             </div>
-
             <div className={styles.formGroup}>
               <InputSimple
                 label="Descripción / Nombre de la Línea"
@@ -842,77 +833,82 @@ export default function LineasCadena() {
                 hideErrorSpace
               />
             </div>
+          </div>
 
-            <div className={styles.formGroup}>
-              <SelectSimple
-                label="Moneda de la Línea *"
-                options={currenciesOptions}
-                value={formData.monedaLineaId}
-                onChange={(val) => handleInputChange("monedaLineaId", val)}
-                error={formErrors.monedaLineaId}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <div className={styles.unitInputWrapper}>
-                <InputSimple
-                  label="Vigencia de la Línea (días) *"
-                  value={formData.diasVigenciaLinea}
-                  onChange={(val) =>
-                    handleInputChange("diasVigenciaLinea", val)
-                  }
-                  mask={Number}
-                  scale={0}
-                  signed={false}
-                  min={0}
-                  max={3650}
-                  thousandsSeparator="."
-                  lazy={false}
-                  error={formErrors.diasVigenciaLinea}
+          <section className={styles.lineaBloque}>
+            <h4 className={styles.lineaBloqueTitulo}>
+              <span className={styles.lineaBloqueIcono} aria-hidden="true">
+                <FiCreditCard />
+              </span>
+              Línea
+            </h4>
+            <div className={styles.lineaGrilla3}>
+              <div className={styles.formGroup}>
+                <SelectSimple
+                  label="Moneda *"
+                  options={currenciesOptions}
+                  value={formData.monedaLineaId}
+                  onChange={(val) => handleInputChange("monedaLineaId", val)}
+                  hideErrorSpace
                 />
-                <span className={styles.unitSuffix}>días</span>
               </div>
-              {formatearVencimiento(formData.diasVigenciaLinea) && (
-                <span className={styles.dueDateChip}>
-                  <FiCalendar size={11} />
-                  Vence el {formatearVencimiento(formData.diasVigenciaLinea)}
-                </span>
-              )}
+              <div className={styles.formGroup}>
+                <div className={styles.unitInputWrapper}>
+                  <InputSimple
+                    label="Vigencia *"
+                    value={formData.diasVigenciaLinea}
+                    onChange={(val) =>
+                      handleInputChange("diasVigenciaLinea", val)
+                    }
+                    mask={Number}
+                    scale={0}
+                    signed={false}
+                    min={0}
+                    max={3650}
+                    thousandsSeparator="."
+                    lazy={false}
+                  />
+                  <span className={styles.unitSuffix}>días</span>
+                </div>
+                {formatearVencimiento(formData.diasVigenciaLinea) && (
+                  <span className={styles.dueDateChip}>
+                    <FiCalendar size={11} />
+                    Vence el {formatearVencimiento(formData.diasVigenciaLinea)}
+                  </span>
+                )}
+              </div>
+              <div className={styles.formGroup}>
+                <InputSimple
+                  label="Monto *"
+                  value={formData.montoLinea}
+                  onChange={(val) => handleInputChange("montoLinea", val)}
+                  mask={`${monedaSimbolo} num`}
+                  blocks={{
+                    num: {
+                      mask: Number,
+                      scale: 2,
+                      signed: false,
+                      thousandsSeparator: ".",
+                      padFractionalZeros: true,
+                      normalizeZeros: true,
+                      radix: ",",
+                      mapToRadix: ["."],
+                    },
+                  }}
+                  lazy={false}
+                  disabled={!formData.monedaLineaId}
+                  sinIconos
+                />
+                {!formData.monedaLineaId && (
+                  <span className={styles.fieldHint}>
+                    Elegí primero la moneda de la línea
+                  </span>
+                )}
+                {formData.monedaLineaId && (
+                  <MontoEnPalabras value={limpiarMonto(formData.montoLinea)} />
+                )}
+              </div>
             </div>
-
-            <div className={styles.formGroup}>
-              <InputSimple
-                label="Monto de la Línea *"
-                value={formData.montoLinea}
-                onChange={(val) => handleInputChange("montoLinea", val)}
-                mask={`${monedaSimbolo} num`}
-                blocks={{
-                  num: {
-                    mask: Number,
-                    scale: 2,
-                    signed: false,
-                    thousandsSeparator: ".",
-                    padFractionalZeros: true,
-                    normalizeZeros: true,
-                    radix: ",",
-                    mapToRadix: ["."],
-                  },
-                }}
-                lazy={false}
-                error={formErrors.montoLinea}
-                disabled={!formData.monedaLineaId}
-                sinIconos
-              />
-              {!formData.monedaLineaId && (
-                <span className={styles.fieldHint}>
-                  Elegí primero la moneda de la línea
-                </span>
-              )}
-              {!formErrors.montoLinea && (
-                <MontoEnPalabras value={limpiarMonto(formData.montoLinea)} />
-              )}
-            </div>
-
             <div className={styles.uniqueAmountCard}>
               <label className={styles.uniqueAmountCardTop}>
                 <span className={styles.uniqueAmountSwitch}>
@@ -938,108 +934,84 @@ export default function LineasCadena() {
                   : "Desactivado: el socio va a poder solicitar cualquier monto dentro de este rango."}
               </span>
             </div>
+          </section>
 
-            <div className={styles.formSectionDivider}>
-              <FiFileText size={12} />
-              <span>Contrato</span>
-            </div>
-
-            <div className={styles.formGroup}>
-              <SelectSimple
-                label="Moneda del Contrato *"
-                options={currenciesOptions}
-                value={formData.monedaContratoId}
-                onChange={(val) => handleInputChange("monedaContratoId", val)}
-                error={formErrors.monedaContratoId}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <div className={styles.unitInputWrapper}>
-                <InputSimple
-                  label="Vigencia del Contrato (días) *"
-                  value={formData.diasVigenciaContrato}
-                  onChange={(val) =>
-                    handleInputChange("diasVigenciaContrato", val)
-                  }
-                  mask={Number}
-                  scale={0}
-                  signed={false}
-                  min={0}
-                  max={3650}
-                  thousandsSeparator="."
-                  lazy={false}
-                  error={formErrors.diasVigenciaContrato}
+          <section className={styles.lineaBloque}>
+            <h4 className={styles.lineaBloqueTitulo}>
+              <span className={styles.lineaBloqueIcono} aria-hidden="true">
+                <FiFileText />
+              </span>
+              Contrato
+            </h4>
+            <div className={styles.lineaGrilla3}>
+              <div className={styles.formGroup}>
+                <SelectSimple
+                  label="Moneda *"
+                  options={currenciesOptions}
+                  value={formData.monedaContratoId}
+                  onChange={(val) => handleInputChange("monedaContratoId", val)}
+                  hideErrorSpace
                 />
-                <span className={styles.unitSuffix}>días</span>
               </div>
-              {formatearVencimiento(formData.diasVigenciaContrato) && (
-                <span className={styles.dueDateChip}>
-                  <FiCalendar size={11} />
-                  Vence el {formatearVencimiento(formData.diasVigenciaContrato)}
-                </span>
-              )}
+              <div className={styles.formGroup}>
+                <div className={styles.unitInputWrapper}>
+                  <InputSimple
+                    label="Vigencia *"
+                    value={formData.diasVigenciaContrato}
+                    onChange={(val) =>
+                      handleInputChange("diasVigenciaContrato", val)
+                    }
+                    mask={Number}
+                    scale={0}
+                    signed={false}
+                    min={0}
+                    max={3650}
+                    thousandsSeparator="."
+                    lazy={false}
+                  />
+                  <span className={styles.unitSuffix}>días</span>
+                </div>
+                {formatearVencimiento(formData.diasVigenciaContrato) && (
+                  <span className={styles.dueDateChip}>
+                    <FiCalendar size={11} />
+                    Vence el {formatearVencimiento(formData.diasVigenciaContrato)}
+                  </span>
+                )}
+              </div>
+              <div className={styles.formGroup}>
+                <InputSimple
+                  label="Monto *"
+                  value={formData.montoContrato}
+                  onChange={(val) => handleInputChange("montoContrato", val)}
+                  mask={`${monedaContratoSimbolo} num`}
+                  blocks={{
+                    num: {
+                      mask: Number,
+                      scale: 2,
+                      signed: false,
+                      thousandsSeparator: ".",
+                      padFractionalZeros: true,
+                      normalizeZeros: true,
+                      radix: ",",
+                      mapToRadix: ["."],
+                    },
+                  }}
+                  lazy={false}
+                  disabled={!formData.monedaContratoId}
+                  sinIconos
+                />
+                {!formData.monedaContratoId && (
+                  <span className={styles.fieldHint}>
+                    Elegí primero la moneda del contrato
+                  </span>
+                )}
+                {formData.monedaContratoId && (
+                  <MontoEnPalabras value={limpiarMonto(formData.montoContrato)} />
+                )}
+              </div>
             </div>
-
-            <div className={styles.formGroup}>
-              <InputSimple
-                label="Monto del Contrato *"
-                value={formData.montoContrato}
-                onChange={(val) => handleInputChange("montoContrato", val)}
-                mask={`${monedaContratoSimbolo} num`}
-                blocks={{
-                  num: {
-                    mask: Number,
-                    scale: 2,
-                    signed: false,
-                    thousandsSeparator: ".",
-                    padFractionalZeros: true,
-                    normalizeZeros: true,
-                    radix: ",",
-                    mapToRadix: ["."],
-                  },
-                }}
-                lazy={false}
-                error={formErrors.montoContrato}
-                disabled={!formData.monedaContratoId}
-                sinIconos
-              />
-              {!formData.monedaContratoId && (
-                <span className={styles.fieldHint}>
-                  Elegí primero la moneda del contrato
-                </span>
-              )}
-              {!formErrors.montoContrato && (
-                <MontoEnPalabras value={limpiarMonto(formData.montoContrato)} />
-              )}
-            </div>
-
-            <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>
-              <Button
-                type="button"
-                variant="outlineBlue"
-                onClick={() => setIsLineaModalOpen(false)}
-                disabled={
-                  crearMutation.isPending || actualizarMutation.isPending
-                }
-              >
-                CANCELAR
-              </Button>
-              <Button
-                type="submit"
-                variant="blue"
-                disabled={
-                  crearMutation.isPending ||
-                  actualizarMutation.isPending ||
-                  sinCambios
-                }
-                title={sinCambios ? "No hay cambios para guardar" : undefined}
-              >
-                {activeLinea ? "GUARDAR CAMBIOS" : "CREAR LÍNEA"}
-              </Button>
-            </div>
-          </form>
-        </div>
+          </section>
+        </form>
       </Modal>
 
       {/* Modal de Productos Vinculados */}

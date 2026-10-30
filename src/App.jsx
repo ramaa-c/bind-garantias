@@ -38,9 +38,6 @@ const AceptarTerminos = lazy(
 const RecuperarClave = lazy(
   () => import("./pages/cliente/auth/RecuperarClave"),
 );
-const CadenaDetalle = lazy(
-  () => import("./pages/admin/cadenas-valor/CadenaDetalle"),
-);
 const AltaOperacion = lazy(() =>
   import("./pages/cliente/operaciones/alta-operacion/AltaOperacion").then(
     (m) => ({ default: m.AltaOperacion }),
@@ -66,6 +63,10 @@ const SeleccionarEmpresa = lazy(
   () =>
     import("./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa"),
 );
+const ElegirEmpresa = lazy(
+  () => import("./pages/cliente/onboarding/ElegirEmpresa/ElegirEmpresa"),
+);
+const UsuariosEmpresa = lazy(() => import("./pages/cliente/usuarios/UsuariosEmpresa"));
 const Dashboard = lazy(() => import("./pages/admin/dashboard/Dashboard"));
 const Empresas = lazy(() => import("./pages/admin/empresas/Empresas"));
 const EmpresaDetalle = lazy(
@@ -83,7 +84,6 @@ const LineasCadena = lazy(() => import("./pages/admin/lineas/LineasCadena"));
 const LineasProducto = lazy(
   () => import("./pages/admin/lineas/LineasProducto"),
 );
-const LineasCda = lazy(() => import("./pages/admin/lineas/LineasCda"));
 const ModoOffline = lazy(
   () => import("./pages/admin/configuracion/ModoOffline"),
 );
@@ -211,11 +211,21 @@ const rutasCliente = (
                 }
               />
               <Route
-                path="cadenas-valor/:id"
+                path="usuarios"
                 element={
                   <OnboardingGuard>
                     <DashboardLayout>
-                      <CadenaDetalle />
+                      <UsuariosEmpresa />
+                    </DashboardLayout>
+                  </OnboardingGuard>
+                }
+              />
+              <Route
+                path="elegir-empresa"
+                element={
+                  <OnboardingGuard>
+                    <DashboardLayout hideHelpButton>
+                      <ElegirEmpresa />
                     </DashboardLayout>
                   </OnboardingGuard>
                 }
@@ -373,13 +383,7 @@ const rutasAdmin = (
     />
     <Route
       path="/admin/lineas-cda"
-      element={
-        <AdminGuard>
-          <AdminLayout>
-            <LineasCda />
-          </AdminLayout>
-        </AdminGuard>
-      }
+      element={<Navigate to="/admin/cadenas-cda?pantalla=PANTALLA_LINEAS" replace />}
     />
     <Route
       path="/admin/lineas-cadenas"

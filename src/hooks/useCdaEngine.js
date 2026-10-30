@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { cdaService } from "../services/cdaService";
+import { esMensajeUtil } from "../utils/mensajesError";
 
 // El CDA "Valida al socio que no sea socio protector de otra SGR" (ID 10) es
 // el único criterio no bloqueante: si no se cumple, es informativo pero no
@@ -25,6 +26,18 @@ const esCdaNoBloqueante = (mensaje) => {
     mensajeNormalizado.includes(frase),
   );
 };
+
+const parsearCuerpo = (data) => {
+  if (typeof data !== "string") return data;
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+};
+
+const esMensajeGenericoAxios = (mensaje) =>
+  /^Request failed with status code \d+$/i.test(String(mensaje || "").trim());
 
 export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
@@ -97,7 +110,7 @@ export const useCdaEngine = () => {
       console.error("[CDA ENGINE] Error durante la validación del CDA:", err);
 
       const status = err.response?.status;
-      const responseData = err.response?.data;
+      const responseData = parsearCuerpo(err.response?.data);
       console.log("[CDA ENGINE] Status:", status, "| Response data:", responseData);
 
       const isInfraError =
@@ -135,9 +148,18 @@ export const useCdaEngine = () => {
       // 406: WSResponseCDA { Result: false, ListTest: [{ Result, Valor, Mensaje }] }
       // Rechazo de negocio normal: se arman los errores a partir de los
       // ítems que dieron Result=false.
-      if (status === 406 && responseData && typeof responseData === "object" && !isInfraError) {
-        const listTest = responseData.listtest ?? responseData.ListTest ?? [];
-        const rechazos = listTest.filter((t) => (t.result ?? t.Result) === false);
+      if (status === 406 && !isInfraError) {
+        const cuerpoObjeto = responseData && typeof responseData === "object" ? responseData : {};
+        const listTest = cuerpoObjeto.listtest ?? cuerpoObjeto.ListTest ?? [];
+        const rechazos = (Array.isArray(listTest) ? listTest : []).filter(
+          (t) => (t.result ?? t.Result) === false,
+        );
+        const mensajeTextoPlano =
+          typeof responseData === "string" &&
+          esMensajeUtil(responseData) &&
+          !responseData.trim().startsWith("{")
+            ? responseData.trim()
+            : "";
 
         const mappedErrors = rechazos.map((t) => {
           const mensaje =
@@ -161,7 +183,7 @@ export const useCdaEngine = () => {
               {
                 cdaid: 0,
                 isInvalidante: true,
-                message: "No se cumplieron los criterios de aceptación.",
+                message: mensajeTextoPlano || "No se cumplieron los criterios de aceptación.",
                 isSystemError: false,
               },
             ],
@@ -188,12 +210,30 @@ export const useCdaEngine = () => {
         return { success: true, errors: [] };
       }
 
+      // 403/404: la API no reconoce la entidad como propia del usuario. No es
+      // una integración caída: quien llama no debe tomarlo como "dejar pasar".
+      if (status === 403 || status === 404) {
+        setLoading(false);
+        return {
+          success: false,
+          errors: [
+            {
+              cdaid: 0,
+              isInvalidante: true,
+              message: "No se pudieron evaluar los criterios de aceptación. Intentá nuevamente o contactá a soporte.",
+              isSystemError: true,
+              isAccesoRechazado: true,
+            },
+          ],
+        };
+      }
+
       // 400 (cualquier otro motivo) / 500 / red / cualquier otra cosa: error
       // de sistema, no un rechazo de negocio real.
+      const mensajeApi = responseData?.message || responseData?.Message;
       let msg =
-        responseData?.message ||
-        responseData?.Message ||
-        err.message ||
+        (esMensajeUtil(mensajeApi) && mensajeApi) ||
+        (!esMensajeGenericoAxios(err.message) && esMensajeUtil(err.message) && err.message) ||
         "Error de comunicación con el servicio de validación CDA.";
       if (isInfraError) {
         msg =

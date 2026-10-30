@@ -1,147 +1,225 @@
+/* Rediseño 2026-10, misma línea que Datos de ubicación (opción A):
+   cabecera con ícono e indicador de paso (1 de 2 / 2 de 2), cuerpo y
+   acciones en el footer fijo del Modal. */
+
 .body {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  gap: 1rem;
 }
 
-.iconWrapper,
-.iconWrapperSuccess {
-  width: 3.125rem;
-  height: 3.125rem;
-  border-radius: 50%;
+/* ── CABECERA ────────────────────────────────────────────────────────────── */
+
+.header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-bottom: 1rem;
-  flex-shrink: 0;
+  gap: 0.875rem;
+  /* Deja lugar al botón de cerrar flotante del Modal. */
+  padding-right: 2.5rem;
 }
 
 .iconWrapper {
-  background-color: var(--badge-amarillo-bg);
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  background: var(--badge-amarillo-bg);
   color: var(--badge-amarillo-text);
 }
 
-.iconWrapperSuccess {
-  background-color: rgba(76, 175, 80, 0.1);
-  color: var(--success-bright);
+.headerTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.paso {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .title {
+  margin: 0;
   color: var(--white);
   font-size: 1.25rem;
-  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
+.progreso {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.progresoTramo {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background-color 0.3s ease;
+}
+
+.progresoActivo {
+  background: var(--color-amarillo-bind);
+}
+
+/* ── CUERPO ──────────────────────────────────────────────────────────────── */
+
 .description {
+  margin: 0;
   color: var(--text-muted);
-  margin-top: 0.5rem;
-  margin-bottom: 2rem;
-  line-height: 1.4;
   font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.numero {
+  color: var(--white);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .formSection {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-  text-align: left;
 }
 
-.btnSave {
-  width: 100%;
+.yaValidadoHint {
+  margin: -0.5rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--success-green);
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .resendRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  padding: 0.625rem 0.75rem;
-  border-radius: 0.625rem;
-  background: rgba(var(--overlay-rgb), 0.03);
-  border: 1px solid rgba(var(--overlay-rgb), 0.06);
-  margin-top: 1rem;
-  width: 100%;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.75rem;
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .resendLabel {
-  font-size: 0.8rem;
   color: var(--text-muted);
+  font-size: 0.8125rem;
 }
 
 .resendTimer {
-  font-size: 0.8rem;
+  color: var(--white-muted);
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
 
 .resendBtn {
-  font-size: 0.8rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border-hover);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--white);
+  font-family: inherit;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-amarillo-bind);
-  background: none;
-  border: none;
-  padding: 0;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 
 .resendBtn:hover:not(:disabled) {
-  opacity: 0.75;
+  border-color: var(--color-amarillo-bind);
 }
 
 .resendBtn:disabled {
-  color: var(--text-dim);
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.yaValidadoHint {
+/* ── ÉXITO ───────────────────────────────────────────────────────────────── */
+
+.exito {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  color: var(--success-bright);
-  font-size: 0.8125rem;
-  margin-top: -0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  padding: 1.5rem 0 0.75rem;
+  text-align: center;
+  animation: aparecer 0.4s ease both;
 }
 
-/* Escritorio */
-@media (min-width: 48rem) {
-  .iconWrapper,
-  .iconWrapperSuccess {
-    width: 3.75rem;
-    height: 3.75rem;
-    margin-bottom: 1.25rem;
+.exitoIcono {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 0.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--success-green) 15%, transparent);
+  color: var(--success-green);
+  animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── FOOTER (prop `footer` del Modal) ────────────────────────────────────── */
+
+.footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+.footerBtn {
+  min-height: 2.875rem;
+  padding: 0 1.25rem;
+  border-radius: 0.75rem;
+}
+
+@media (max-width: 47.99rem) {
+  .footer {
+    flex-direction: column-reverse;
   }
 
-  .title {
-    font-size: 1.5rem;
-  }
-
-  .description {
-    margin-bottom: 3rem;
-  }
-
-  .formSection {
-    gap: 1.5625rem;
-    margin-bottom: 1.875rem;
-  }
-
-  .resendRow {
-    margin-top: 1.25rem;
+  .footerBtn {
+    width: 100%;
   }
 }
 
-/* --- UTILIDADES Y ANIMACIONES --- */
-.linkEdit {
-  color: var(--color-amarillo-bind);
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: 0.85rem;
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exito,
+  .exitoIcono {
+    animation: none;
+  }
+}

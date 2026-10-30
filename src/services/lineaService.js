@@ -2,9 +2,6 @@ import { lineaAdapter } from "../adapters/lineaAdapter";
 import api from '../api/axios';
 
 export const lineaService = {
-    // GET api/TipoLimiteSocioCambioEstado/{TipoLimiteSocioID}
-    obtenerCambiosEstado: async (tipoLimiteSocioId) => (await api.get(`api/TipoLimiteSocioCambioEstado/${tipoLimiteSocioId}`)).data,
-
     // GET api/TipoLimiteSocio?socioid={SocioID}
     obtenerLimitesPorSocio: async (socioId) => (await api.get(`api/TipoLimiteSocio?socioid=${socioId}`)).data,
 
@@ -46,10 +43,6 @@ export const lineaService = {
     actualizarProductoLimite: async (asocData) => 
         (await api.put('api/TipoObligacionTipoLimite', lineaAdapter.adaptarPayload5(asocData))).data,
 
-    // DELETE api/TipoObligacionTipoLimite/{id}
-    desasociarProductoLimite: async (id) =>
-        (await api.delete(`api/TipoObligacionTipoLimite/${id}`)).data,
-
     // POST api/Linea/Migrar - migra la línea aprobada al core SGR+.
     // Confirmado en vivo el 2026-09-15 que es idempotente (llamarlo dos
     // veces sobre la misma línea responde "Línea migrada" ambas veces, sin
@@ -65,4 +58,13 @@ export const lineaService = {
             'api/Linea/Migrar',
             lineaAdapter.adaptarPayload6({ tipolimitesocioid: tipoLimiteSocioId }),
         )).data,
+
+    obtenerExecuteCda: async (tipoLimiteSocioId) => {
+        try {
+            return (await api.get('api/Lineas/ExecuteCda', { params: { LineaID: tipoLimiteSocioId } })).data;
+        } catch (error) {
+            if (error.response?.status === 404) return [];
+            throw error;
+        }
+    },
 };

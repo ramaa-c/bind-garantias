@@ -1,15 +1,13 @@
 import React, { useEffect } from "react";
-import { useFormContext, useFormState, useWatch } from "react-hook-form";
-import { FiDollarSign, FiBriefcase, FiSliders, FiChevronRight } from "react-icons/fi";
 import {
-  Button,
-  InputMonto,
-  SelectFecha,
-  SelectSocio,
-  TicketSimulacion,
-  TicketPrestamoFijo,
-  Modal,
-} from "../../../ui";
+  Controller,
+  useFormContext,
+  useFormState,
+  useWatch,
+} from "react-hook-form";
+import { FiSliders } from "react-icons/fi";
+import { Button, InputMonto, SelectFecha, SelectSocio } from "../../../ui";
+import SelectorLinea from "./SelectorLinea";
 import styles from "./Paso3Simulador.module.css";
 import {
   useMonedas,
@@ -91,18 +89,18 @@ const calculateDays = (dateStr) => {
   return diffDays > 0 ? diffDays : 71.365;
 };
 
+// Rediseño 2026-10: la simulación ya no se abre en un modal al tocar
+// "Calcular" - se recalcula en vivo en un panel lateral (debajo del
+// formulario en mobile, con una barra fija abajo) y "Enviar solicitud" corre
+// las mismas validaciones de monto que antes hacía Calcular, y si pasan,
+// envía directamente (onContinuar).
 export default function Paso3Simulador({
-  mostrarResultados,
-  onCalcular,
   onContinuar,
-  onCancelar,
   mostrarTipoCalculo = true,
   mostrarMonto = true,
   mostrarFecha = true,
-  textoAccion = "CALCULAR",
   labelFecha = "Fecha de pago",
   labelMonto = "Monto",
-  usarTicketPrestamoFijo = false,
   opcionesProducto: propOpcionesProducto,
   opcionesMoneda: propOpcionesMoneda,
   opcionesCalculo: propOpcionesCalculo,
@@ -171,7 +169,8 @@ export default function Paso3Simulador({
       ?.simbolo || simboloMoneda(monedaValue);
   const enPesos = esMonedaPesos(monedaValue);
 
-  const handleLocalCalcular = async () => {
+  const handleEnviar = async () => {
+    if (isSubmitting) return;
     const camposATrigger = ["moneda", "tipoProducto"];
     if (mostrarMonto) camposATrigger.push("monto");
     if (mostrarTipoCalculo) camposATrigger.push("tipoCalculo");
@@ -203,7 +202,7 @@ export default function Paso3Simulador({
         });
         return;
       }
-      onCalcular();
+      onContinuar();
     }
   };
 
@@ -393,129 +392,248 @@ export default function Paso3Simulador({
       : "IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa. Los gastos fijos en pesos (valores al cobro y gestión de cobro) no se incluyen en esta estimación.";
   }
 
-  const prestamosConfig = config.prestamos;
-  const datosTablaPrestamo = [
-    {
-      plazo: "181 a 360 días",
-      conceptos: [
-        {
-          label: "Monto hasta",
-          value: formatCurrency(montoNumerico),
-          unidad: "",
-        },
-        { label: "Tasa", value: `${prestamosConfig.tasaGeneral}%`, unidad: "TNA" },
-        { label: "Comisión Banco", value: `${prestamosConfig.comisionBanco}%`, unidad: "Directo" },
-        { label: "Comisión SGR", value: `${prestamosConfig.comisionSgr}%`, unidad: "TNA" },
-      ],
-    },
-  ];
+  // Con una sola moneda disponible no hay nada que elegir: queda
+  // seleccionada siempre (también si el valor guardado no corresponde a
+  // ninguna opción, ej. un borrador viejo de sessionStorage).
+  const unicaMoneda =
+    opcionesMoneda.length === 1 ? String(opcionesMoneda[0].value) : null;
+  useEffect(() => {
+    if (unicaMoneda && String(monedaValue) !== unicaMoneda) {
+      setValue("moneda", unicaMoneda, { shouldValidate: true });
+    }
+  }, [unicaMoneda, monedaValue, setValue]);
+
+  // Si al cambiar de moneda la línea elegida ya no está entre las opciones
+  // (son las de esa moneda), se limpia en vez de quedar seleccionada "a
+  // escondidas".
+  useEffect(() => {
+    if (
+      tipoProductoValue &&
+      opcionesProducto.length > 0 &&
+      !opcionesProducto.some((o) => String(o.value) === String(tipoProductoValue))
+    ) {
+      setValue("tipoProducto", "", { shouldValidate: false });
+    }
+  }, [opcionesProducto, tipoProductoValue, setValue]);
+
+  const simulacionLista = !!tipoProductoValue && montoNumerico > 0;
+  const fmt = (val) => (isDolarPagare ? formatDolar(val) : formatCurrency(val));
+  const netoTexto = simulacionLista ? fmt(netoCheque) : "—";
 
   return (
     <div className={styles.container}>
-      <div className={styles.topGrid}>
-        <SelectSocio
-          name="moneda"
-          control={control}
-          label={cargandoMonedas ? "Cargando..." : "Moneda"}
-          icon={<FiDollarSign />}
-          options={opcionesMoneda}
-          disabled={mostrarResultados || cargandoMonedas}
-          error={errors.moneda?.message}
-          esValido={isValidSelection(errors.moneda, monedaValue)}
-        />
+      <div className={styles.columnaForm}>
+        <section className={styles.seccion} aria-labelledby="alta-linea-titulo">
+          <div className={styles.seccionHead}>
+            <h2 id="alta-linea-titulo" className={styles.seccionTitulo}>
+              1. Línea
+              {opcionesProducto.length > 0 && (
+                <span className={styles.seccionMeta}>
+                  {" "}
+                  · {opcionesProducto.length}{" "}
+                  {opcionesProducto.length === 1 ? "disponible" : "disponibles"}
+                </span>
+              )}
+            </h2>
 
-        <SelectSocio
-          name="tipoProducto"
-          control={control}
-          label={cargandoProductos ? "Cargando..." : "Tipo de producto"}
-          icon={<FiBriefcase />}
-          options={opcionesProducto}
-          disabled={mostrarResultados || cargandoProductos || disableTipoProducto}
-          error={errors.tipoProducto?.message}
-          esValido={isValidSelection(errors.tipoProducto, tipoProductoValue)}
-        />
+            {opcionesMoneda.length > 0 && (
+              <Controller
+                name="moneda"
+                control={control}
+                render={({ field }) => (
+                  <div
+                    role="group"
+                    aria-label="Moneda"
+                    className={styles.monedaToggle}
+                  >
+                    {opcionesMoneda.map((op) => {
+                      const activa = String(field.value) === String(op.value);
+                      return (
+                        <button
+                          key={op.value}
+                          type="button"
+                          aria-pressed={activa}
+                          disabled={cargandoMonedas || isSubmitting}
+                          onClick={() => field.onChange(String(op.value))}
+                          className={`${styles.monedaOpcion} ${activa ? styles.monedaActiva : ""}`}
+                        >
+                          {op.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+            )}
+          </div>
 
-        {mostrarTipoCalculo && (
-          <SelectSocio
-            name="tipoCalculo"
-            control={control}
-            label={cargandoContratos ? "Cargando..." : "Tipo de cálculo"}
-            icon={<FiSliders />}
-            options={opcionesCalculo}
-            disabled={mostrarResultados || cargandoContratos || disableTipoCalculo}
-            error={errors.tipoCalculo?.message}
-            esValido={isValidSelection(errors.tipoCalculo, tipoCalculo)}
-          />
-        )}
+          {cargandoProductos ? (
+            <p className={styles.lineasVacio}>Cargando líneas...</p>
+          ) : (
+            <Controller
+              name="tipoProducto"
+              control={control}
+              render={({ field }) => (
+                <SelectorLinea
+                  opciones={opcionesProducto}
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.tipoProducto?.message}
+                  disabled={disableTipoProducto || isSubmitting}
+                  labelledBy="alta-linea-titulo"
+                />
+              )}
+            />
+          )}
+          {errors.moneda?.message && (
+            <span className={styles.errorTexto}>{errors.moneda.message}</span>
+          )}
+          {errors.tipoProducto?.message && (
+            <span className={styles.errorTexto}>
+              {errors.tipoProducto.message}
+            </span>
+          )}
+        </section>
 
-        {mostrarFecha && (
-          <SelectFecha
-            key={campoFecha}
-            name={campoFecha}
-            label={labelFecha}
-            disabled={mostrarResultados}
-            error={errorPlazo}
-          />
-        )}
+        <section className={styles.seccion} aria-labelledby="alta-cond-titulo">
+          <h2 id="alta-cond-titulo" className={styles.seccionTitulo}>
+            2. Condiciones
+          </h2>
+          <div className={styles.condiciones}>
+            {mostrarMonto && (
+              <div className={styles.condicionMonto}>
+                <InputMonto
+                  name="monto"
+                  control={control}
+                  label={labelMonto}
+                  currency={simboloActual}
+                  esValido={isMontoValid || montoValue > 0}
+                  error={errors.monto?.message}
+                  disabled={disableMonto || isSubmitting}
+                  locked={disableMonto}
+                  lockedMessage="Este es el monto disponible de tu línea de crédito: se completa automáticamente y no se puede modificar."
+                />
+              </div>
+            )}
+
+            {mostrarFecha && (
+              <SelectFecha
+                key={campoFecha}
+                name={campoFecha}
+                label={labelFecha}
+                disabled={isSubmitting}
+                error={errorPlazo}
+              />
+            )}
+
+            {mostrarTipoCalculo && (
+              <SelectSocio
+                name="tipoCalculo"
+                control={control}
+                label={cargandoContratos ? "Cargando..." : "Tipo de cálculo"}
+                icon={<FiSliders />}
+                options={opcionesCalculo}
+                disabled={cargandoContratos || disableTipoCalculo || isSubmitting}
+                error={errors.tipoCalculo?.message}
+                esValido={isValidSelection(errors.tipoCalculo, tipoCalculo)}
+              />
+            )}
+          </div>
+        </section>
       </div>
 
-      {mostrarMonto && (
-        <div className={styles.mainForm}>
-          <div className={styles.montoSection}>
-            <InputMonto
-              name="monto"
-              control={control}
-              label={labelMonto}
-              currency={simboloActual}
-              esValido={isMontoValid || montoValue > 0}
-              error={errors.monto?.message}
-              disabled={mostrarResultados || disableMonto}
-              locked={disableMonto}
-              lockedMessage="Este es el monto disponible de tu línea de crédito: se completa automáticamente y no se puede modificar."
-            />
-          </div>
+      <aside className={styles.panel} aria-labelledby="alta-sim-titulo">
+        <div className={styles.panelHead}>
+          <h2 id="alta-sim-titulo" className={styles.panelTitulo}>
+            Simulación
+          </h2>
+          <span className={styles.panelTag}>Estimada</span>
         </div>
-      )}
 
-      <div className={styles.calcBtnWrapper}>
+        {simulacionLista ? (
+          <>
+            <div className={styles.netoBox}>
+              <span className={styles.netoLabel}>Neto a recibir</span>
+              <strong className={styles.netoValor}>{netoTexto}</strong>
+              {datoExtraTotal && (
+                <span className={styles.netoExtra}>
+                  {datoExtraTotal.label}{" "}
+                  <strong>{datoExtraTotal.value}</strong>
+                </span>
+              )}
+            </div>
+
+            <dl className={styles.costos}>
+              {filasCostosCheque.map((fila) => (
+                <div key={fila.label} className={styles.costoFila}>
+                  <dt>{fila.label}</dt>
+                  <dd>{fila.value}</dd>
+                </div>
+              ))}
+              <div className={`${styles.costoFila} ${styles.costoTotal}`}>
+                <dt>Total de costos</dt>
+                <dd>{fmt(totalCostosCheque)}</dd>
+              </div>
+            </dl>
+
+            <div className={styles.resumenGrid}>
+              {datosResumenCheque.map((dato) => (
+                <div key={dato.label} className={styles.resumenItem}>
+                  <span>{dato.label}</span>
+                  <strong>{dato.value}</strong>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className={styles.panelVacio}>
+            <strong>
+              {tipoProductoValue ? "Ingresá un monto" : "Elegí una línea"}
+            </strong>
+            <span>
+              Vas a ver acá cuánto recibís, los costos y el CFT estimado.
+            </span>
+          </div>
+        )}
+
         <Button
           variant="primary"
-          size="md"
-          onClick={handleLocalCalcular}
-          className={styles.continueBtn}
+          onClick={handleEnviar}
+          isLoading={isSubmitting}
+          disabled={isSubmitting || !simulacionLista}
+          className={styles.panelCta}
         >
-          {textoAccion}
+          {isSubmitting ? "ENVIANDO..." : "Enviar solicitud"}
+        </Button>
+
+        {simulacionLista && textoAlerta && (
+          <div className={styles.panelNota}>{textoAlerta}</div>
+        )}
+        {!simulacionLista && (
+          <p className={styles.panelNota}>
+            La tasa de interés utilizada en el simulador es estimativa.
+          </p>
+        )}
+      </aside>
+
+      {/* Mobile/tablet: el panel queda debajo del formulario, así que el neto
+          y la acción se repiten en una barra fija abajo para no tener que
+          scrollear hasta el final para enviar. */}
+      <div className={styles.barraMovil}>
+        <div className={styles.barraNeto}>
+          <span>Neto a recibir</span>
+          <strong>{netoTexto}</strong>
+        </div>
+        <Button
+          variant="primary"
+          onClick={handleEnviar}
+          isLoading={isSubmitting}
+          disabled={isSubmitting || !simulacionLista}
+          className={styles.barraCta}
+        >
+          {isSubmitting ? "ENVIANDO..." : "Enviar solicitud"}
         </Button>
       </div>
-
-      <Modal
-        isOpen={mostrarResultados}
-        onClose={onCancelar}
-        title="Resultado de la Simulación"
-        maxWidth="800px"
-      >
-        {usarTicketPrestamoFijo || tipoProductoValue === "prestamo" ? (
-          <TicketPrestamoFijo
-            datosTabla={datosTablaPrestamo}
-            onContinuar={onContinuar}
-            onRecalcular={onCancelar}
-            isSubmitting={isSubmitting}
-          />
-        ) : (
-          <TicketSimulacion
-            netoRecibir={isDolarPagare ? formatDolar(netoCheque) : formatCurrency(netoCheque)}
-            filasCostos={filasCostosCheque}
-            totalCostos={isDolarPagare ? formatDolar(totalCostosCheque) : formatCurrency(totalCostosCheque)}
-            datoExtraTotal={datoExtraTotal}
-            datosResumen={datosResumenCheque}
-            textoAlerta={textoAlerta}
-            onRecalcular={onCancelar}
-            onContinuar={onContinuar}
-            textoBotonSecundario="Desisto de avanzar"
-            isSubmitting={isSubmitting}
-          />
-        )}
-      </Modal>
     </div>
   );
 }

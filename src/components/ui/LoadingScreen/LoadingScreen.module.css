@@ -1,5 +1,5 @@
 /* =========================================
-   LoadingScreen — Bind Fintech Design
+   LoadingScreen — variantes "ensamble" (primer ingreso) y "orbita"
    ========================================= */
 
 .overlay {
@@ -8,6 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   background-color: var(--carbon-black, #1a1a1a);
   z-index: 9999;
   animation: fadeIn 0.35s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
@@ -23,10 +24,11 @@
 }
 
 .content {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  padding: 0 1.5rem;
   animation: riseIn 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 }
 
@@ -41,65 +43,173 @@
   }
 }
 
-/* --- Spinner --- */
-.spinnerWrap {
+/* --- Fondos --- */
+.fondoHalo,
+.fondoGrilla {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fondoHalo {
+  background: radial-gradient(60% 45% at 50% 50%, rgba(76, 101, 230, 0.1), transparent 70%);
+}
+
+.fondoGrilla {
+  background-image:
+    linear-gradient(rgba(var(--overlay-rgb), 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--overlay-rgb), 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask: radial-gradient(circle at 50% 50%, #000, transparent 60%);
+  mask: radial-gradient(circle at 50% 50%, #000, transparent 60%);
+}
+
+/* --- Flor --- */
+.petalo {
+  fill: var(--color-amarillo-bind);
+  transform-box: view-box;
+  transform-origin: 24.188px 34px;
+}
+
+[data-theme="light"] .petalo {
+  fill: var(--white);
+}
+
+.florGrupo {
+  transform-box: view-box;
+  transform-origin: 24.188px 34px;
+}
+
+/* Ensamble: los pétalos se arman de a uno y la palabra se escribe. */
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.florEnsamble .petalo {
+  animation: armar 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  animation-delay: calc(var(--i) * 0.07s);
+}
+
+@keyframes armar {
+  0% { opacity: 0; transform: scale(0.2) rotate(-90deg); }
+  22% { opacity: 1; transform: scale(1) rotate(0deg); }
+  70% { opacity: 1; transform: scale(1) rotate(0deg); }
+  88%, 100% { opacity: 0; transform: scale(1.25) rotate(25deg); }
+}
+
+.palabra {
+  display: block;
+  fill: var(--white, #fffefe);
+  animation: escribir 3.2s ease infinite;
+}
+
+@keyframes escribir {
+  0%, 18% { opacity: 0; transform: translateX(-8px); clip-path: inset(0 100% 0 0); }
+  38%, 72% { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+  88%, 100% { opacity: 0; clip-path: inset(0 0 0 0); }
+}
+
+.puntos {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.puntos span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-amarillo-bind);
+  animation: punto 1.2s ease-in-out infinite;
+}
+
+.puntos span:nth-child(2) { animation-delay: 0.15s; }
+.puntos span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes punto {
+  0%, 100% { opacity: 0.2; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* Órbita: anillos amarillo y azul girando en sentidos opuestos alrededor
+   de la flor, que rota lenta con un brillo suave. */
+.orbita {
   position: relative;
-  width: 52px;
-  height: 52px;
-  margin-bottom: 2rem;
+  width: 9.5rem;
+  height: 9.5rem;
+  display: grid;
+  place-items: center;
 }
 
-.ring {
-  position: absolute;
-  inset: 0;
+.orbita > * {
+  grid-area: 1 / 1;
+}
+
+.orbitaPista,
+.orbitaAnillo,
+.orbitaAnilloInterno {
   border-radius: 50%;
-  border: 1.5px solid var(--border, #252525);
+  place-self: stretch;
 }
 
-.ringInner {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1.5px solid transparent;
-  border-top-color: var(--color-amarillo-bind);
-  animation: spin 0.9s linear infinite;
+.orbitaPista {
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
 }
 
-.ringInner::after {
-  content: '';
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  border: 1.5px solid transparent;
-  border-top-color: var(--color-azul-bind, #4c65e6);
-  animation: spin 1.4s linear infinite reverse;
+.orbitaAnillo {
+  background: conic-gradient(from 0deg, transparent 0 62%, rgba(245, 244, 0, 0.9) 88%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  animation: girar 1.6s linear infinite;
 }
 
-@keyframes spin {
+.orbitaAnilloInterno {
+  margin: 1rem;
+  background: conic-gradient(from 180deg, transparent 0 70%, rgba(138, 159, 255, 0.8) 92%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  animation: girar 2.6s linear infinite reverse;
+}
+
+.florOrbita {
+  filter: drop-shadow(0 0 14px rgba(245, 244, 0, 0.35));
+}
+
+.florOrbita .florGrupo {
+  animation: girar 8s linear infinite;
+}
+
+@keyframes girar {
   to { transform: rotate(360deg); }
 }
 
-/* --- Text --- */
+/* --- Texto --- */
 .titulo {
   color: var(--white, #fffefe);
   font-family: var(--font-principal, 'Metropolis', system-ui, sans-serif);
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  margin: 0 0 0.5rem;
+  margin: 1.5rem 0 0.45rem;
   text-align: center;
   animation: fadeUp 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) 0.1s both;
+}
+
+.orbita + .titulo {
+  margin-top: 1.75rem;
 }
 
 .mensaje {
   color: var(--text-muted, #666666);
   font-family: var(--font-principal, 'Metropolis', system-ui, sans-serif);
-  font-size: 0.825rem;
+  font-size: 0.85rem;
   font-weight: 500;
   text-align: center;
   max-width: 22rem;
   margin: 0;
-  line-height: 1.55;
+  line-height: 1.5;
   animation: fadeUp 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) 0.18s both;
 }
 
@@ -112,4 +222,26 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Sin animaciones si el sistema lo pide: la marca queda quieta y armada. */
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .content,
+  .titulo,
+  .mensaje,
+  .petalo,
+  .florGrupo,
+  .palabra,
+  .puntos span,
+  .orbitaAnillo,
+  .orbitaAnilloInterno {
+    animation: none !important;
+  }
+}
+
+.acciones {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
 }

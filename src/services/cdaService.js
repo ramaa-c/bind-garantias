@@ -2,18 +2,12 @@ import { cdaAdapter } from "../adapters/cdaAdapter";
 import api from "../api/axios";
 
 export const cdaService = {
-  // GET api/cda/GrupoCda?Pantalla=X&CadenaValorID=Y - Grupo de CDAs para una
+  // GET api/cda/GrupoCda?Pantalla=X&CadenaID=Y - Grupo de CDAs para una
   // combinación Pantalla+Cadena, con su propia ExpresionAgrupacion.
-  //
-  // ⚠️ El backend hoy IGNORA el filtro CadenaValorID (devuelve todos los
-  // grupos de la pantalla, sin importar la cadena pedida) — reportado al
-  // backend. Filtramos acá del lado del cliente para no terminar operando
-  // sobre el GrupoCda de otra cadena. Sacar este filtro extra el día que el
-  // backend lo resuelva de verdad.
   obtenerGrupoCda: async (pantalla, cadenaValorId) => {
     const params = { Pantalla: pantalla };
     if (cadenaValorId !== undefined && cadenaValorId !== null) {
-      params.CadenaValorID = cadenaValorId;
+      params.CadenaID = cadenaValorId;
     }
     const response = await api.get("api/cda/GrupoCda", { params });
     const data = response.data;
@@ -84,7 +78,7 @@ export const cdaService = {
   // y cerrar el grupo en la misma llamada.
   ejecutarCda: async (pantallaOrObj, entidad, cadenaValorId, valorParticularExpresion) => {
     let Pantalla = pantallaOrObj;
-    let SocioID, TerceroID, LineaID;
+    let SocioID, TerceroID, LineaID, TipoLimiteID;
     let CadenaValorID = cadenaValorId;
     let ValorParticularExpresion = valorParticularExpresion;
     if (typeof pantallaOrObj === "object" && pantallaOrObj !== null) {
@@ -92,6 +86,7 @@ export const cdaService = {
       SocioID = pantallaOrObj.socioId ?? pantallaOrObj.SocioID;
       TerceroID = pantallaOrObj.terceroId ?? pantallaOrObj.TerceroID;
       LineaID = pantallaOrObj.lineaId ?? pantallaOrObj.LineaID;
+      TipoLimiteID = pantallaOrObj.tipoLimiteId ?? pantallaOrObj.TipoLimiteID;
       CadenaValorID = pantallaOrObj.cadenaValorId || pantallaOrObj.CadenaValorID || pantallaOrObj.cadenavalorid || cadenaValorId;
       ValorParticularExpresion =
         pantallaOrObj.valorParticularExpresion || pantallaOrObj.ValorParticularExpresion || valorParticularExpresion;
@@ -99,6 +94,7 @@ export const cdaService = {
       SocioID = entidad.socioId ?? entidad.SocioID;
       TerceroID = entidad.terceroId ?? entidad.TerceroID;
       LineaID = entidad.lineaId ?? entidad.LineaID;
+      TipoLimiteID = entidad.tipoLimiteId ?? entidad.TipoLimiteID;
     }
     const params = { Pantalla };
     if (SocioID !== undefined && SocioID !== null && String(SocioID).trim() !== "") {
@@ -109,6 +105,9 @@ export const cdaService = {
     }
     if (LineaID !== undefined && LineaID !== null && String(LineaID).trim() !== "") {
       params.LineaID = Number(LineaID);
+    }
+    if (Number(TipoLimiteID) > 0) {
+      params.TipoLimiteID = Number(TipoLimiteID);
     }
     if (CadenaValorID !== undefined && CadenaValorID !== null && String(CadenaValorID).trim() !== "" && !isNaN(Number(CadenaValorID))) {
       params.CadenaValorID = Number(CadenaValorID);

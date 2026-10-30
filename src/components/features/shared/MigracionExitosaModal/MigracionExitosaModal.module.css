@@ -1,3 +1,7 @@
+.modal {
+  background: radial-gradient(circle at 50% 0%, rgba(61, 220, 132, 0.12), var(--bg-modal) 60%);
+}
+
 .content {
   display: flex;
   flex-direction: column;
@@ -88,7 +92,7 @@
 }
 
 .btnAceptar {
-  width: 100%;
+  min-width: 10rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1246,7 +1246,7 @@ export function CdaWorkbench({
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmarGuardado}
-        titulo={esEdicion ? "Confirmar Actualización de Criterio" : "Confirmar Criterio de Aceptación"}
+        titulo={esEdicion ? "Confirmar actualización del criterio" : "Confirmar criterio de aceptación"}
         mensaje={
           <>
             {esEdicion
@@ -1264,7 +1264,7 @@ export function CdaWorkbench({
         }
         variant="blue"
         confirmText={esEdicion ? "GUARDAR CAMBIOS" : "CREAR CRITERIO"}
-        cancelText="CANCELAR"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isGuardando}

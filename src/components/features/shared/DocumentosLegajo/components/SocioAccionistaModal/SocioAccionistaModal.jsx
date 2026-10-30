@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useContext } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield, FiCreditCard } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -14,20 +14,24 @@ import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { mensajeNegocio } from "../../../../../../utils/mensajesError";
-import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
+import { decidirReejecucionCdaTercero } from "../../../../../../hooks/useTerceros";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
-import { FORMATOS_ARCHIVO, formatBase64Size, procesarArchivo, validarArchivo } from "../../../../../../utils/fileUtils";
+import { FORMATOS_ARCHIVO, TAMANIO_MAXIMO_ARCHIVO_MB, formatBase64Size, procesarArchivo, validarTamanioArchivo, validarTipoArchivo } from "../../../../../../utils/fileUtils";
 import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
+import { buscarRelacionVigente } from "../../../../../../utils/relacionesTercerosUtils";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
 import { parseAddress, armarDireccion } from "../../../../../../utils/direccionParser";
 import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresaPorCuit";
+import { SugerenciasTerceros } from "../TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 
 import styles from "./SocioAccionistaModal.module.css";
+import { obtenerInicialesEmpresa } from "../../../../../../utils/empresaAvatar";
 import { useCadenaActiva } from "../../../../../../hooks/useCadenaActiva";
+import { CadenaLegajoContext } from "../../../../../../context/cadenaLegajoContextObject";
 import { useDescargaConFeedback } from "../../../../../../hooks/useDescargaConFeedback";
 
 // El botón de submit vive en el footer del Modal (ver prop `footer`), fuera
@@ -43,15 +47,50 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-// DNI Dorso reusa el mismo ícono de DNI Frente, solo espejado - así se
-// distinguen entre sí sin necesitar un segundo ícono real de "reverso de
-// documento" (no existe uno claro en Feather/react-icons/fi).
-const IconoDniDorso = (props) => (
-  <FiCreditCard {...props} style={{ transform: "scaleX(-1)" }} />
+// Dibujos chicos (32×24) para la fila de DNI: el frente con la foto de la
+// persona, el dorso con las líneas de texto y la banda del código - así se
+// distinguen de un vistazo sin leer el título. Usan currentColor para tomar
+// el color del estado (azul, amarillo al arrastrar, rojo con error).
+const DibujoDniFrente = () => (
+  <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+    <rect x="1" y="1" width="30" height="22" rx="4" />
+    <circle cx="9.5" cy="9.5" r="3" />
+    <path d="M4.5 18.5c.8-2.4 2.8-3.6 5-3.6s4.2 1.2 5 3.6" />
+    <path d="M18 8h9M18 12h7M18 16h5" />
+  </svg>
 );
 
-const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
+const DibujoDniDorso = () => (
+  <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+    <rect x="1" y="1" width="30" height="22" rx="4" />
+    <path d="M5 8h22M5 12h18M5 15h14" />
+    <rect x="5" y="18" width="22" height="3" rx="1" strokeWidth="1.2" />
+  </svg>
+);
+
+const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
   const [isDragging, setIsDragging] = useState(false);
+  // Motivo del último archivo rechazado (formato/tamaño): las validaciones ya
+  // avisan con un toast, pero el toast se va y la fila tiene que seguir
+  // diciendo por qué no se cargó.
+  const [errorArchivo, setErrorArchivo] = useState(null);
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
+
+  const aceptar = (archivo, formato = FORMATOS_ARCHIVO.documento) => {
+    if (!archivo) return;
+    if (!validarTipoArchivo(archivo, formato)) {
+      setErrorArchivo(`Formato no permitido · usá ${formato.etiqueta}`);
+      return;
+    }
+    if (!validarTamanioArchivo(archivo)) {
+      setErrorArchivo(`El archivo supera los ${TAMANIO_MAXIMO_ARCHIVO_MB} MB`);
+      return;
+    }
+    setErrorArchivo(null);
+    onChange(archivo);
+  };
+
   return (
     <div className={styles.dropzoneWrapper}>
       <input
@@ -60,11 +99,12 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         style={{ display: "none" }}
         accept={FORMATOS_ARCHIVO.documento.accept}
         onChange={(e) => {
-          const selected = e.target.files?.[0];
-          if (selected && validarArchivo(selected)) onChange(selected);
+          aceptar(e.target.files?.[0]);
           e.target.value = null;
         }}
       />
+      {/* Cámara trasera directa en mobile ("Sacar foto"): solo imágenes,
+          porque es lo único que puede devolver la cámara. */}
       <input
         type="file"
         id={`camera-input-${fileKey}`}
@@ -72,29 +112,35 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         accept="image/*"
         capture="environment"
         onChange={(e) => {
-          const selected = e.target.files?.[0];
-          if (selected && validarArchivo(selected, FORMATOS_ARCHIVO.imagen)) onChange(selected);
+          aceptar(e.target.files?.[0], FORMATOS_ARCHIVO.imagen);
           e.target.value = null;
         }}
       />
       <CargaArchivos
+        variant="fila"
         title={title}
-        subtitle={subtitle}
-        icon={icon}
+        subtitle="Foto clara, sin reflejos"
+        ilustracion={fileKey === "dorso" ? <DibujoDniDorso /> : <DibujoDniFrente />}
         // El límite de 50MB es un dato de archivos sueltos, no de una foto
         // de DNI - acá no aplica (ver CargaArchivos.jsx).
         showMaxSizeHint={false}
         formatos={FORMATOS_ARCHIVO.documento.etiqueta}
         onCamara={() => document.getElementById(`camera-input-${fileKey}`).click()}
-        compact
+        admin={isAdmin}
         isLoading={isLoading}
-        hasError={hasError}
+        hasError={hasError || Boolean(errorArchivo)}
+        mensajeError={errorArchivo}
         file={
           file
             ? {
                 name: file.name,
-                size: typeof file.size === "number" ? `${(file.size / 1024).toFixed(1)} KB` : file.size || "Disponible",
+                size: file.size || "Disponible",
                 vialufe: file.vialufe || "0",
+                // File recién elegido (o en memoria): da la miniatura real.
+                // Los del backend llegan sin contenido acá y quedan con la
+                // tarjeta genérica.
+                fuente: file instanceof Blob ? file : null,
+                contenido: file.contenido,
               }
             : null
         }
@@ -112,10 +158,7 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         onDrop={(e) => {
           e.preventDefault();
           setIsDragging(false);
-          const droppedFile = e.dataTransfer.files?.[0];
-          if (droppedFile && validarArchivo(droppedFile)) {
-            onChange(droppedFile);
-          }
+          aceptar(e.dataTransfer.files?.[0]);
         }}
       />
     </div>
@@ -125,9 +168,12 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
 const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
-export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
+const DEFAULT_SUGERENCIAS = [];
+
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS, sugerencias = DEFAULT_SUGERENCIAS }) {
   const { cadenaSlug } = useCadenaActiva();
-  const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const cadenaLegajo = useContext(CadenaLegajoContext);
+  const cadenaValorIdParam = Number(cadenaLegajo ?? cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
@@ -164,6 +210,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   // hecha a medias (la lista ya la ocultaba por tener 0% de participación,
   // pero el vínculo quedaba igual en la base).
   const stubRelacionRef = useRef(null);
+  const cdaNoAprobadoRef = useRef(false);
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -305,6 +352,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setShowConfirm(false);
       stubIdsRef.current = { terceroId: null, relacionId: null };
       stubRelacionRef.current = null;
+      cdaNoAprobadoRef.current = false;
       if (socio) {
         setAfipValidado(true);
       } else {
@@ -424,8 +472,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setFilesChanged(false);
   }
 
-  const handleAfipLookup = async () => {
-    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+  // `cuitElegido`: CUIT de una persona elegida en SugerenciasTerceros. Desde
+  // el botón "Validar" llega el evento del click, por eso el chequeo de tipo.
+  const handleAfipLookup = async (cuitElegido) => {
+    const cuitLimpio = String(
+      (typeof cuitElegido === "string" ? cuitElegido : cuitValue) || "",
+    ).replace(/\D/g, "");
     if (!cuitLimpio || cuitLimpio.length !== 11) {
       setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
       return;
@@ -498,9 +550,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           terceroResuelto.id;
 
         const relacionesSocio = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-        const relacionesArr = Array.isArray(relacionesSocio) ? relacionesSocio : [];
-        const relacionExistente = relacionesArr.find(
-          (r) => Number(r.terceroid ?? r.TerceroID) === Number(stubTerceroId),
+        const relacionExistente = buscarRelacionVigente(
+          relacionesSocio,
+          stubTerceroId,
+          RELACION_ACCIONISTA_ID,
         );
 
         let stubRelacionId = relacionExistente
@@ -535,8 +588,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             ],
           });
           const relacionesActualizadas = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-          const nuevaRelacion = (Array.isArray(relacionesActualizadas) ? relacionesActualizadas : []).find(
-            (r) => Number(r.terceroid ?? r.TerceroID) === Number(stubTerceroId),
+          const nuevaRelacion = buscarRelacionVigente(
+            relacionesActualizadas,
+            stubTerceroId,
+            RELACION_ACCIONISTA_ID,
           );
           stubRelacionId = nuevaRelacion?.sociotercerorelacionid ?? nuevaRelacion?.SocioTerceroRelacionID ?? null;
           stubRelacionRef.current = nuevaRelacion || null;
@@ -783,6 +838,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", terceroIdValidacion] });
     queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
 
+    cdaNoAprobadoRef.current = !result.success && !result.errors.some((e) => e.isSystemError);
+
     if (!result.success) {
       // hasError:true acá muestra el botón "Continuar" del ProcesamientoModal
       // y NO se auto-cierra (a diferencia del caso exitoso, más abajo): sin
@@ -812,10 +869,43 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setValidando(false);
   };
 
+  const conservarAltaEnRevision = async (relacion) => {
+    const participacionCargada = Number(getValues("participacion"));
+    const participacionValida =
+      participacionCargada > 0 && participacionCargada <= maximoPermitido;
+    const participacion = participacionValida ? participacionCargada : maximoPermitido;
+    if (!(participacion > 0)) return false;
+
+    try {
+      await tercerosService.actualizarRelacionDeSocio({
+        ...relacion,
+        socioid: socioIdActivo,
+        porcacciones: participacion,
+        momento: new Date().toISOString().split(".")[0],
+      });
+    } catch (relErr) {
+      console.warn("[SocioAccionistaModal] No se pudo conservar el alta en revisión:", relErr);
+      return false;
+    }
+
+    toast.info(`El accionista quedó cargado con ${participacion}% y en revisión.`, {
+      description: participacionValida
+        ? "Podés completar o corregir sus datos editándolo desde la lista."
+        : "Se le asignó la participación disponible: revisala y completá sus datos editándolo desde la lista.",
+    });
+    if (onSuccess) onSuccess();
+    return true;
+  };
+
   const descartarAltaSinConfirmar = async () => {
     const relacion = stubRelacionRef.current;
     if (!relacion) return;
     stubRelacionRef.current = null;
+
+    if (cdaNoAprobadoRef.current) {
+      cdaNoAprobadoRef.current = false;
+      if (await conservarAltaEnRevision(relacion)) return;
+    }
 
     try {
       await tercerosService.darDeBajaRelacionDeSocio(relacion);
@@ -826,6 +916,24 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   };
 
   const handleCerrar = async () => {
+    const debeIndicarParticipacion =
+      cdaNoAprobadoRef.current &&
+      !!stubRelacionRef.current &&
+      maximoPermitido > 0 &&
+      !(Number(getValues("participacion")) > 0);
+
+    if (debeIndicarParticipacion) {
+      setError("participacion", {
+        type: "manual",
+        message: "Indicá el % de participación: el accionista queda cargado y en revisión aunque cierres.",
+      });
+      toast.warning("Falta el % de participación", {
+        description: "Este accionista queda cargado aunque cierres. Indicá su participación para continuar.",
+      });
+      document.getElementById("participacionSocioInput")?.focus();
+      return;
+    }
+
     await descartarAltaSinConfirmar();
     onClose();
   };
@@ -917,15 +1025,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   // guardado ya quedó hecho, y la persona queda marcada en rojo en la
   // lista para que un admin la reintente después.
   const validarCdaAccionistaExistente = async (terceroId) => {
-    let yaAprobado = false;
+    let reejecutar = true;
     try {
-      const historial = await tercerosService.obtenerExecuteCda(terceroId);
-      yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
+      reejecutar = await decidirReejecucionCdaTercero(queryClient, terceroId, cadenaValorIdParam);
     } catch (histErr) {
       console.warn("[SocioAccionistaModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
     }
 
-    if (yaAprobado) return;
+    if (!reejecutar) return;
 
     setProcesoModal({
       isOpen: true,
@@ -1093,7 +1200,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       if (dniFrenteFile instanceof File || dniDorsoFile instanceof File) {
         toast.loading("Subiendo documentos de identidad del accionista...", { id: mainToastId });
         try {
-          const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+          const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo, true);
           if (dniFrenteFile instanceof File) {
             const existenteFrente = archivosExistentes?.find((a) => {
               if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
@@ -1129,6 +1236,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           }
         } catch (uploadErr) {
           console.error("[MODAL - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
+          queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] });
+          uploadErr.mensajeParaUsuario = `Los datos del accionista se guardaron, pero no se pudo subir el DNI. ${
+            uploadErr.esValidacionArchivo ? uploadErr.message : mensajeNegocio(uploadErr, "Reintentá en unos minutos.")
+          }`;
           throw uploadErr;
         }
       }
@@ -1162,7 +1273,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       } else {
         // Motivo de negocio de la API (ej. la suma de participaciones supera
         // el 100%, relación duplicada, CUIT inválido) o el texto genérico.
-        toast.error(mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."), { id: mainToastId });
+        toast.error(
+          error?.mensajeParaUsuario || mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."),
+          { id: mainToastId },
+        );
       }
     } finally {
       setGuardando(false);
@@ -1176,27 +1290,37 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         isOpen={isOpen}
         onClose={handleCerrar}
         title={socio ? "Editar Accionista" : "Agregar Accionista"}
-        maxWidth="800px"
+        // El paso de búsqueda es una sola columna: con los 800px del
+        // formulario quedaba mucho aire a los lados.
+        maxWidth={!afipValidado && !socio ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={
           (afipValidado || socio) && (
-            <Button type="submit" form={ACCIONISTA_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
-              {socio ? "Guardar Cambios" : "Agregar Accionista"}
-            </Button>
+            <>
+              <Button type="button" variant={isAdmin ? "outlineBlue" : "outline"} onClick={handleCerrar} disabled={validando}>
+                Cancelar
+              </Button>
+              <Button type="submit" form={ACCIONISTA_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
+                {socio ? "Guardar cambios" : "Agregar accionista"}
+              </Button>
+            </>
           )
         }
       >
         <form id={ACCIONISTA_FORM_ID} onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !socio ? (
             <div className={styles.cuitSearchStep}>
-              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
-                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
-                  <FiShield />
-                </div>
-                <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Validación segura con ARCA</p>
-                  <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del accionista</p>
+              {/* Mismo patrón que el paso 1 del alta (Paso1Cuit): el CUIT es
+                  lo protagonista y "Validar" vive dentro del input. Admin
+                  conserva el botón aparte en azul. */}
+              <div className={styles.cuitSearchHead}>
+                <span className={`${styles.cuitSearchIcon} ${isAdmin ? styles.cuitSearchIconAdmin : ""}`} aria-hidden="true">
+                  <FiUser />
+                </span>
+                <div className={styles.cuitSearchHeadText}>
+                  <p className={styles.cuitSearchTitle}>¿Quién va a ser accionista?</p>
+                  <p className={styles.cuitSearchSub}>Ingresá su CUIT y completamos sus datos.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1207,27 +1331,64 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText="VALIDAR CUIT"
+                  buttonText={isAdmin ? "VALIDAR CUIT" : "Validar"}
                   isLoading={validando}
+                  inline={!isAdmin}
                 />
+                <p className={styles.cuitSearchAyuda}>Son 11 números, sin guiones.</p>
               </div>
+              <SugerenciasTerceros
+                sugerencias={sugerencias}
+                isAdmin={isAdmin}
+                disabled={validando}
+                onUsar={(persona) => {
+                  setValue("cuit", persona.cuit, { shouldDirty: true });
+                  handleAfipLookup(persona.cuit);
+                }}
+              />
             </div>
           ) : (
             <>
-              <div className={styles.summaryCard}>
-                <div className={styles.summaryHeader}>
-                  <span className={styles.summaryStatus}>
-                    {enriqueciendoAuto ? (
-                      <>
-                        <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
-                        Enriqueciendo datos...
-                      </>
-                    ) : (
-                      <>
-                        <FiCheckCircle size={12} /> Validado ARCA
-                      </>
-                    )}
+              <h4 className={styles.sectionTitle}>
+                <span className={`${styles.sectionNum} ${styles.sectionNumOk}`} aria-hidden="true"><FiCheck /></span>
+                Accionista
+              </h4>
+              <div className={styles.identidadRow}>
+                <div className={styles.identidadCard}>
+                  <span className={styles.identidadAvatar} aria-hidden="true">
+                    {obtenerInicialesEmpresa(nombreValue || "") || <FiUser />}
                   </span>
+                  <div className={styles.identidadTexto}>
+                    <div className={styles.identidadNombreFila}>
+                      {/* El nombre viene de la fuente al validar el CUIT: el
+                          cliente no lo edita a mano, salvo que no haya
+                          llegado ninguno. Admin conserva la edición para
+                          corregir casos puntuales. */}
+                      {isAdmin || !String(nombreValue || "").trim() ? (
+                        <input
+                          type="text"
+                          value={nombreValue || ""}
+                          onChange={(e) => setValue("nombre", e.target.value, { shouldDirty: true, shouldValidate: true })}
+                          className={styles.editableSummaryName}
+                          placeholder="Nombre o Razón Social"
+                          aria-label="Nombre o razón social"
+                        />
+                      ) : (
+                        <strong className={styles.identidadNombre}>{nombreValue || "Sin nombre"}</strong>
+                      )}
+                      <span className={styles.summaryStatus}>
+                        {enriqueciendoAuto ? (
+                          <>
+                            <Spinner size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />
+                            Completando datos...
+                          </>
+                        ) : (
+                          "Validado"
+                        )}
+                      </span>
+                    </div>
+                    <span className={styles.summaryCuit}>CUIT {cuitValue}</span>
+                  </div>
                   {socio ? (
                     <button
                       type="button"
@@ -1235,7 +1396,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       onClick={handleAfipLookup}
                       disabled={validando || enriqueciendoAuto}
                     >
-                      <FiEdit2 size={11} /> {validando ? "Buscando..." : "Consultar"}
+                      <FiRefreshCw size={12} aria-hidden="true" /> {validando ? "Actualizando..." : "Actualizar datos"}
                     </button>
                   ) : (
                     <button
@@ -1243,34 +1404,19 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       className={styles.editLink}
                       onClick={() => setAfipValidado(false)}
                     >
-                      <FiEdit2 size={11} /> Cambiar CUIT
+                      <FiEdit2 size={12} aria-hidden="true" /> Cambiar CUIT
                     </button>
                   )}
                 </div>
 
-                <div className={styles.summaryBody}>
-                  <div className={styles.summaryInfo}>
-                    <input
-                      type="text"
-                      value={nombreValue || ""}
-                      onChange={(e) => setValue("nombre", e.target.value, { shouldDirty: true, shouldValidate: true })}
-                      className={styles.editableSummaryName}
-                      placeholder="Nombre o Razón Social"
-                    />
-                    <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                  </div>
-                </div>
-
-                <div className={styles.summaryFooter}>
-                  <div className={styles.pctInfo}>
-                    <span className={styles.pctLabel}>Participación accionaria</span>
+                <div className={styles.pctCampo}>
+                  <label className={styles.pctLabelFila} htmlFor="participacionSocioInput">
+                    <span className={styles.pctLabel}>Participación</span>
                     <span className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""}`}>
-                      {maximoPermitido > 0 ? `Máximo permitido: ${maximoPermitido}%` : "Cupo completo"}
+                      {maximoPermitido > 0 ? `máx. ${maximoPermitido}%` : "Cupo completo"}
                     </span>
-                  </div>
-
-                  <div className={styles.pctInputContainer}>
-                    <div className={`${styles.customInputWrapper} ${errors.participacion ? styles.wrapperError : ""}`}>
+                  </label>
+                  <div className={`${styles.customInputWrapper} ${isAdmin ? styles.customInputWrapperAdmin : ""} ${errors.participacion ? styles.wrapperError : ""}`}>
                       <Controller
                         name="participacion"
                         control={control}
@@ -1299,18 +1445,18 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                         )}
                       />
                       <span className={styles.percentageSymbol}>%</span>
-                    </div>
-                    {errors.participacion && (
-                      <span className={styles.errorText}>
-                        <FiAlertCircle size={11} /> {errors.participacion.message}
-                      </span>
-                    )}
                   </div>
+                  {errors.participacion && (
+                    <span className={styles.errorText}>
+                      <FiAlertCircle size={11} /> {errors.participacion.message}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <h4 className={styles.sectionTitle}>
-                Datos Personales y Contacto
+                <span className={styles.sectionNum} aria-hidden="true">2</span>
+                Contacto
               </h4>
 
               <div className={styles.modalRow2}>
@@ -1355,6 +1501,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 />
               </div>
 
+              <h4 className={styles.sectionTitle}>
+                <span className={styles.sectionNum} aria-hidden="true">3</span>
+                Domicilio
+              </h4>
               <div className={styles.modalRow}>
                 <Controller
                   name="calle"
@@ -1467,14 +1617,13 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               </div>
 
               <h4 className={styles.sectionTitle}>
-                Identidad (DNI)
+                <span className={styles.sectionNum} aria-hidden="true">4</span>
+                DNI
               </h4>
               <div className={styles.dropzoneGrid}>
                 <DropzoneField
                   file={dniFrenteFile}
                   title="DNI Frente"
-                  subtitle="Imagen clara y legible (Obligatorio)"
-                  icon={FiCreditCard}
                   fileKey="frente"
                   isLoading={cargandoArchivos && !dniFrenteFile}
                   hasError={errorDniFrente}
@@ -1491,8 +1640,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 <DropzoneField
                   file={dniDorsoFile}
                   title="DNI Dorso"
-                  subtitle="Imagen clara y legible (Obligatorio)"
-                  icon={IconoDniDorso}
                   fileKey="dorso"
                   isLoading={cargandoArchivos && !dniDorsoFile}
                   hasError={errorDniDorso}
@@ -1517,6 +1664,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
         titulo={socio ? "Actualizar Accionista" : "Agregar Accionista"}
+        variant={isAdmin ? "blue" : "default"}
         mensaje={socio ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este accionista?"}
         isLoading={guardando}
       />

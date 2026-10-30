@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiRotateCcw } from "react-icons/fi";
+import { FiChevronLeft, FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaOperacionSchema } from "../../../../schemas/AltaOperacionSchema";
@@ -10,7 +10,7 @@ import {
   useFormPersist,
   getPersistedFormData,
 } from "../../../../hooks/useFormPersist";
-import { BarraProgreso, BotonVolver, Button } from "../../../../components/ui";
+import { BotonVolver, Button } from "../../../../components/ui";
 import {
   Paso3Simulador,
   Paso7Exito,
@@ -26,22 +26,27 @@ import { cadenaValorService } from "../../../../services/cadenaValorService";
 import { posicionConsolidadaService } from "../../../../services/posicionConsolidadaService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/useChannel";
+import { familiaDeLinea } from "../../../../utils/familiaLinea";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto, useMonedas } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
-import { useObtenerVariableParametrizacion } from "../../../../hooks/useVariablesParametrizacion";
+import {
+  consultaVariablesParametrizacion,
+  buscarValorVariable,
+} from "../../../../hooks/useVariablesParametrizacion";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { PANTALLA_LINEAS } from "../../../../utils/pantallasCda";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 import {
-  TERCERO_VIA_PLATAFORMA_PROPIA,
+  esProcesoDeOtraPlataforma,
   ESTADO_PENDIENTE,
   ESTADO_RECHAZADA,
   ESTADO_CANCELADA,
   MOTIVOS_RECHAZO_AUTOMATICO,
   construirMotivoRechazoAutomatico,
+  quitarPrefijoRechazoAutomatico,
 } from "../../../../utils/estadoLimiteSocio";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import { simboloMoneda } from "../../../../utils/monedaUtils";
@@ -107,33 +112,15 @@ export const AltaOperacion = () => {
   // submit corre.
   const { data: tiposLimiteGlobal } = useTiposProducto();
   const { data: monedasCatalogo } = useMonedas();
-  const familiaDeLinea = (tipoLimiteId) => {
-    const item = tiposLimiteGlobal?.raw?.find(
-      (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
-    );
-    const desc = (item?.descripcion || "").toUpperCase();
-    if (desc.includes("CHEQUE")) return "cheque";
-    if (desc.includes("PAGARE")) return "pagare";
-    return "prestamo";
-  };
 
   // Posición consolidada del socio (todas sus líneas, todas las cadenas):
   // fuente del "utilizado" para las reglas de monto por línea (ver más abajo,
   // efecto de auto-completado y enviarSolicitud).
   const { data: limitesSocioData } = useObtenerLimiteSocioPorCuit(cuitActivo);
 
-  // Catálogo global de variables de parametrización de la plataforma (aún
-  // solo tiene esta variable). No bloquea la carga de la solicitud: si el
-  // monto pedido no llega al mínimo, se envía igual pero queda rechazada
-  // automáticamente (ver enviarSolicitud).
-  const { valor: porcentajeMinimoSolicitud } = useObtenerVariableParametrizacion(
-    "PorcentajeMinimoSolicitud",
-  );
-
   const { ejecutarValidaciones } = useCdaEngine();
 
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
-  const [mostrarResultados, setMostrarResultados] = useState(false);
   // pasoActual queda en sessionStorage (ver useFormPersist), así que un
   // refresh en el paso de Éxito lo restaura en 2 - pero resumenSolicitud es
   // un useState aparte, nunca persistido, y volvía a null en ese refresh:
@@ -211,9 +198,7 @@ export const AltaOperacion = () => {
         // fila de SolicitudEnProceso apenas deja de estar en Inicial o
         // EnProceso (confirmado el 2026-08-18) — que la fila exista ya
         // implica que sigue activa, sin importar el valor del campo.
-        const tieneSolicitudEnProceso = solicitudesArray.some(
-          (s) => Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA,
-        );
+        const tieneSolicitudEnProceso = solicitudesArray.some(esProcesoDeOtraPlataforma);
 
         if (tieneSolicitudEnProceso) {
           if (isMounted) {
@@ -335,7 +320,7 @@ export const AltaOperacion = () => {
     }),
   });
 
-  const { handleSubmit, trigger, control, setValue, getValues, watch } =
+  const { handleSubmit, control, setValue, getValues, watch } =
     metodosFormulario;
 
   const { pasoActual, setPasoActual, clearStorage } = useFormPersist({
@@ -360,12 +345,9 @@ export const AltaOperacion = () => {
 
   useEffect(() => {
     const familia = lineaSeleccionada
-      ? familiaDeLinea(lineaSeleccionada.tipolimiteid)
+      ? familiaDeLinea(tiposLimiteGlobal, lineaSeleccionada.tipolimiteid)
       : "";
     setValue("familiaProducto", familia);
-    // familiaDeLinea se recalcula cada render a partir de tiposLimiteGlobal,
-    // que sí está en las deps - no hace falta agregar la función en sí.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineaSeleccionada, tiposLimiteGlobal, setValue]);
 
   // Utilizado del socio para esta línea puntual (mismo TipoLimiteID, misma
@@ -415,7 +397,6 @@ export const AltaOperacion = () => {
       plazo: "",
     });
     setPasoActual(1);
-    setMostrarResultados(false);
     setResumenSolicitud(null);
   };
 
@@ -467,14 +448,12 @@ export const AltaOperacion = () => {
     setEnviandoSolicitud(true);
     try {
       const cleanData = data;
-      const cuitLimpio = cuitActivo
-        ? String(cuitActivo).replace(/\D/g, "")
-        : "33711316839";
+      const cuitLimpio = String(cuitActivo || "").replace(/\D/g, "");
 
       let finalSocioId = socioIdActivo;
 
-      // Si no se encuentra el ID real del socio, bloqueamos el envío de la solicitud
-      if (!finalSocioId) {
+      // Sin socio o sin CUIT de la empresa activa no se puede armar la solicitud
+      if (!finalSocioId || cuitLimpio.length !== 11) {
         toast.error("Error al enviar", {
           description: "No se pudo determinar el ID real del socio. La solicitud no se puede procesar.",
         });
@@ -536,6 +515,21 @@ export const AltaOperacion = () => {
       // PorcentajeMinimoSolicitud de la línea. No impide cargar la
       // solicitud: si no lo alcanza, se guarda directamente rechazada y el
       // motivo queda visible en DetalleSolicitudModal (no se avisa acá).
+      let porcentajeMinimoSolicitud;
+      try {
+        const variables = await queryClient.ensureQueryData(
+          consultaVariablesParametrizacion,
+        );
+        porcentajeMinimoSolicitud = buscarValorVariable(
+          variables,
+          "PorcentajeMinimoSolicitud",
+        );
+      } catch (errorVariables) {
+        console.warn(
+          "[ALTA OPERACION] No se pudo leer PorcentajeMinimoSolicitud:",
+          errorVariables,
+        );
+      }
       const porcentajeSolicitado =
         montoLineaReal > 0 ? (montoLimpio / montoLineaReal) * 100 : 100;
       const noAlcanzaMinimo =
@@ -545,17 +539,24 @@ export const AltaOperacion = () => {
       // Regla: CDA de PANTALLA_LINEAS sobre la línea elegida (vinculado por
       // cadena entera en LineasCda.jsx, ver CdaPanel.jsx). Mismo criterio
       // que PorcentajeMinimoSolicitud: no impide cargar la solicitud, si
-      // rechaza se envía igual pero queda rechazada automáticamente. Se
-      // reusa el motor ya probado en el onboarding (useCdaEngine), pasando
-      // LineaID en vez de SocioID/TerceroID - es el mismo parámetro real
-      // que ya acepta cda/execute. Un error de sistema o "pendiente"
-      // (integración caída) NO rechaza, se deja pasar igual que en el resto
-      // de los CDAs de la app - solo un rechazo de negocio real bloquea.
+      // rechaza se envía igual pero queda rechazada automáticamente.
+      // La línea del socio todavía no existe, así que no hay LineaID: se
+      // evalúa por SocioID + TipoLimiteID (el TipoLimiteID no es una línea
+      // del socio y como LineaID la API lo rechazaba con 404, con lo que el
+      // CDA nunca se aplicaba). Una integración caída o "pendiente" NO
+      // rechaza; un 403/404 corta el envío, porque no se evaluó nada.
       const resultCdaLinea = await ejecutarValidaciones(
         PANTALLA_LINEAS,
-        { lineaId: tipoLimiteIdReal },
+        { socioId: finalSocioId, tipoLimiteId: tipoLimiteIdReal },
         Number(cadenaSlug),
       );
+      if (resultCdaLinea.errors.some((e) => e.isAccesoRechazado)) {
+        toast.error("No se pudo enviar la solicitud", {
+          description: resultCdaLinea.errors[0].message,
+        });
+        setEnviandoSolicitud(false);
+        return;
+      }
       const rechazosCdaLinea = resultCdaLinea.success
         ? []
         : resultCdaLinea.errors.filter(
@@ -740,6 +741,32 @@ export const AltaOperacion = () => {
       const tipoLimiteSocioIdCreado =
         resLimite?.tipolimitesocioid || resLimite?.id || 0;
 
+      const rechazadaPorApi =
+        !debeRechazarseAutomaticamente &&
+        Number(resLimite?.tipolimiteestadoid) === ESTADO_RECHAZADA;
+
+      if (rechazadaPorApi) {
+        try {
+          await solicitudesService.sincronizarEstadoSolicitudEnProcesoPorClave(
+            cuitLimpio,
+            tipoLimiteIdReal,
+            Number(cadenaSlug),
+            ESTADO_RECHAZADA,
+          );
+        } catch (putError) {
+          console.error(
+            "[ALTA OPERACION] No se pudo informar en SolicitudEnProceso el rechazo hecho por la API:",
+            putError,
+          );
+        }
+      }
+
+      const quedoRechazada = debeRechazarseAutomaticamente || rechazadaPorApi;
+      const motivoRechazoFinal = rechazadaPorApi
+        ? quitarPrefijoRechazoAutomatico(resLimite?.observaciones) ||
+          MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
+        : motivoRechazoBase;
+
       // AltaOperacion crea la solicitud vía servicios directos, no
       // mutaciones de react-query - sin esto, Solicitudes.jsx (que sí
       // cachea con staleTime de 5min) sigue mostrando la lista vieja al
@@ -755,8 +782,8 @@ export const AltaOperacion = () => {
         monto: montoLimpio,
         monedaId: Number(cleanData.moneda) || 5000,
         plazo: cleanData.plazo,
-        rechazada: debeRechazarseAutomaticamente,
-        motivoRechazo: debeRechazarseAutomaticamente ? motivoRechazoBase : "",
+        rechazada: quedoRechazada,
+        motivoRechazo: quedoRechazada ? motivoRechazoFinal : "",
       });
 
       setPasoActual(2);
@@ -838,6 +865,7 @@ export const AltaOperacion = () => {
         .map((l) => ({
           value: String(l.tipolimitecadenavalorid),
           label: l.descripcion || `Línea #${l.tipolimitecadenavalorid}`,
+          montoMaximo: Number(l.montolinea) || 0,
         }));
 
       const mostrarTipoCalculo = familiaProducto === "cheque";
@@ -850,23 +878,14 @@ export const AltaOperacion = () => {
 
       return (
         <Paso3Simulador
-          mostrarResultados={mostrarResultados}
-          onCalcular={async () => {
-            const campos = ["monto", "tipoProducto", "plazo"];
-            if (mostrarTipoCalculo) campos.push("tipoCalculo");
-
-            const esValido = await trigger(campos);
-
-            if (esValido) {
-              setMostrarResultados(true);
-            }
-          }}
+          // La simulación se ve en vivo en el panel lateral de
+          // Paso3Simulador (ya no hay modal de resultados): "Enviar
+          // solicitud" valida montos ahí y, si pasan, llega acá.
           onContinuar={async () => {
             handleSubmit(onSubmitFinal, (errors) => {
               console.error("Errores de validación del schema:", errors);
             })();
           }}
-          onCancelar={() => setMostrarResultados(false)}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
           opcionesCalculo={opcionesCalculo}
@@ -902,23 +921,18 @@ export const AltaOperacion = () => {
     switch (pasoActual) {
       case 1:
         return {
-          badge: "Alta de Línea",
-          t: "Alta de Operación",
-          s: "Seleccioná el tipo de operación y las condiciones.",
+          badge: "Alta de línea",
+          t: "¿Qué querés financiar?",
+          s: "Elegí la línea, definí las condiciones y mirá la simulación al instante.",
         };
       default:
         return { badge: "Alta de Línea", t: "Alta de Operación", s: "" };
     }
   };
 
-  // Un solo paso visible (Operación) - Documentos/Bolsa ya no existen acá
-  // (ver renderPasoDinamico) y Éxito nunca se muestra en el stepper, igual
-  // que antes (showHeaderYStepper lo oculta).
-  const hitosVisuales = ["Operación"];
-  const hitoActualMapped = 1;
-  const maxHitoAlcanzadoMapped = 1;
-  const handleStepClickMapped = () => {};
-
+  // Con un solo paso visible (Operación) el stepper no aportaba nada: en su
+  // lugar queda una fila con las dos acciones que tenía (volver a
+  // Solicitudes y reiniciar). Éxito no la muestra, igual que antes.
   const showHeaderYStepper = pasoActual === 1;
 
   if (isLoadingEmpresa || validandoAcceso) {
@@ -970,19 +984,24 @@ export const AltaOperacion = () => {
               className={`${styles.columnaFormulario} ${!showHeaderYStepper ? styles.columnaCentrada : ""}`}
             >
               {showHeaderYStepper && (
-                <BarraProgreso
-                  hitos={hitosVisuales}
-                  hitoActual={hitoActualMapped}
-                  maxHitoAlcanzado={maxHitoAlcanzadoMapped}
-                  onStepClick={handleStepClickMapped}
-                  onVolver={null}
-                  onVolverInicio={
-                    pasoActual === 1
-                      ? () => navigate(`${basePath}/solicitudes`)
-                      : null
-                  }
-                  onReiniciar={handleClickReiniciar}
-                />
+                <div className={styles.accionesTop}>
+                  <button
+                    type="button"
+                    className={styles.accionTop}
+                    onClick={() => navigate(`${basePath}/solicitudes`)}
+                  >
+                    <FiChevronLeft aria-hidden="true" />
+                    Mis solicitudes
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.accionTop}
+                    onClick={handleClickReiniciar}
+                  >
+                    <FiRotateCcw aria-hidden="true" />
+                    Reiniciar
+                  </button>
+                </div>
               )}
 
               {showHeaderYStepper && (
@@ -995,7 +1014,6 @@ export const AltaOperacion = () => {
                   <h1 className={styles.tituloBienvenida}>
                     {obtenerTextosCabecera().t}
                   </h1>
-                  <div className={styles.titleAccent}></div>
                   {obtenerTextosCabecera().s && (
                     <p className={styles.subtituloBienvenida}>
                       {obtenerTextosCabecera().s}

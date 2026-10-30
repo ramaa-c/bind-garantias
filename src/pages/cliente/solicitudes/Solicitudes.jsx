@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
-import { FiPlus, FiSearch, FiClock, FiX } from "react-icons/fi";
+import { FiPlus, FiSearch, FiClock, FiX, FiXCircle, FiSliders, FiChevronDown } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { toast } from "sonner";
 import {
+  Alert,
   BotonVolver,
   Button,
   SelectSimple,
@@ -18,6 +19,7 @@ import {
   DetalleSolicitudModal,
   LegajoUniversalBar,
 } from "../../../components/features";
+import { FilaSolicitudHistorial } from "../../../components/features/solicitudes/FilaSolicitudHistorial/FilaSolicitudHistorial";
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -29,11 +31,20 @@ import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/useChannel";
 import { mensajeNegocio } from "../../../utils/mensajesError";
+import { useTiposProducto } from "../../../hooks/useCatalogos";
+import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
+import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
+import { importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
+  ESTADO_RECHAZADA,
   estadoTextoDesde,
+  esEstadoEnCurso,
   MOTIVO_CANCELACION_SOCIO,
+  MENSAJE_SOLICITUD_OTRA_PLATAFORMA,
+  procesosVigentes,
+  procesosHuerfanosPorRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
 
 import styles from "./Solicitudes.module.css";
@@ -42,7 +53,6 @@ import styles from "./Solicitudes.module.css";
 
 const opcionesEstado = [
   { value: "todos", label: "Todos los estados" },
-  { value: "pendiente", label: "Pendiente" },
   { value: "aprobada", label: "Aprobada" },
   { value: "rechazada", label: "Rechazada" },
   { value: "cancelada", label: "Cancelada" },
@@ -140,6 +150,14 @@ export default function Solicitudes() {
 
   const handleLimpiarFiltros = () => reset(FILTROS_POR_DEFECTO);
 
+  const [filtrosMovilAbiertos, setFiltrosMovilAbiertos] = useState(false);
+  const cantidadFiltrosActivos = [
+    filtros.estado && filtros.estado !== "todos",
+    filtros.orden && filtros.orden !== "desc",
+    !!filtros.fechaDesde,
+    !!filtros.fechaHasta,
+  ].filter(Boolean).length;
+
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
@@ -150,6 +168,7 @@ export default function Solicitudes() {
   const {
     habilitada: nuevaOperacionHabilitada,
     motivo: motivoNuevaOperacionBloqueada,
+    cuitVerificado: cuitNuevaOperacionVerificado,
   } = useVerificarHabilitacionNuevaOperacion();
 
   const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
@@ -159,8 +178,39 @@ export default function Solicitudes() {
     useObtenerLimitesSocio(socioIdFinal);
   const { data: solicitudesEnProceso, isLoading: cargandoProceso } =
     useObtenerSolicitudesEnProceso(cuitActivo);
+  const { data: tiposLimiteGlobal, isLoading: cargandoTiposLimite } = useTiposProducto();
 
-  const isLoadingData = cargandoSolicitudes || cargandoProceso;
+  const isLoadingData = cargandoSolicitudes || cargandoProceso || cargandoTiposLimite;
+
+  const { solicitudEnOtraPlataforma, cargando: cargandoAccesoDashboard } = useAccesoDashboardCliente();
+  const [modalOtraPlataformaOpen, setModalOtraPlataformaOpen] = useState(false);
+  const [avisoOtraPlataformaCerrado, setAvisoOtraPlataformaCerrado] = useState(false);
+  const claveAvisoOtraPlataforma = `bind_aviso_otra_plataforma_${cuitActivo || ""}`;
+
+  const avisoOtraPlataformaYaVisto = (() => {
+    try {
+      return sessionStorage.getItem(claveAvisoOtraPlataforma) === "1";
+    } catch {
+      return false;
+    }
+  })();
+
+  const mostrarModalOtraPlataforma =
+    modalOtraPlataformaOpen ||
+    (solicitudEnOtraPlataforma &&
+      !!cuitActivo &&
+      !avisoOtraPlataformaCerrado &&
+      !avisoOtraPlataformaYaVisto);
+
+  const cerrarModalOtraPlataforma = () => {
+    try {
+      sessionStorage.setItem(claveAvisoOtraPlataforma, "1");
+    } catch {
+      // no-op
+    }
+    setAvisoOtraPlataformaCerrado(true);
+    setModalOtraPlataformaOpen(false);
+  };
 
   const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
 
@@ -181,13 +231,48 @@ export default function Solicitudes() {
   // TipoLimiteSocio todavía no llegó a persistirse (falla parcial en
   // AltaOperacion.jsx).
   const tieneSolicitudPendiente = useMemo(() => {
-    const hasRealPendiente = Array.isArray(solicitudesReal) && solicitudesReal.some(s =>
-      Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE) === ESTADO_PENDIENTE
-    );
+    const hasRealPendiente =
+      Array.isArray(solicitudesReal) && solicitudesReal.some((s) => esEstadoEnCurso(s.tipolimiteestadoid));
     const hasProcesoPendiente =
-      Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
+      procesosVigentes(solicitudesEnProceso, solicitudesReal).length > 0;
     return hasRealPendiente || hasProcesoPendiente;
   }, [solicitudesReal, solicitudesEnProceso]);
+
+  const procesosHuerfanos = useMemo(
+    () => procesosHuerfanosPorRechazoAutomatico(solicitudesEnProceso, solicitudesReal),
+    [solicitudesEnProceso, solicitudesReal],
+  );
+
+  const huerfanosIntentadosRef = useRef(new Set());
+
+  useEffect(() => {
+    const claveProceso = (p) => `${cuitActivo}-${p.tipolimiteid}-${p.cadenavalorid}`;
+    const pendientes = procesosHuerfanos.filter(
+      (p) => !huerfanosIntentadosRef.current.has(claveProceso(p)),
+    );
+    if (!cuitActivo || pendientes.length === 0) return;
+    pendientes.forEach((p) => huerfanosIntentadosRef.current.add(claveProceso(p)));
+
+    const cerrarHuerfanos = async () => {
+      for (const proceso of pendientes) {
+        try {
+          await solicitudesService.sincronizarEstadoSolicitudEnProcesoPorClave(
+            cuitActivo,
+            proceso.tipolimiteid,
+            proceso.cadenavalorid,
+            ESTADO_RECHAZADA,
+          );
+        } catch (syncErr) {
+          console.error(
+            "[Solicitudes] No se pudo cerrar la SolicitudEnProceso de un rechazo automático:",
+            syncErr,
+          );
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
+    };
+    cerrarHuerfanos();
+  }, [cuitActivo, procesosHuerfanos, queryClient]);
 
   // SolicitudEnProceso ya no se muestra acá: pasó a ser una tabla de control
   // interno entre plataformas, sin ninguna fila propia en pantalla (decisión
@@ -198,9 +283,12 @@ export default function Solicitudes() {
       const tipoLimiteEstadoId = Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE);
       return {
         id: s.tipolimitesocioid?.toString() || "",
-        tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
-        monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
-        moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
+        tipo: etiquetaFamiliaDeLinea(tiposLimiteGlobal, s.tipolimiteid),
+        lineaNombre:
+          tiposLimiteGlobal?.raw?.find((t) => Number(t.tipolimiteid) === Number(s.tipolimiteid))
+            ?.descripcion || "",
+        monto: new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(s)),
+        moneda: simboloMoneda(s.monedaid),
         estado: estadoTextoDesde(tipoLimiteEstadoId),
         tipoLimiteEstadoId,
         fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
@@ -210,7 +298,7 @@ export default function Solicitudes() {
         raw: s,
       };
     });
-  }, [solicitudesReal, socioIdFinal, cuitActivo]);
+  }, [solicitudesReal, socioIdFinal, cuitActivo, tiposLimiteGlobal]);
 
   const listaFiltrada = useMemo(() => {
     const texto = (filtros.busqueda || "").trim().toLowerCase();
@@ -249,6 +337,36 @@ export default function Solicitudes() {
       return filtros.orden === "asc" ? -diff : diff;
     });
   }, [listaSolicitudes, filtros.busqueda, filtros.estado, filtros.fechaDesde, filtros.fechaHasta, filtros.orden]);
+
+  const solicitudesEnCurso = useMemo(
+    () =>
+      listaSolicitudes
+        .filter((s) => esEstadoEnCurso(s.tipoLimiteEstadoId))
+        .sort((a, b) => idNumerico(b) - idNumerico(a)),
+    [listaSolicitudes],
+  );
+
+  const gruposHistorial = useMemo(() => {
+    const grupos = [];
+    const porClave = new Map();
+    listaFiltrada
+      .filter((s) => !esEstadoEnCurso(s.tipoLimiteEstadoId))
+      .forEach((s) => {
+        const fecha = s.fechaISO ? new Date(s.fechaISO) : null;
+        const valida = fecha && !Number.isNaN(fecha.getTime());
+        const clave = valida ? `${fecha.getFullYear()}-${fecha.getMonth()}` : "sin-fecha";
+        if (!porClave.has(clave)) {
+          const mes = valida
+            ? new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(fecha)
+            : "Sin fecha";
+          const grupo = { clave, titulo: mes.charAt(0).toUpperCase() + mes.slice(1).replace(" de ", " "), items: [] };
+          porClave.set(clave, grupo);
+          grupos.push(grupo);
+        }
+        porClave.get(clave).items.push(s);
+      });
+    return grupos;
+  }, [listaFiltrada]);
 
   const [solicitudACancelar, setSolicitudACancelar] = useState(null);
   const actualizarLimiteMutation = useActualizarLimiteSocio();
@@ -313,6 +431,11 @@ export default function Solicitudes() {
     // una solicitud no depende de tener legajo/documentación completos: es
     // justamente el primer paso del flujo, antes de pedirle al cliente más
     // datos que capaz no hacían falta si el CDA de la línea rechaza.
+    if (solicitudEnOtraPlataforma) {
+      setModalOtraPlataformaOpen(true);
+      return;
+    }
+
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
       return;
@@ -343,6 +466,27 @@ export default function Solicitudes() {
       navigate(ruta);
     }
   };
+
+  // Vendor: "Iniciar operación" desde su panel entra a la empresa y pide
+  // abrir el alta acá, con todas las validaciones de siempre. Se dispara una
+  // sola vez y recién cuando los datos y la habilitación de ESTA empresa
+  // terminaron de cargar.
+  const iniciarOperacionPedida = !!location.state?.iniciarOperacion;
+  const iniciarOperacionAtendidaRef = useRef(false);
+  const listoParaIniciarOperacion =
+    iniciarOperacionPedida &&
+    !!cuitActivo &&
+    !isLoadingData &&
+    !cargandoAccesoDashboard &&
+    cuitNuevaOperacionVerificado === cuitActivo;
+
+  useEffect(() => {
+    if (!listoParaIniciarOperacion || iniciarOperacionAtendidaRef.current) return;
+    iniciarOperacionAtendidaRef.current = true;
+    navigate(location.pathname, { replace: true, state: null });
+    handleNuevaOperacion(`${basePath}/alta-operacion`, "draft_alta_operacion");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listoParaIniciarOperacion]);
 
   const handleConfirmStartNew = () => {
     if (draftKeyPendiente) {
@@ -375,8 +519,8 @@ export default function Solicitudes() {
             <FaFileInvoiceDollar />
           </div>
           <div className={styles.titleWrapper}>
-            <h1 className={styles.title}>Mis Solicitudes</h1>
-            <p className={styles.subtitle}>Gestioná tus operaciones.</p>
+            <h1 className={styles.title}>Mis solicitudes</h1>
+            <p className={styles.subtitle}>Seguí el estado de tus operaciones y cargá una nueva.</p>
           </div>
         </div>
 
@@ -394,116 +538,186 @@ export default function Solicitudes() {
 
       {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
-        <LegajoUniversalBar context="solicitudes" />
+        {solicitudEnOtraPlataforma ? (
+          <Alert variant="warning" icon={FiClock} className={styles.avisoOtraPlataforma}>
+            {MENSAJE_SOLICITUD_OTRA_PLATAFORMA} Si necesitás ayuda, escribinos a{" "}
+            <a href="mailto:soporte@bind.com.ar" className={styles.avisoLink}>
+              soporte@bind.com.ar
+            </a>
+            .
+          </Alert>
+        ) : (
+          <LegajoUniversalBar context="solicitudes" />
+        )}
         
-        <div className={styles.filterBar}>
-          <div className={styles.searchBox}>
-            <FiSearch className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Buscar por N° de solicitud o CUIT..."
-              className={styles.searchInput}
-              {...register("busqueda")}
-            />
-          </div>
-
-          <div className={styles.filterFieldsRow}>
-            <SelectFechaSimple
-              label="Desde"
-              value={filtros.fechaDesde}
-              onChange={(val) => setValue("fechaDesde", val, { shouldDirty: true })}
-              disableFuture
-              maxDate={fechaHastaDate}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-            <SelectFechaSimple
-              label="Hasta"
-              value={filtros.fechaHasta}
-              onChange={(val) => setValue("fechaHasta", val, { shouldDirty: true })}
-              disableFuture
-              minDate={fechaDesdeDate}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-            <SelectSimple
-              name="estado"
-              control={control}
-              label="Estado"
-              options={opcionesEstado}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-            <SelectSimple
-              name="orden"
-              control={control}
-              label="Orden"
-              options={opcionesOrden}
-              variant="client"
-              compact
-              hideErrorSpace
-              className={styles.filterField}
-            />
-          </div>
-
-          <button
-            type="button"
-            className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
-            onClick={handleLimpiarFiltros}
-            disabled={!hayFiltrosActivos}
-            tabIndex={hayFiltrosActivos ? 0 : -1}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros"
-          >
-            <FiX />
-          </button>
-        </div>
         <div className={styles.listContainer}>
           {isLoadingData ? (
             <SkeletonTable rows={3} />
-          ) : listaFiltrada.length > 0 ? (
-            listaFiltrada.map((item) => {
-              // Solo se puede cancelar una solicitud real (ya tiene
-              // TipoLimiteSocio, no un simple borrador en proceso) que
-              // todavía esté pendiente de validación.
-              const puedeCancelar =
-                !!item.raw && item.tipoLimiteEstadoId === ESTADO_PENDIENTE;
-              return (
-                <TarjetaSolicitud
-                  key={item.id}
-                  solicitud={item}
-                  onVerDetalle={setSolicitudSeleccionada}
-                  acciones={
-                    puedeCancelar
-                      ? [
-                          {
-                            label: "Cancelar solicitud",
-                            variant: "danger",
-                            onClick: () => setSolicitudACancelar(item),
-                          },
-                        ]
-                      : undefined
-                  }
-                />
-              );
-            })
-          ) : (
+          ) : listaSolicitudes.length === 0 ? (
             <div className={styles.emptyState}>
-              <p>
-                {listaSolicitudes.length > 0
-                  ? "No encontramos solicitudes con esos filtros."
-                  : "No tenés solicitudes activas en este momento."}
-              </p>
+              <p>Todavía no tenés solicitudes. Cargá la primera con "Nueva operación".</p>
             </div>
+          ) : (
+            <>
+              {solicitudesEnCurso.length > 0 && (
+                <section className={styles.seccion} aria-labelledby="solicitudes-en-curso">
+                  <h2 id="solicitudes-en-curso" className={`${styles.seccionTitulo} ${styles.seccionTituloEnCurso}`}>
+                    En curso
+                  </h2>
+                  {solicitudesEnCurso.map((item) => (
+                    <TarjetaSolicitud
+                      key={item.id}
+                      solicitud={item}
+                      onVerDetalle={setSolicitudSeleccionada}
+                      acciones={
+                        item.raw
+                          ? [
+                              {
+                                label: "Cancelar",
+                                variant: "danger",
+                                onClick: () => setSolicitudACancelar(item),
+                              },
+                            ]
+                          : undefined
+                      }
+                    />
+                  ))}
+                </section>
+              )}
+
+              <section className={styles.seccion} aria-labelledby="solicitudes-historial">
+                <div className={styles.historialCabecera}>
+                  <h2 id="solicitudes-historial" className={styles.seccionTitulo}>
+                    Historial
+                  </h2>
+                  <div className={styles.filterBar}>
+                    <div className={styles.searchBox}>
+                      <FiSearch className={styles.searchIcon} />
+                      <input
+                        type="text"
+                        placeholder="Buscar por N° de solicitud o CUIT..."
+                        className={styles.searchInput}
+                        {...register("busqueda")}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      className={`${styles.filtrosToggle} ${filtrosMovilAbiertos ? styles.filtrosToggleActivo : ""}`}
+                      onClick={() => setFiltrosMovilAbiertos((abiertos) => !abiertos)}
+                      aria-expanded={filtrosMovilAbiertos}
+                      aria-controls="solicitudes-filtros"
+                    >
+                      <FiSliders aria-hidden="true" />
+                      Filtros
+                      {cantidadFiltrosActivos > 0 && (
+                        <span className={styles.filtrosBadge}>{cantidadFiltrosActivos}</span>
+                      )}
+                      <FiChevronDown
+                        className={`${styles.filtrosChevron} ${filtrosMovilAbiertos ? styles.filtrosChevronAbierto : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+                      onClick={handleLimpiarFiltros}
+                      disabled={!hayFiltrosActivos}
+                      tabIndex={hayFiltrosActivos ? 0 : -1}
+                      title="Limpiar filtros"
+                      aria-label="Limpiar filtros"
+                    >
+                      <FiX />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="solicitudes-filtros"
+                  className={`${styles.filterFieldsRow} ${filtrosMovilAbiertos ? styles.filterFieldsRowAbierta : ""}`}
+                >
+                  <SelectFechaSimple
+                    label="Desde"
+                    value={filtros.fechaDesde}
+                    onChange={(val) => setValue("fechaDesde", val, { shouldDirty: true })}
+                    disableFuture
+                    maxDate={fechaHastaDate}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                  <SelectFechaSimple
+                    label="Hasta"
+                    value={filtros.fechaHasta}
+                    onChange={(val) => setValue("fechaHasta", val, { shouldDirty: true })}
+                    disableFuture
+                    minDate={fechaDesdeDate}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                  <SelectSimple
+                    name="estado"
+                    control={control}
+                    label="Estado"
+                    options={opcionesEstado}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                  <SelectSimple
+                    name="orden"
+                    control={control}
+                    label="Orden"
+                    options={opcionesOrden}
+                    variant="client"
+                    compact
+                    hideErrorSpace
+                    className={styles.filterField}
+                  />
+                </div>
+
+
+                {gruposHistorial.length === 0 ? (
+                  <div className={styles.historialVacio}>
+                    {hayFiltrosActivos
+                      ? "No encontramos solicitudes con esos filtros."
+                      : "Cuando una solicitud se resuelva, la vas a ver acá."}
+                  </div>
+                ) : (
+                  gruposHistorial.map((grupo) => (
+                    <div key={grupo.clave} className={styles.grupoMes}>
+                      <h3 className={styles.mesTitulo}>{grupo.titulo}</h3>
+                      {grupo.items.map((item) => (
+                        <FilaSolicitudHistorial
+                          key={item.id}
+                          solicitud={item}
+                          onVerDetalle={setSolicitudSeleccionada}
+                        />
+                      ))}
+                    </div>
+                  ))
+                )}
+              </section>
+            </>
           )}
         </div>
       </main>
+
+      <div className={styles.nuevaOpMovil} data-cta-fijo>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => handleNuevaOperacion(`${basePath}/alta-operacion`, "draft_alta_operacion")}
+          className={styles.nuevaOpMovilBoton}
+        >
+          <FiPlus /> Nueva operación
+        </Button>
+      </div>
 
       <ConfirmacionBorradorModal
         isOpen={!!flujoPendiente}
@@ -525,8 +739,9 @@ export default function Solicitudes() {
         onConfirm={handleConfirmarCancelacion}
         isLoading={actualizarLimiteMutation.isPending}
         tone="danger"
-        titulo="Cancelar solicitud"
-        mensaje={`¿Seguro que querés cancelar la Solicitud N°${solicitudACancelar?.id}? Vas a poder iniciar una nueva operación una vez cancelada.`}
+        titulo={`¿Cancelar la Solicitud N° ${solicitudACancelar?.id ?? ""}?`}
+        mensaje="La solicitud se cierra y no se puede retomar. Una vez cancelada, vas a poder iniciar una nueva operación."
+        icono={<FiXCircle />}
         confirmText="Sí, cancelar"
         cancelText="Volver"
       />
@@ -534,7 +749,7 @@ export default function Solicitudes() {
       <InformativoModal
         isOpen={modalPendienteOpen}
         onClose={() => setModalPendienteOpen(false)}
-        icon={<FiClock style={{ color: "var(--yellow, #f4f500)" }} />}
+        icon={<FiClock />}
         variant="warning"
         title="Solicitud en proceso"
         description="Ya tenés una solicitud de línea en análisis. Debés esperar a que se valide o cancelarla antes de crear una nueva."
@@ -542,9 +757,20 @@ export default function Solicitudes() {
       />
 
       <InformativoModal
+        isOpen={mostrarModalOtraPlataforma}
+        onClose={cerrarModalOtraPlataforma}
+        icon={<FiClock />}
+        variant="warning"
+        title="Tenés una solicitud en curso"
+        description={`${MENSAJE_SOLICITUD_OTRA_PLATAFORMA} Si necesitás ayuda, escribinos a soporte@bind.com.ar.`}
+        buttonText="Entendido"
+        maxWidth="30rem"
+      />
+
+      <InformativoModal
         isOpen={modalNuevaOperacionBloqueada}
         onClose={() => setModalNuevaOperacionBloqueada(false)}
-        icon={<FiClock style={{ color: "var(--yellow, #f4f500)" }} />}
+        icon={<FiClock />}
         variant="warning"
         title="No podés iniciar una operación nueva"
         description={

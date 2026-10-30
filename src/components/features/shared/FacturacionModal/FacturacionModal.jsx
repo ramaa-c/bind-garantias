@@ -32,23 +32,26 @@ export default function FacturacionModal({ isOpen, onClose, onGuardar }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="28rem">
-      <form className={styles.body} onSubmit={handleGuardar}>
-        <div className={styles.iconWrapper}>
-          <FiMail size={30} />
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="30rem" variant="confirm">
+      <form className={styles.body} onSubmit={handleGuardar} noValidate>
+        <div className={styles.head}>
+          <span className={styles.tile} aria-hidden="true">
+            <FiMail />
+          </span>
+          <div className={styles.texto}>
+            <h2 className={styles.title}>Email de facturación</h2>
+            <p className={styles.description}>
+              A esta casilla vamos a enviarte las facturas y comprobantes de tu empresa.
+            </p>
+          </div>
         </div>
-
-        <h2 className={styles.title}>Email de Facturación</h2>
-        <p className={styles.description}>
-          A esta casilla vamos a enviarte las facturas y comprobantes de tu empresa.
-        </p>
 
         <div className={styles.formSection}>
           <InputSocioMasked
             name="emailfacturacion"
             control={control}
             type="email"
-            label="Email de facturación"
+            label="Email"
             icon={<FiMail />}
             error={(intentoGuardar || emailValue) ? errors?.emailfacturacion?.message : null}
             esValido={!errors?.emailfacturacion && emailValue.length > 0}
@@ -57,14 +60,12 @@ export default function FacturacionModal({ isOpen, onClose, onGuardar }) {
           />
         </div>
 
-        <div className={styles.btnSave}>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={!dirtyFields?.emailfacturacion}
-            style={{ width: "100%", minHeight: "3rem" }}
-          >
-            GUARDAR EMAIL
+        <div className={styles.footer}>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={!dirtyFields?.emailfacturacion}>
+            Guardar
           </Button>
         </div>
       </form>

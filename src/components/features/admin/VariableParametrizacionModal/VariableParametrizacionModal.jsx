@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { FiSliders } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
 import styles from "./VariableParametrizacionModal.module.css";
 import { Button } from "../../../ui/Button/Button";
@@ -84,27 +85,26 @@ export const VariableParametrizacionModal = ({
           ? "Solo se puede modificar el valor. El nombre de la variable no cambia."
           : "Definí el nombre y el valor inicial de la nueva variable parametrizable."
       }
-      maxWidth="480px"
+      icono={<FiSliders />}
+      maxWidth="520px"
       variant="blue"
       preventClose={isGuardando}
       footer={
         <>
           <Button
-            variant="outlineBlue"
-            size="sm"
+            variant="adminNeutro"
             onClick={onClose}
             disabled={isGuardando}
           >
-            CANCELAR
+            Cancelar
           </Button>
           <Button
             variant="blue"
-            size="sm"
             onClick={handleGuardar}
             isLoading={isGuardando}
             disabled={isGuardando || !puedeGuardar}
           >
-            GUARDAR
+            {esEdicion ? "Guardar" : "Agregar"}
           </Button>
         </>
       }

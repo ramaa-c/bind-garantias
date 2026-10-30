@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
-import { FiBriefcase, FiShield, FiZap, FiCheckCircle } from "react-icons/fi";
+import { FiShield, FiZap, FiCheckCircle } from "react-icons/fi";
 import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
-import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
+import VinculacionModal from "./VinculacionModal";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
@@ -29,6 +29,9 @@ const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 // ofrecen "Reintentar".
 const MENSAJE_VALIDACION_RECHAZADA =
   "Registramos algunas observaciones sobre tu empresa. Vas a poder continuar con la carga, pero tu legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.";
+// Vendor: da de alta una empresa que va a gestionar, no la propia.
+const MENSAJE_VALIDACION_RECHAZADA_VENDOR =
+  "Registramos algunas observaciones sobre la empresa. Vas a poder continuar con la carga, pero su legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.";
 
 const formatearCuit = (cuit) => {
   const limpio = String(cuit || "").replace(/\D/g, "");
@@ -43,6 +46,9 @@ const formatearCuit = (cuit) => {
 // "durante" (en el click de handleValidar, con datos potencialmente todavía
 // en vuelo) ni tenga forma de desincronizarse de lo que ve el resto del wizard.
 export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, isVendor = false, vendorCuit = null }) {
+  const mensajeValidacionRechazada = isVendor
+    ? MENSAJE_VALIDACION_RECHAZADA_VENDOR
+    : MENSAJE_VALIDACION_RECHAZADA;
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
@@ -105,7 +111,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
   // confirmación de vinculación (ver handleValidar) — se guardan acá en
   // "limbo" para poder precargarlos en continuarValidacionCompleta sin
   // volver a golpear las integraciones si el usuario confirma. Si cancela,
-  // se descartan (ver onClose del ConfirmacionModal más abajo).
+  // se descartan (ver onClose del VinculacionModal más abajo).
   const datosEmpresaPrefetchRef = useRef(null);
 
   const [confirmVinculacion, setConfirmVinculacion] = useState({
@@ -298,7 +304,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
                 error: esErrorSistema
                   ? resultCda.errors.find((e) => e.isInvalidante)?.message ||
                     "No pudimos completar la validación."
-                  : MENSAJE_VALIDACION_RECHAZADA,
+                  : mensajeValidacionRechazada,
               }
             : p,
         ),
@@ -384,7 +390,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
             ? {
                 ...p,
                 estado: "error",
-                error: MENSAJE_VALIDACION_RECHAZADA,
+                error: mensajeValidacionRechazada,
               }
             : { ...p, estado: "completado" }
           : p.id === "pyme"
@@ -453,17 +459,17 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
 
     setProcesoModal({
       isOpen: true,
-      titulo: "Validando Empresa",
+      titulo: isVendor ? "Validando la empresa" : "Validando tu empresa",
       pasos: [
         {
           id: "socio",
-          etiqueta: "Registro Inicial",
+          etiqueta: "Registro inicial",
           estado: yaCruzoUmbral ? "completado" : "cargando",
           descripcion: "Datos iniciales registrados con éxito.",
         },
         {
           id: "sgrcore",
-          etiqueta: "Validación de Información",
+          etiqueta: "Validación de información",
           estado: !yaCruzoUmbral
             ? "pendiente"
             : pasoQueFallo === "cda"
@@ -473,13 +479,13 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         },
         {
           id: "pyme",
-          etiqueta: "Revisión Detallada y Complementaria",
+          etiqueta: "Revisión complementaria",
           estado: yaCruzoUmbral && pasoQueFallo === "cda" ? "completado" : "pendiente",
           descripcion: "Estamos procesando verificaciones detalladas en curso.",
         },
         {
           id: "cda",
-          etiqueta: "Finalización de la Solicitud",
+          etiqueta: "Finalización",
           estado: yaCruzoUmbral && pasoQueFallo === "cda" ? "cargando" : "pendiente",
           descripcion: "Últimos chequeos antes de la decisión final.",
         },
@@ -534,7 +540,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         ciudadid: valores.ciudadid ? Number(valores.ciudadid) : null,
         telefono: "",
         fax: "",
-        email: user?.email,
+        email: isVendor ? "" : user?.email,
         tipopersonaid: valores.tipopersonaid,
         tipocarteraid: 2,
         sectorcontableid: 700,
@@ -643,10 +649,37 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
       // (crearSocio, vincularSocioUsuario, etc.) — sin loguear acá no hay
       // forma de saber cuál de esos pasos fue el que tiró, ni por qué.
       console.error("[Paso1Cuit] Error inesperado en continuarValidacionCompleta:", err);
+
+      if (!socioIdCreadoRef.current && err?.response?.status === 409) {
+        const denominacion = getValues("razonSocial");
+        cuitEnProcesoRef.current = "";
+        datosEmpresaPrefetchRef.current = null;
+        setProcesoModal({
+          isOpen: false,
+          titulo: "",
+          pasos: [],
+          hasError: false,
+          isSystemError: false,
+        });
+        const mensajeConflicto = String(err?.response?.data?.message ?? err?.response?.data ?? "");
+        const motivo = /otro email/i.test(mensajeConflicto) ? "email_mismatch" : "ya_existe";
+        if (onSocioExistente) onSocioExistente({ cuit, denominacion }, motivo);
+        return;
+      }
+
       setProcesoModal((prev) => ({
         ...prev,
         hasError: true,
         isSystemError: true,
+        pasos: prev.pasos.map((p) =>
+          p.estado === "cargando"
+            ? {
+                ...p,
+                estado: "error",
+                error: "No pudimos completar este paso. Intentá nuevamente.",
+              }
+            : p,
+        ),
       }));
     } finally {
       setIsValidatingSocio(false);
@@ -657,19 +690,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
 
   return (
     <div className={styles.pasoContainer}>
-      <div className={styles.heroIcon}>
-        <FiBriefcase />
-      </div>
-
-      <div className={styles.heroCopy}>
-        <h2 className={styles.heroTitle}>¿Cuál es el CUIT de tu empresa?</h2>
-        <p className={styles.heroSub}>
-          Validamos tu información fiscal y crediticia en tiempo real para
-          agilizar el registro de tu empresa.
-        </p>
-      </div>
-
-      <div className={styles.inputWrapper}>
+      {/* El título/subtítulo ("¿Cuál es el CUIT de tu empresa?") vive en la
+          cabecera de AltaDatosEmpresa, igual que en Paso 2 - acá queda solo
+          el campo, con el botón de validar adentro de su mismo borde. */}
+      <div className={styles.campo}>
         <BuscadorCuit
           name="cuit"
           control={control}
@@ -677,21 +701,59 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           onValidar={handleValidar}
           error={errors.cuit?.message}
           esValido={isCuitValid}
-          buttonText="VALIDAR CUIT"
+          buttonText="Validar"
           isLoading={isLoading}
           disabled={thresholdCruzado}
+          inline
         />
+        {!errors.cuit && (
+          <p className={styles.ayuda}>
+            11 dígitos, sin guiones.{" "}
+            {isVendor
+              ? "Lo encontrás en la constancia de AFIP de la empresa."
+              : "Lo encontrás en tu constancia de AFIP."}
+          </p>
+        )}
       </div>
+
+      <section className={styles.siguiente} aria-labelledby="paso1-siguiente">
+        <h2 id="paso1-siguiente" className={styles.siguienteTitulo}>
+          Qué pasa después
+        </h2>
+        <ol className={styles.siguienteLista}>
+          <li className={styles.siguienteItem}>
+            <span className={styles.siguienteNum}>01</span>
+            <span className={styles.siguienteTexto}>
+              <strong>{isVendor ? "Validamos la empresa" : "Validamos tu empresa"}</strong>
+              <span>{isVendor ? "Verificamos su información." : "Verificamos la información de tu empresa."}</span>
+            </span>
+          </li>
+          <li className={styles.siguienteItem}>
+            <span className={styles.siguienteNum}>02</span>
+            <span className={styles.siguienteTexto}>
+              <strong>{isVendor ? "Completás sus datos" : "Completás tus datos"}</strong>
+              <span>{isVendor ? "Sumás algunos datos de contacto de la empresa." : "Sumás algunos datos de contacto."}</span>
+            </span>
+          </li>
+          <li className={styles.siguienteItem}>
+            <span className={styles.siguienteNum}>03</span>
+            <span className={styles.siguienteTexto}>
+              <strong>{isVendor ? "Entrás a su legajo" : "Entrás a tu legajo"}</strong>
+              <span>{isVendor ? "Seguís el alta desde el legajo de la empresa." : "Seguís el alta desde tu legajo."}</span>
+            </span>
+          </li>
+        </ol>
+      </section>
 
       <div className={styles.trustRow}>
         <span className={styles.trustChip}>
-          <FiShield /> Datos encriptados
+          <FiShield aria-hidden="true" /> Datos encriptados
         </span>
         <span className={styles.trustChip}>
-          <FiZap /> Validación en segundos
+          <FiZap aria-hidden="true" /> Validación en segundos
         </span>
         <span className={styles.trustChip}>
-          <FiCheckCircle /> Sin costo
+          <FiCheckCircle aria-hidden="true" /> Sin costo
         </span>
       </div>
 
@@ -724,7 +786,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         onRetry={continuarValidacionCompleta}
       />
 
-      <ConfirmacionModal
+      <VinculacionModal
         isOpen={confirmVinculacion.isOpen}
         onClose={() => {
           setConfirmVinculacion({ isOpen: false, cuit: "", nombreEmpresa: "" });
@@ -734,10 +796,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           setConfirmVinculacion({ isOpen: false, cuit: "", nombreEmpresa: "" });
           continuarValidacionCompleta();
         }}
-        titulo="Confirmá tu empresa"
-        mensaje={`Vas a vincular la empresa ${confirmVinculacion.nombreEmpresa} (CUIT ${formatearCuit(confirmVinculacion.cuit)}) a tu usuario. Una vez que confirmes, no vas a poder modificarla — asegurate de que sea la correcta antes de continuar.`}
-        confirmText="Confirmar y continuar"
-        cancelText="Volver a revisar"
+        nombreEmpresa={confirmVinculacion.nombreEmpresa}
+        esVendor={isVendor}
+        cuit={formatearCuit(confirmVinculacion.cuit)}
       />
     </div>
   );

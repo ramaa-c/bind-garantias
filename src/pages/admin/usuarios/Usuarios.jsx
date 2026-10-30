@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { toast } from "sonner";
-import { FiInbox, FiSearch, FiX, FiUsers, FiLock, FiUnlock } from "react-icons/fi";
+import { FiInbox, FiSearch, FiLock, FiUnlock } from "react-icons/fi";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
-import { SelectSimple } from "../../../components/ui";
+import { FiltroDesplegable } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import {
   useListarUsuarios,
@@ -13,12 +13,14 @@ import {
 } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import {
   ESTADO_USUARIO,
   esAdministradorActivo,
   esUsuarioBloqueadoPorAdmin,
 } from "../../../utils/usuarioUtils";
 import styles from "./Usuarios.module.css";
+import l from "../../../components/features/admin/ListadoAdmin/ListadoAdmin.module.css";
 
 const ELEMENTOS_POR_PAGINA = 8;
 
@@ -38,13 +40,13 @@ const FILTROS_POR_DEFECTO = {
 };
 
 const OPCIONES_TIPO = [
-  { value: "todos", label: "Todos los tipos" },
+  { value: "todos", label: "Todos" },
   { value: "admin", label: "Administrador" },
   { value: "usuario", label: "Usuario" },
 ];
 
 const OPCIONES_ESTADO = [
-  { value: "todos", label: "Todos los estados" },
+  { value: "todos", label: "Todos" },
   ...Object.entries(ESTADOS).map(([value, { label }]) => ({ value, label })),
 ];
 
@@ -116,6 +118,11 @@ export default function Usuarios() {
   const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
   const [pagina, setPagina] = useState(1);
   const [accionPendiente, setAccionPendiente] = useState(null);
+  const contenedorRef = useRef(null);
+  const listaRef = useRef(null);
+  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
+    porDefecto: ELEMENTOS_POR_PAGINA,
+  });
 
   const { data, isLoading, isFetching, isError } = useListarUsuarios();
   const bloquearMutation = useBloquearUsuario();
@@ -145,11 +152,11 @@ export default function Usuarios() {
     });
   }, [data, debouncedBusqueda, tipo, estado, orden]);
 
-  const totalPaginas = Math.max(1, Math.ceil(usuarios.length / ELEMENTOS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(usuarios.length / filasPorPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const usuariosPagina = usuarios.slice(
-    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
-    paginaActual * ELEMENTOS_POR_PAGINA,
+    (paginaActual - 1) * filasPorPagina,
+    paginaActual * filasPorPagina,
   );
 
   const conReinicioDePagina = (setter) => (valor) => {
@@ -196,85 +203,58 @@ export default function Usuarios() {
   const emailPendiente = accionPendiente?.usuario?.email || "este usuario";
 
   return (
-    <div className={styles.container}>
-      <div className={styles.headerTitle}>
-        <div>
-          <h1>Usuarios</h1>
-          <p>Cuentas registradas en la plataforma. Desde acá podés bloquear o desbloquear el acceso.</p>
-        </div>
-      </div>
-
-      <div className={styles.filtersCard}>
-        <div className={styles.searchWrap}>
-          <FiSearch className={styles.iconSearch} />
-          <input
-            type="text"
-            placeholder="Buscar por email..."
-            value={busqueda}
-            onChange={(e) => conReinicioDePagina(setBusqueda)(e.target.value)}
-            className={styles.inputSearch}
-          />
-        </div>
-
-        <div className={styles.filterFieldsRow}>
-          <SelectSimple
-            label="Tipo"
-            value={tipo}
-            onChange={conReinicioDePagina(setTipo)}
-            options={OPCIONES_TIPO}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-          <SelectSimple
-            label="Estado"
-            value={estado}
-            onChange={conReinicioDePagina(setEstado)}
-            options={OPCIONES_ESTADO}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-          <SelectSimple
-            label="Orden"
-            value={orden}
-            onChange={conReinicioDePagina(setOrden)}
-            options={OPCIONES_ORDEN}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-        </div>
-
-        <button
-          type="button"
-          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
-          onClick={handleLimpiarFiltros}
-          disabled={!hayFiltrosActivos}
-          tabIndex={hayFiltrosActivos ? 0 : -1}
-          title="Limpiar filtros"
-          aria-label="Limpiar filtros"
-        >
-          <FiX />
-        </button>
-
+    <div className={styles.container} ref={contenedorRef}>
+      <div className={l.encabezado}>
+        <h1>Usuarios</h1>
         {!isLoading && (
-          <span className={styles.listCount}>
-            <FiUsers />
+          <span className={l.resumen}>
             {usuarios.length} usuario{usuarios.length !== 1 ? "s" : ""}
           </span>
         )}
       </div>
 
-      <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
+      <div className={l.filtros}>
+        <div className={l.buscador}>
+          <FiSearch aria-hidden="true" />
+          <input
+            type="text"
+            placeholder="Buscar por email"
+            value={busqueda}
+            onChange={(e) => conReinicioDePagina(setBusqueda)(e.target.value)}
+            aria-label="Buscar por email"
+          />
+        </div>
+        <FiltroDesplegable
+          etiqueta="Tipo"
+          valor={tipo}
+          opciones={OPCIONES_TIPO}
+          onChange={conReinicioDePagina(setTipo)}
+          valorPorDefecto={FILTROS_POR_DEFECTO.tipo}
+        />
+        <FiltroDesplegable
+          etiqueta="Estado"
+          valor={estado}
+          opciones={OPCIONES_ESTADO}
+          onChange={conReinicioDePagina(setEstado)}
+          valorPorDefecto={FILTROS_POR_DEFECTO.estado}
+        />
+        <FiltroDesplegable
+          etiqueta="Orden"
+          valor={orden}
+          opciones={OPCIONES_ORDEN}
+          onChange={conReinicioDePagina(setOrden)}
+          valorPorDefecto={FILTROS_POR_DEFECTO.orden}
+        />
+        {hayFiltrosActivos && (
+          <button type="button" className={l.limpiar} onClick={handleLimpiarFiltros}>
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      <div className={l.tablaCaja}>
+        <div className={l.tablaScroll} ref={listaRef}>
+          <table className={`${l.tabla} ${styles.table}`}>
             <thead>
               <tr>
                 <th style={{ width: "40%" }}>Usuario</th>
@@ -289,9 +269,9 @@ export default function Usuarios() {
                 Array.from({ length: 6 }).map((_, i) => <UsuarioRowSkeleton key={i} />)
               ) : isError || usuariosPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 0 }}>
-                    <div className={styles.emptyState}>
-                      <FiInbox className={styles.emptyStateIcon} />
+                  <td colSpan={5} style={{ padding: 0, height: "auto" }}>
+                    <div className={l.vacio}>
+                      <FiInbox aria-hidden="true" />
                       <span>
                         {isError
                           ? "No se pudo cargar el listado de usuarios. Intentá más tarde."
@@ -309,7 +289,7 @@ export default function Usuarios() {
                     !!emailActual &&
                     String(u.email || "").toLowerCase() === emailActual.toLowerCase();
                   return (
-                    <tr key={leerId(u) ?? `${u.email}-${idx}`}>
+                    <tr key={leerId(u) ?? `${u.email}-${idx}`} data-fila>
                       <td>
                         <div className={styles.usuarioCell}>
                           <div className={styles.avatar}>{getIniciales(u.email)}</div>
@@ -339,7 +319,7 @@ export default function Usuarios() {
                         {bloqueadoPorAdmin ? (
                           <button
                             type="button"
-                            className={`${styles.accionBtn} ${styles.accionDesbloquear}`}
+                            className={`${l.accionFila} ${styles.accionDesbloquear}`}
                             onClick={() => setAccionPendiente({ usuario: u, accion: "desbloquear" })}
                           >
                             <FiUnlock /> Desbloquear
@@ -347,7 +327,7 @@ export default function Usuarios() {
                         ) : (
                           <button
                             type="button"
-                            className={`${styles.accionBtn} ${styles.accionBloquear}`}
+                            className={`${l.accionFila} ${styles.accionBloquear}`}
                             onClick={() => setAccionPendiente({ usuario: u, accion: "bloquear" })}
                             disabled={esUsuarioActual}
                             title={esUsuarioActual ? "No podés bloquear tu propia cuenta" : undefined}
@@ -374,7 +354,7 @@ export default function Usuarios() {
           knownEndPage={totalPaginas}
           variant="admin"
           totalItems={usuarios.length}
-          pageSize={ELEMENTOS_POR_PAGINA}
+          pageSize={filasPorPagina}
           itemLabel="usuarios"
         />
       )}

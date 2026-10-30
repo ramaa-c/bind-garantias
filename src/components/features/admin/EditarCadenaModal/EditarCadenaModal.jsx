@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiUploadCloud } from "react-icons/fi";
+import { FiEdit2, FiHash, FiBriefcase, FiFileText, FiDollarSign } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
 import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas, useTipoModeloDocumento } from "../../../../hooks/useCatalogos";
@@ -8,8 +8,9 @@ import { useModelosDocumentoDisponibles } from "../../../../hooks/useModeloDocum
 import { filtrarTiposModeloDocumento } from "../../../../utils/parametrosModeloDocumento";
 import { Modal, Button, InputSimple, SelectSimple, MontoEnPalabras } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
+import { SeccionCadena, CargaLogoCadena } from "../FormularioCadena/FormularioCadena";
+import f from "../FormularioCadena/FormularioCadena.module.css";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
-import styles from "./EditarCadenaModal.module.css";
 import { FORMATOS_ARCHIVO, validarTipoArchivo } from "../../../../utils/fileUtils";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 
@@ -20,7 +21,7 @@ const construirDatosFormulario = (activeItem) => ({
   logo: activeItem?.logo || "",
   tipocanalcomercializacionid: activeItem?.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
   equipocomercialid: activeItem?.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
-  tipocontratoid: activeItem?.tipocontratoid != null ? activeItem.tipocontratoid.toString() : "",
+  tipocontratoid: Number(activeItem?.tipocontratoid) > 0 ? activeItem.tipocontratoid.toString() : "",
   montomaximo: activeItem?.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
   montomaximoutilizado: activeItem?.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
   porcentajemaximoutilizado: activeItem?.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
@@ -72,7 +73,6 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   // Mismo patrón que LineasCadena.jsx/ActivarCadenaModal.jsx: cada campo
   // obligatorio muestra su propio error debajo en vez de un toast que
   // desaparece solo y no señala qué campo hay que corregir.
-  const [formErrors, setFormErrors] = useState({});
 
   const fileInputRef = useRef(null);
 
@@ -145,17 +145,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     JSON.stringify(normalizarParaComparar(formState)) ===
       JSON.stringify(normalizarParaComparar(formStateInicial));
 
-  // Actualiza el campo y, si ya tenía un error marcado, lo limpia apenas el
-  // usuario empieza a corregirlo - mismo criterio que handleInputChange en
-  // LineasCadena.jsx/ActivarCadenaModal.jsx.
   const handleInputChange = (field, val) => {
     setFormState((prev) => ({ ...prev, [field]: val }));
-    setFormErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
   };
 
   // Cambiar el tipo invalida el modelo elegido previamente (los modelos de
@@ -234,10 +225,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     return errores;
   };
 
+  const errorPendiente = Object.values(validarFormulario())[0];
+
   const handleSave = () => {
-    const errores = validarFormulario();
-    setFormErrors(errores);
-    if (Object.keys(errores).length > 0) return;
+    if (errorPendiente) return;
     setConfirmOpen(true);
   };
 
@@ -283,110 +274,109 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="MODIFICAR CADENA DE VALOR"
-      maxWidth="700px"
+      title="Modificar cadena de valor"
+      subtitle={activeItem?.denominacion}
+      icono={<FiEdit2 />}
+      maxWidth="780px"
       variant="blue"
+      preventClose={actualizarMutation.isPending}
+      footer={
+        <>
+          <span className={`${f.pieAyuda} ${!formState.monedaid ? f.pieAyudaError : ""}`}>
+            {formState.monedaid
+              ? "Los campos con * son obligatorios"
+              : "Esta cadena no tiene moneda asignada. Contactá a soporte para configurarla."}
+          </span>
+          <Button variant="adminNeutro" onClick={onClose} disabled={actualizarMutation.isPending}>
+            Cancelar
+          </Button>
+          <Button
+            variant="blue"
+            onClick={handleSave}
+            isLoading={actualizarMutation.isPending}
+            disabled={sinCambios || !!errorPendiente}
+            title={sinCambios ? "No hay cambios para guardar" : errorPendiente}
+          >
+            Guardar cambios
+          </Button>
+        </>
+      }
     >
-      <div className={styles.modalBody}>
+      <div className={f.cuerpo}>
         <CadenaHeaderCard
+          compacta
           denominacion={activeItem?.denominacion || formState.denominacion}
           logo={formState.logo || activeItem?.logo}
           referencia={activeItem?.referencia}
           cadenavalorid={activeItem?.cadenavalorid || formState.cadenavalorid}
           cuittercero={activeItem?.cuittercero}
         />
-        <div className={styles.sectionGroup}>
-          <h4 className={styles.sectionTitle}>Identificación de la Cadena</h4>
-          <div className={styles.inputsGrid}>
-            <div className={styles.row}>
-              <div style={{ flex: 1 }}>
-                <InputSimple
-                  label="ID de Cadena"
-                  value={formState.cadenavalorid}
-                  disabled
-                  className={styles.compactInput}
-                />
-              </div>
-              <div style={{ flex: 2 }}>
-                <InputSimple
-                  label="Denominación"
-                  value={formState.denominacion}
-                  disabled
-                  className={styles.compactInput}
-                />
-              </div>
-            </div>
-            <div className={styles.row}>
-              <div style={{ flex: 1 }}>
-                <InputSimple
-                  label="Referencia"
-                  value={formState.referencia}
-                  onChange={val => setFormState({ ...formState, referencia: val })}
-                  className={styles.compactInput}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className={styles.sectionGroup}>
-          <h4 className={styles.sectionTitle}>Configuración Comercial</h4>
-          <div className={styles.row}>
-            <div style={{ flex: 1 }}>
-              <SelectSimple
-                label="Canal Comercialización *"
-                placeholder="Seleccione canal comercial..."
-                options={canalesOpciones}
-                value={formState.tipocanalcomercializacionid}
-                onChange={val => handleInputChange("tipocanalcomercializacionid", val)}
-                className={styles.compactInput}
-                error={formErrors.tipocanalcomercializacionid}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <SelectSimple
-                label="Equipo Comercial *"
-                placeholder="Seleccione equipo comercial..."
-                options={equiposOpciones}
-                value={formState.equipocomercialid}
-                onChange={val => handleInputChange("equipocomercialid", val)}
-                className={styles.compactInput}
-                error={formErrors.equipocomercialid}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <SelectSimple
-                label="Tipo de Contrato *"
-                placeholder="Seleccione tipo de contrato..."
-                options={contratosOpciones}
-                value={formState.tipocontratoid}
-                onChange={val => handleInputChange("tipocontratoid", val)}
-                className={styles.compactInput}
-                error={formErrors.tipocontratoid}
-              />
-            </div>
+        <SeccionCadena icono={<FiHash />} titulo="Identificación">
+          <div className={`${f.grilla} ${f.grilla3}`}>
+            <InputSimple label="ID de Cadena" value={formState.cadenavalorid} disabled hideErrorSpace />
+            <InputSimple label="Denominación" value={formState.denominacion} disabled hideErrorSpace />
+            <InputSimple
+              label="Referencia"
+              value={formState.referencia}
+              onChange={(val) => setFormState({ ...formState, referencia: val })}
+              hideErrorSpace
+            />
           </div>
-        </div>
+          <CargaLogoCadena
+            logoSrc={getLogoSrc(formState.logo)}
+            onElegir={triggerFileSelect}
+            onQuitar={() => setFormState({ ...formState, logo: "" })}
+          />
+        </SeccionCadena>
 
-        <div className={styles.sectionGroup}>
-          <h4 className={styles.sectionTitle}>Modelo de Documento</h4>
-          <div className={styles.row}>
-            <div style={{ flex: 1 }}>
+        <SeccionCadena icono={<FiBriefcase />} titulo="Configuración comercial">
+          <div className={`${f.grilla} ${f.grilla3}`}>
+            <SelectSimple
+              label="Canal Comercialización *"
+              placeholder="Seleccione canal comercial..."
+              options={canalesOpciones}
+              value={formState.tipocanalcomercializacionid}
+              onChange={(val) => handleInputChange("tipocanalcomercializacionid", val)}
+              hideErrorSpace
+            />
+            <SelectSimple
+              label="Equipo Comercial *"
+              placeholder="Seleccione equipo comercial..."
+              options={equiposOpciones}
+              value={formState.equipocomercialid}
+              onChange={(val) => handleInputChange("equipocomercialid", val)}
+              hideErrorSpace
+            />
+            <SelectSimple
+              label="Tipo de Contrato *"
+              placeholder="Seleccione tipo de contrato..."
+              options={contratosOpciones}
+              value={formState.tipocontratoid}
+              onChange={(val) => handleInputChange("tipocontratoid", val)}
+              hideErrorSpace
+            />
+          </div>
+        </SeccionCadena>
+
+        <SeccionCadena icono={<FiFileText />} titulo="Modelo de documento">
+          <div className={`${f.grilla} ${f.grilla2}`}>
+            <div className={f.campo}>
               <SelectSimple
                 label="Tipo de Modelo"
                 placeholder="Seleccione tipo de modelo..."
                 options={tiposModeloDocumentoOpciones}
                 value={tipoModeloDocumentoIdUI}
                 onChange={handleTipoModeloDocumentoChange}
-                className={styles.compactInput}
+                hideErrorSpace
               />
               {!tipoModeloDocumentoIdUI && Number(formState.modelodocumentoid) > 0 && (
-                <span className={styles.selectHint}>
+                <span className={f.ayuda}>
                   Modelo actual N.º {formState.modelodocumentoid}. Elegí un tipo para cambiarlo.
                 </span>
               )}
             </div>
-            <div style={{ flex: 1 }}>
+            <div className={f.campo}>
               <SelectSimple
                 label="Modelo de Documento"
                 placeholder={
@@ -398,12 +388,12 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 }
                 options={modelosDocumentoOpciones}
                 value={formState.modelodocumentoid !== "0" ? formState.modelodocumentoid : ""}
-                onChange={val => handleInputChange("modelodocumentoid", val)}
+                onChange={(val) => handleInputChange("modelodocumentoid", val)}
                 disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
-                className={styles.compactInput}
+                hideErrorSpace
               />
               {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
-                <span className={styles.selectHint}>
+                <span className={f.ayuda}>
                   {modelosDocumentoOpciones.length === 0
                     ? "Ningún modelo de este tipo se puede generar desde una solicitud."
                     : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
@@ -411,110 +401,62 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               )}
             </div>
           </div>
-        </div>
+        </SeccionCadena>
 
-        <div className={styles.sectionGroup}>
-          <h4 className={styles.sectionTitle}>Límites Financieros</h4>
-          <div className={styles.row}>
-            <div style={{ flex: 1 }}>
-              <SelectSimple
-                label="Moneda *"
-                placeholder="Sin moneda asignada"
-                options={monedasOpciones}
-                value={formState.monedaid}
-                onChange={() => {}}
-                disabled
-                className={styles.compactInput}
-                error={formErrors.monedaid}
-              />
-            </div>
-            <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+        <SeccionCadena icono={<FiDollarSign />} titulo="Límites financieros">
+          <div className={`${f.grilla} ${f.grilla2}`}>
+            <SelectSimple
+              label="Moneda *"
+              placeholder="Sin moneda asignada"
+              options={monedasOpciones}
+              value={formState.monedaid}
+              onChange={() => {}}
+              disabled
+              hideErrorSpace
+            />
+            <div className={f.campo}>
               <InputSimple
                 label="Monto Máximo *"
                 value={formState.montomaximo}
-                onChange={val => handleInputChange("montomaximo", val)}
+                onChange={(val) => handleInputChange("montomaximo", val)}
                 mask="$ num"
                 blocks={{ num: bloqueNumerico() }}
                 lazy={false}
-                className={`${styles.compactInput} ${styles.compactInputMonto}`}
                 sinIconos
                 disabled={!formState.monedaid}
-                error={formErrors.montomaximo}
               />
-              {!formState.monedaid && (
-                <span className={styles.fieldHint}>Sin moneda asignada</span>
-              )}
-              {formState.monedaid && !formErrors.montomaximo && (
+              {!formState.monedaid && <span className={f.ayudaEnCampo}>Sin moneda asignada</span>}
+              {formState.monedaid && (
                 <MontoEnPalabras value={desenmascarar(formState.montomaximo)} />
               )}
             </div>
-          </div>
-          <div className={styles.row}>
-            <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+            <div className={f.campo}>
               <InputSimple
                 label="Monto Máximo Utilizado *"
                 value={formState.montomaximoutilizado}
-                onChange={val => handleInputChange("montomaximoutilizado", val)}
+                onChange={(val) => handleInputChange("montomaximoutilizado", val)}
                 mask="$ num"
                 blocks={{ num: bloqueNumerico() }}
                 lazy={false}
-                className={`${styles.compactInput} ${styles.compactInputMonto}`}
                 sinIconos
                 disabled={!formState.monedaid}
-                error={formErrors.montomaximoutilizado}
               />
-              {!formState.monedaid && (
-                <span className={styles.fieldHint}>Sin moneda asignada</span>
-              )}
-              {formState.monedaid && !formErrors.montomaximoutilizado && (
+              {!formState.monedaid && <span className={f.ayudaEnCampo}>Sin moneda asignada</span>}
+              {formState.monedaid && (
                 <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
               )}
             </div>
-            <div style={{ flex: 1 }}>
-              <InputSimple
-                label="Porcentaje Máximo Utilizado (%) *"
-                value={formState.porcentajemaximoutilizado}
-                onChange={val => handleInputChange("porcentajemaximoutilizado", val)}
-                mask="% num"
-                blocks={{ num: bloqueNumerico(100) }}
-                lazy={false}
-                className={styles.compactInput}
-                error={formErrors.porcentajemaximoutilizado}
-              />
-            </div>
+            <InputSimple
+              label="Porcentaje Máximo Utilizado (%) *"
+              value={formState.porcentajemaximoutilizado}
+              onChange={(val) => handleInputChange("porcentajemaximoutilizado", val)}
+              mask="% num"
+              blocks={{ num: bloqueNumerico(100) }}
+              lazy={false}
+              hideErrorSpace
+            />
           </div>
-        </div>
-
-        <div className={styles.logoSection}>
-          {formState.logo ? (
-            <div className={styles.modalLogoPreviewWrap}>
-              <img
-                src={getLogoSrc(formState.logo)}
-                alt="Preview Logo"
-                style={{ maxHeight: "60px", maxWidth: "180px", objectFit: "contain", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(43, 113, 200, 0.15)", padding: "0.25rem", borderRadius: "0.5rem" }}
-              />
-              <button
-                type="button"
-                className={styles.btnRemoveLogo}
-                onClick={() => setFormState({ ...formState, logo: "" })}
-              >
-                Quitar Imagen
-              </button>
-            </div>
-          ) : (
-            <div className={styles.uploadZone} onClick={triggerFileSelect}>
-              <FiUploadCloud className={styles.uploadIcon} />
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: "0.8125rem", fontWeight: "600", color: "#ffffff" }}>
-                  Cargar Logo de la Cadena (Opcional)
-                </div>
-                <div style={{ fontSize: "0.7rem", color: "#8b949e", marginTop: "0.15rem" }}>
-                  Arrastrá o hacé click aquí. JPG o PNG con fondo transparente, máx. 500 KB.
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        </SeccionCadena>
 
         <input
           type="file"
@@ -525,34 +467,15 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
         />
       </div>
 
-      <div className={styles.modalFoot}>
-        <Button
-          variant="outlineBlue"
-          onClick={onClose}
-          disabled={actualizarMutation.isPending}
-        >
-          CANCELAR
-        </Button>
-        <Button
-          variant="blue"
-          onClick={handleSave}
-          isLoading={actualizarMutation.isPending}
-          disabled={sinCambios}
-          title={sinCambios ? "No hay cambios para guardar" : undefined}
-        >
-          GUARDAR
-        </Button>
-      </div>
-
       <ConfirmacionModal
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSave}
-        titulo="Confirmar Modificación"
+        titulo="Confirmar modificación"
         mensaje="¿Estás seguro de que deseas guardar los cambios realizados en esta cadena de valor?"
         variant="blue"
-        confirmText="GUARDAR"
-        cancelText="CANCELAR"
+        confirmText="Guardar"
+        cancelText="Cancelar"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={actualizarMutation.isPending}

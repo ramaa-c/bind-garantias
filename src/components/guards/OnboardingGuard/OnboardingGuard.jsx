@@ -20,6 +20,7 @@ import { useChannel } from "../../../context/useChannel";
 import { useVendor } from "../../../hooks/useVendor";
 import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
 import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
+import { useAsistenciaInterna, separarEmpresasAsistidas } from "../../../hooks/useAsistenciaInterna";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
@@ -40,6 +41,7 @@ export const OnboardingGuard = ({ children }) => {
   const isSeleccionarEmpresaPage = location.pathname.endsWith(
     "/seleccionar-empresa",
   );
+  const isElegirEmpresaPage = location.pathname.endsWith("/elegir-empresa");
   const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
   const isLegajoPage = location.pathname.endsWith("/legajo");
   const isDocumentacionPage = location.pathname.endsWith("/documentacion");
@@ -116,10 +118,18 @@ export const OnboardingGuard = ({ children }) => {
   // datos) — eso no cuenta como empresa registrada. Filtramos esos casos acá
   // para no mandar al usuario a /legajo con una empresa vacía, dejándolo sin
   // forma de volver a completar el alta.
-  const { empresasCompletas, isLoading: isLoadingEmpresasCompletas } =
-    useEmpresasCompletas(listaEmpresasBase);
-  const listaEmpresas = empresasCompletas;
+  const { vigentesQueAtiendo, cargando: cargandoAsistencias } = useAsistenciaInterna({ habilitado: !isVendor });
+  const { propias: listaPropiasBase, asistidas: empresasAsistidas } = separarEmpresasAsistidas(
+    listaEmpresasBase,
+    vigentesQueAtiendo,
+  );
+  const { empresasCompletas, isLoading: isLoadingEmpresasCompletas } = useEmpresasCompletas(
+    cargandoAsistencias ? [] : listaPropiasBase,
+  );
+  const listaEmpresas = isVendor ? empresasCompletas : [...empresasCompletas, ...empresasAsistidas];
   const tieneEmpresas = listaEmpresas.length > 0;
+  const unicaEmpresaId =
+    listaEmpresas.length === 1 ? listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID || null : null;
 
   // El socio ya puede tener datos reales (esSocioVacio ya no alcanza) sin
   // que el CDA de PANTALLA_INGRESO_CUIT haya pasado — eso pasa siempre que
@@ -128,7 +138,12 @@ export const OnboardingGuard = ({ children }) => {
   // equipo el 2026-08-13): el socio puede entrar más allá del resultado del
   // CDA — el aviso y el bloqueo real (migración a SGR+) viven en
   // LegajoUniversalBar, que sí sigue consultando ese estado.
-  const empresaActual = !isVendor ? listaEmpresas[0] : null;
+  const esMultiEmpresa = !isVendor && listaEmpresas.length > 1;
+  const empresaElegida = listaEmpresas.find(
+    (s) => String(s?.socioid ?? s?.SocioID) === String(activeSocioId ?? ""),
+  );
+  const empresaActual = isVendor ? null : esMultiEmpresa ? empresaElegida : listaEmpresas[0];
+  const atiendoEmpresaActual = !!empresaActual?.esAsistencia;
   const telefonoActual = String(
     empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
   ).trim();
@@ -186,14 +201,12 @@ export const OnboardingGuard = ({ children }) => {
     // si tieneEmpresas resuelve antes, le fijaría un activeSocioId a un
     // vendor real antes de saber que lo es, y el guard de abajo ya no lo
     // manda a /seleccionar-empresa.
-    if (tieneEmpresas && !activeSocioId && vendorData && !vendorData.isVendor) {
-      const firstSocioId =
-        listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID;
-      if (firstSocioId) {
-        setActiveSocioId(firstSocioId);
+    if (unicaEmpresaId && vendorData && !vendorData.isVendor) {
+      if (String(unicaEmpresaId) !== String(activeSocioId ?? "")) {
+        setActiveSocioId(unicaEmpresaId);
       }
     }
-  }, [tieneEmpresas, activeSocioId, vendorData, listaEmpresas, setActiveSocioId]);
+  }, [activeSocioId, vendorData, unicaEmpresaId, setActiveSocioId]);
 
   React.useEffect(() => {
     if (isVendor && !isLoadingVendor && user) {
@@ -261,7 +274,8 @@ export const OnboardingGuard = ({ children }) => {
       (isLoadingTerminosVigentes || isLoadingConfirmacionTyC)) ||
     isLoadingVendor ||
     isVerifying ||
-    cargandoAccesoDashboard
+    cargandoAccesoDashboard ||
+    (usuarioWebId && !isLoadingVendor && !isVendor && cargandoAsistencias)
   ) {
     return (
       <LoadingScreen
@@ -316,32 +330,23 @@ export const OnboardingGuard = ({ children }) => {
       ) {
         return <Navigate to={homePath} replace />;
       }
-    } else if (!telefonoActual) {
-      // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
-      // "umbral", el Paso 2 es lo que termina de cargar datos como el
-      // teléfono). Lo mandamos directo a completarlo, sin pasar de nuevo
-      // por Paso1Cuit (ese paso bloquearía por "ya existe"). A propósito ya
-      // NO importa el resultado del CDA acá — el socio puede entrar a
-      // operar con su cuenta más allá de si el CDA de ingreso pasó o no; el
-      // aviso de "no pasaste las validaciones" vive en LegajoUniversalBar
-      // (banner permanente) y el bloqueo real está en la migración a SGR+,
-      // no en el acceso (acordado con el equipo el 2026-08-13).
-      if (!isAltaDatosPage && !debeAceptarTerminos) {
-        return (
-          <Navigate
-            to={`${basePath}/alta-datos-empresa`}
-            state={{ socioParaCompletar: empresaActual }}
-            replace
-          />
-        );
+    } else if (esMultiEmpresa && !empresaElegida) {
+      if (!isElegirEmpresaPage) {
+        return <Navigate to={`${basePath}/elegir-empresa`} replace />;
       }
+      return <>{children}</>;
     } else if (
       (isTerminosPage && !debeAceptarTerminos) ||
-      isAltaDatosPage ||
+      (isAltaDatosPage && (!!telefonoActual || atiendoEmpresaActual)) ||
       isSeleccionarEmpresaPage ||
-      isInicioPage
+      isInicioPage ||
+      (isElegirEmpresaPage && !esMultiEmpresa)
     ) {
       return <Navigate to={homePath} replace />;
+    }
+
+    if (isElegirEmpresaPage) {
+      return <>{children}</>;
     }
 
     if (!isSolicitudesEnabled && isSolicitudesPage) {

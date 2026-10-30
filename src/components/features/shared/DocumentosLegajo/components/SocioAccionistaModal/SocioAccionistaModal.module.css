@@ -1,7 +1,7 @@
 .modalForm {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.5rem;
 }
 .modalRow {
   display: grid;
@@ -34,75 +34,6 @@
 .modalFooterAdmin {
   background: var(--bg-surface);
 }
-.cuitSearchStep {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 0.5rem 0 0.25rem;
-  width: 100%;
-  animation: cuitFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.cuitSearchBanner {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.875rem 1.125rem;
-  border-radius: 0.875rem;
-  background: rgba(245, 244, 0, 0.025);
-  border: 1px solid rgba(245, 244, 0, 0.1);
-  width: 100%;
-  max-width: 28rem;
-  transition: border-color 0.2s;
-}
-.cuitSearchBanner:hover {
-  border-color: rgba(245, 244, 0, 0.18);
-}
-.cuitSearchBannerAdmin {
-  background: rgba(76, 101, 230, 0.05);
-  border-color: rgba(76, 101, 230, 0.15);
-}
-.cuitSearchBannerAdmin:hover {
-  border-color: rgba(76, 101, 230, 0.3);
-}
-.cuitSearchBannerIcon {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
-  background: var(--badge-amarillo-bg);
-  border: 1px solid var(--badge-amarillo-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--badge-amarillo-text);
-  flex-shrink: 0;
-}
-.cuitSearchBannerIconAdmin {
-  background: rgba(76, 101, 230, 0.1);
-  border-color: rgba(76, 101, 230, 0.25);
-  color: var(--color-azul-bind, #4c65e6);
-}
-.cuitSearchBannerText {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.cuitSearchBannerTitle {
-  color: var(--white-muted, #f0f0f0);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  margin: 0;
-}
-.cuitSearchBannerSub {
-  color: var(--text-muted, #666);
-  font-size: 0.72rem;
-  margin: 0;
-  line-height: 1.4;
-}
-.cuitSearchInputWrapper {
-  width: 100%;
-  max-width: 28rem;
-}
 @keyframes cuitFadeIn {
   from {
     opacity: 0;
@@ -113,115 +44,149 @@
     transform: translateY(0);
   }
 }
-.summaryCard {
-  background: rgba(61, 220, 132, 0.03);
-  border: 1px solid rgba(61, 220, 132, 0.12);
-  border-radius: 1rem;
+/* ── Ficha de la persona validada + participación en la misma fila ── */
+.identidadRow {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  box-shadow: inset 3px 0 0 rgba(61, 220, 132, 0.25);
+  gap: 0.75rem;
 }
 
-.summaryHeader {
+.identidadCard {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.875rem;
+  /* Tinte verde de "validado": se nota sin competir con los campos. */
+  background: linear-gradient(90deg, rgba(61, 220, 132, 0.1), rgba(61, 220, 132, 0.02) 60%);
+  border: 1px solid rgba(61, 220, 132, 0.25);
+  box-shadow: inset 3px 0 0 rgba(61, 220, 132, 0.45);
+}
+
+.identidadAvatar {
+  width: 2.625rem;
+  height: 2.625rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--success-green);
+  background: rgba(61, 220, 132, 0.14);
+}
+
+.identidadTexto {
+  flex: 1 1 10rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.identidadNombreFila {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  background: rgba(61, 220, 132, 0.03);
-  border-bottom: 1px solid rgba(61, 220, 132, 0.08);
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  min-width: 0;
+}
+
+.identidadNombre {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--white);
+  overflow-wrap: anywhere;
 }
 
 .summaryStatus {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(61, 220, 132, 0.12);
   color: var(--success-green, #3ddc84);
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .editLink {
-  background: rgba(var(--overlay-rgb), 0.04);
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
-  border-radius: 0.35rem;
+  flex-shrink: 0;
+  min-height: 2.125rem;
+  background: transparent;
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  border-radius: 0.5625rem;
   cursor: pointer;
-  padding: 0.25rem 0.6rem;
+  padding: 0 0.75rem;
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  transition: all 0.2s;
+  gap: 0.375rem;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
   font-family: inherit;
+  white-space: nowrap;
 }
-.editLink:hover {
+
+.editLink:hover:not(:disabled) {
   color: var(--white);
-  background: rgba(var(--overlay-rgb), 0.08);
-  border-color: rgba(var(--overlay-rgb), 0.15);
+  background: rgba(var(--overlay-rgb), 0.06);
+  border-color: rgba(var(--overlay-rgb), 0.18);
 }
 
-.summaryBody {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.summaryInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.editLink:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .editableSummaryName {
+  flex: 1;
+  min-width: 8rem;
   background: transparent;
   border: none;
   border-bottom: 1px dashed rgba(var(--overlay-rgb), 0.2);
   color: var(--white);
-  font-size: 1.125rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   margin: 0;
   outline: none;
-  width: 100%;
-  padding: 0 0 0.25rem 0;
+  padding: 0 0 0.15rem 0;
   transition: border-color 0.2s ease;
   font-family: inherit;
 }
+
 .editableSummaryName:focus {
   border-bottom-color: var(--color-azul-bind, #4c65e6);
 }
 
 .summaryCuit {
   color: var(--text-muted);
-  font-size: 0.8rem;
-  margin: 0;
-  margin-top: 0.25rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
-.summaryFooter {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: rgba(61, 220, 132, 0.02);
-  border-top: 1px solid rgba(61, 220, 132, 0.08);
-}
-
-.pctInfo {
+.pctCampo {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.375rem;
+}
+
+.pctLabelFila {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .pctLabel {
-  color: var(--white-muted);
-  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -233,28 +198,27 @@
   color: var(--danger-bright);
 }
 
-.pctInputContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: flex-end;
-}
-
 .customInputWrapper {
   display: flex;
   align-items: center;
   background: rgba(var(--overlay-rgb), 0.05);
   border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 0 0.875rem;
-  width: 8rem;
-  height: 2.5rem;
+  width: 100%;
+  height: 2.75rem;
   gap: 0.5rem;
-  transition: all 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 .customInputWrapper:focus-within {
-  border-color: var(--color-azul-bind, #4c65e6);
+  border-color: var(--color-amarillo-bind);
+  box-shadow: 0 0 0 3px rgba(245, 244, 0, 0.12);
   background: rgba(var(--overlay-rgb), 0.08);
+}
+.customInputWrapperAdmin:focus-within {
+  border-color: var(--color-azul-bind, #4c65e6);
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.15);
 }
 .wrapperError {
   border-color: rgba(255, 82, 82, 0.4) !important;
@@ -265,11 +229,12 @@
   background: transparent;
   border: none;
   color: var(--white);
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   width: 100%;
-  text-align: right;
+  text-align: left;
   outline: none;
+  font-variant-numeric: tabular-nums;
   font-family: inherit;
 }
 
@@ -287,14 +252,18 @@
   align-items: center;
   gap: 0.25rem;
 }
+/* Frente y dorso van uno debajo del otro: en fila compacta (ver
+   DropzoneField) cada uno ocupa una sola línea, así que apilados ocupan
+   menos alto que la grilla de 2 tarjetas grandes que había antes y el
+   nombre del archivo tiene todo el ancho para no cortarse. */
 .dropzoneGrid {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 0.625rem;
 }
 .dropzoneWrapper {
   width: 100%;
-  overflow: hidden;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -302,54 +271,54 @@
   width: 100%;
   box-sizing: border-box;
 }
-/* Con CargaArchivos en variante compact (ver DropzoneField acá arriba), el
-   estado vacío (ícono + título + subtítulo) y el estado "archivo cargado"
-   (una fila, ícono + nombre) quedan lo bastante parecidos en alto como para
-   compartir el mismo min-height bajo, sin que ninguno de los dos necesite
-   crecer para igualar al otro (antes 138px "empataba" subiendo el estado
-   cargado, que no lo necesitaba, y terminaba agrandando el modal en vez de
-   achicarlo - reportado el 2026-09-21). */
-.dropzoneWrapper > div {
-  min-height: 118px;
-}
+
 @media (min-width: 36rem) {
-  .dropzoneGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .identidadRow {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+  .pctCampo {
+    flex-shrink: 0;
+  }
+  .pctCampo {
+    width: 8.5rem;
   }
 }
 
-@media (min-width: 48rem) {
-  .summaryHeader {
-    padding: 0.5rem 1rem;
-  }
-  .summaryBody {
-    padding: 0.75rem 1rem;
-  }
-  .summaryFooter {
-    padding: 0.75rem 1rem;
-    gap: 0.5rem;
-  }
-  .customInputWrapper {
-    height: 2.125rem;
-  }
-  .editableSummaryName {
-    font-size: 1rem;
-  }
-  .summaryCuit {
-    margin-top: 0.15rem;
-  }
-  .dropzoneWrapper > div {
-    min-height: 92px;
-    padding: 12px 16px;
-  }
-}
 .sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
   font-size: 0.8125rem;
   font-weight: 700;
-  color: rgba(var(--overlay-rgb), 0.7);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--white-muted, var(--white));
+}
+.sectionTitle:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.sectionNum {
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 0.4375rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.6875rem;
+  background: rgba(var(--overlay-rgb), 0.07);
+  color: var(--text-muted);
+}
+.sectionNumOk {
+  background: rgba(61, 220, 132, 0.15);
+  color: var(--success-green);
+}
+.sectionNumOk svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  stroke-width: 3.2;
 }
 .availableText {
   font-size: 0.7rem;
@@ -357,4 +326,63 @@
 }
 .availableTextError {
   color: var(--danger-bright);
+}
+
+/* ── Paso "buscar por CUIT" (mismo lenguaje que Paso1Cuit) ── */
+.cuitSearchStep {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.5rem 0 0.25rem;
+  animation: cuitFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cuitSearchHead {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.cuitSearchIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 0.8rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
+}
+.cuitSearchIconAdmin {
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.25);
+  color: var(--color-azul-bind, #4c65e6);
+}
+.cuitSearchHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.cuitSearchTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+}
+.cuitSearchSub {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.cuitSearchInputWrapper {
+  width: 100%;
+}
+.cuitSearchAyuda {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }

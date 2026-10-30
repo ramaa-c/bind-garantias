@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Modal, Button, InputSimple, Skeleton } from "../../../ui";
+import { Modal, Button, InputSimple, Skeleton, Switch } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import {
   useObtenerUsuariosRelacionados,
@@ -10,7 +10,7 @@ import {
 import { usuarioService } from "../../../../services/usuarioService";
 import { sociosService } from "../../../../services/sociosService";
 import styles from "./UsuariosRelacionadosModal.module.css";
-import { FiPlus, FiX, FiUserPlus, FiAlertCircle } from "react-icons/fi";
+import { FiUserPlus, FiUsers } from "react-icons/fi";
 
 const EMPTY_ARRAY = [];
 
@@ -37,7 +37,6 @@ const verificarSociosVinculados = async (usuarioWebId) => {
 };
 
 export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
-  const [showForm, setShowForm] = useState(false);
   const [searchEmail, setSearchEmail] = useState("");
   const [isVinculando, setIsVinculando] = useState(false);
   const [errorEmail, setErrorEmail] = useState("");
@@ -88,6 +87,11 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
   // Registro.jsx) — el admin nunca los da de alta, solo busca y vincula a
   // uno que ya existe. Si no lo encuentra, hay que avisarle a la persona
   // que todavía no se registró en vez de crearle la cuenta desde acá.
+  const marcarErrorEmail = (mensaje) => {
+    setErrorEmail(mensaje);
+    toast.error(mensaje);
+  };
+
   const handleVincular = async () => {
     const trimmedEmail = searchEmail.trim().toLowerCase();
     if (!trimmedEmail) return;
@@ -109,7 +113,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       const userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
 
       if (!userId) {
-        setErrorEmail(
+        marcarErrorEmail(
           "No hay ningún usuario registrado con ese correo. Debe registrarse primero desde el login de su banco.",
         );
         return;
@@ -119,7 +123,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       // valor: no tiene sentido (ni corresponde) vincularlo a una en
       // particular como usuario de cadena.
       if (esAdministradorActivo(targetUser)) {
-        setErrorEmail(
+        marcarErrorEmail(
           "Es Administrador General: ya tiene acceso a todas las cadenas de valor.",
         );
         return;
@@ -136,7 +140,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       }
 
       if (verificacionSocios === "con_socios") {
-        setErrorEmail(
+        marcarErrorEmail(
           "Ya opera como cliente con una empresa vinculada. Para administrar la cadena debe registrarse con otro correo.",
         );
         return;
@@ -168,7 +172,6 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       }
 
       setSearchEmail("");
-      setShowForm(false);
     } catch (err) {
       console.error("Error linking user:", err);
       toast.error(err.response?.data?.message || err.message || "Ocurrió un error al vincular el usuario.");
@@ -197,105 +200,79 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
     });
   };
 
+  const emailDe = (relation) =>
+    userEmails[relation.usuariowebid] || relation.email || relation.username || `Cargando email (ID: #${relation.usuariowebid})`;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="USUARIOS AUTORIZADOS"
-      maxWidth="600px"
+      title="Usuarios autorizados"
+      subtitle="Usuarios autorizados a interactuar con esta cadena de valor en la plataforma web."
+      icono={<FiUsers />}
+      maxWidth="640px"
       variant="blue"
+      footer={
+        <Button variant="adminNeutro" onClick={onClose}>
+          Cerrar
+        </Button>
+      }
     >
       <div className={styles.modalBody}>
         <CadenaHeaderCard
+          compacta
           denominacion={activeItem?.denominacion}
           logo={activeItem?.logo}
           referencia={activeItem?.referencia}
           cadenavalorid={activeItem?.cadenavalorid}
           cuittercero={activeItem?.cuittercero}
         />
-        
-        <div className={styles.introRow}>
-          <p className={styles.introText}>
-            Usuarios autorizados a interactuar con esta cadena de valor en la plataforma web.
-          </p>
-          <button type="button"
-            className={styles.btnNuevoBlue}
-            style={{ marginBottom: 0, flexShrink: 0 }}
-            onClick={() => {
-              setShowForm((prev) => !prev);
-              setSearchEmail("");
-              setErrorEmail("");
-            }}
-          >
-            {showForm ? <><FiX style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> CANCELAR</> : <><FiPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> NUEVO</>}
-          </button>
+
+        <div className={styles.formContainer}>
+          <div className={styles.formRow}>
+            <div className={styles.inputWrap}>
+              <InputSimple
+                className={styles.inputNoPadding}
+                label="Vincular usuario existente (email)"
+                value={searchEmail}
+                onChange={(val) => {
+                  setSearchEmail(val);
+                  if (errorEmail) setErrorEmail("");
+                }}
+                disabled={isVinculando}
+                error={!!errorEmail}
+                hideErrorSpace
+                aria-invalid={!!errorEmail}
+              />
+            </div>
+            <Button
+              variant="blue"
+              onClick={handleVincular}
+              isLoading={isVinculando}
+              disabled={!searchEmail.trim()}
+            >
+              <FiUserPlus aria-hidden="true" /> Vincular
+            </Button>
+          </div>
         </div>
 
-        {/* Inline Link Form */}
-        {showForm && (
-          <div className={styles.formContainer}>
-            <h4 className={styles.formTitle}>Vincular Usuario Existente</h4>
-            <div className={styles.formRow}>
-              <div className={styles.inputWrap}>
-                <InputSimple
-                  className={styles.inputNoPadding}
-                  label="Email de usuario"
-                  value={searchEmail}
-                  onChange={(val) => {
-                    setSearchEmail(val);
-                    if (errorEmail) setErrorEmail("");
-                  }}
-                  disabled={isVinculando}
-                  error={!!errorEmail}
-                  hideErrorSpace
-                  aria-invalid={!!errorEmail}
-                  aria-describedby={errorEmail ? "error-email-vinculo" : undefined}
-                />
-              </div>
-              <Button
-                variant="blue"
-                onClick={handleVincular}
-                isLoading={isVinculando}
-                disabled={!searchEmail.trim()}
-              >
-                <FiUserPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> VINCULAR
-              </Button>
-            </div>
-            {errorEmail && (
-              <p id="error-email-vinculo" className={styles.errorVinculo} role="alert">
-                <FiAlertCircle aria-hidden="true" />
-                {errorEmail}
-              </p>
-            )}
-          </div>
-        )}
+        <div className={styles.seccionTitulo}>
+          <span>Con acceso</span>
+          {!loadingRelations && !errorRelations && <span className={styles.contador}>{relationsList.length}</span>}
+          <span className={styles.linea} aria-hidden="true" />
+        </div>
 
-        {/* Relations List */}
         {loadingRelations ? (
-          <div className={styles.tableWrapper}>
-            <table className={styles.usersTable}>
-              <thead>
-                <tr>
-                  <th>Nombre de usuario / Email</th>
-                  <th>Habilitado</th>
-                  <th style={{ textAlign: "right", width: "120px" }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}>
-                    <td><Skeleton width="70%" height="0.85rem" /></td>
-                    <td><Skeleton width="2.6rem" height="1.3rem" radius="pill" /></td>
-                    <td>
-                      <Skeleton width="6.5rem" height="1.8rem" radius="0.5rem" style={{ marginLeft: "auto" }} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.lista}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className={styles.fila}>
+                <Skeleton width="2rem" height="2rem" radius="0.55rem" />
+                <Skeleton width="55%" height="0.85rem" />
+              </div>
+            ))}
           </div>
         ) : errorRelations ? (
-          <div className={styles.emptyContainer} style={{ borderColor: "rgba(234, 74, 90, 0.2)" }}>
+          <div className={`${styles.emptyContainer} ${styles.emptyError}`}>
             <p className={styles.errorText}>Error al cargar los usuarios relacionados. Reintente más tarde.</p>
           </div>
         ) : relationsList.length === 0 ? (
@@ -303,68 +280,30 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
             <p className={styles.emptyText}>No hay usuarios vinculados a esta cadena de valor.</p>
           </div>
         ) : (
-          <div className={styles.tableWrapper}>
-            <table className={styles.usersTable}>
-              <thead>
-                <tr>
-                  <th>Nombre de usuario / Email</th>
-                  <th>Habilitado</th>
-                  <th style={{ textAlign: "right", width: "120px" }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {relationsList.map((relation) => (
-                  <tr key={relation.usuariocadenavalorid}>
-                    <td>
-                      <span className={styles.userMailText}>
-                        {userEmails[relation.usuariowebid] || relation.email || relation.username || `Cargando email (ID: #${relation.usuariowebid})`}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={
-                          relation.activa === "1"
-                            ? styles.statusBadgeActive
-                            : styles.statusBadgeInactive
-                        }
-                      >
-                        {relation.activa === "1" ? "Sí" : "No"}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <button
-                        className={
-                          relation.activa === "1"
-                            ? styles.btnActionDisable
-                            : styles.btnActionEnable
-                        }
-                        onClick={() => handleToggleStatus(relation)}
-                        disabled={updateMutation.isPending}
-                      >
-                        {relation.activa === "1" ? "Deshabilitar" : "Habilitar"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className={styles.lista}>
+            {relationsList.map((relation) => {
+              const activa = relation.activa === "1";
+              const email = emailDe(relation);
+              return (
+                <li key={relation.usuariocadenavalorid} className={styles.fila}>
+                  <span className={styles.avatar} aria-hidden="true">
+                    {email.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className={styles.userMailText} title={email}>{email}</span>
+                  <span className={`${styles.estado} ${activa ? styles.estadoActivo : ""}`}>
+                    {activa ? "Habilitado" : "Deshabilitado"}
+                  </span>
+                  <Switch
+                    checked={activa}
+                    onChange={() => handleToggleStatus(relation)}
+                    variant="admin"
+                    disabled={updateMutation.isPending}
+                  />
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
-      <div
-        className={styles.modalFoot}
-        style={{
-          margin: "1.5rem -1.5rem -1.5rem -1.5rem",
-          padding: "1.25rem 1.5rem",
-          borderTop: "1px solid rgba(43, 113, 200, 0.12)",
-          display: "flex",
-          justifyContent: "flex-end",
-          background: "rgba(0, 0, 0, 0.2)",
-        }}
-      >
-        <Button variant="outlineBlue" onClick={onClose}>
-          CERRAR
-        </Button>
       </div>
     </Modal>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiLink, FiPlus } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { useTiposProducto, useObligaciones } from "../../../hooks/useCatalogos";
@@ -12,13 +12,13 @@ import {
 import {
   Modal,
   Button,
-  Spinner,
   Skeleton,
   InputSimple,
   SelectSimple,
 } from "../../../components/ui";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { PieModal } from "../../../components/features/admin/PieModal/PieModal";
 import styles from "./LineasProductos.module.css";
 
 // --- CHILD COMPONENT: SKELETON CARD ---
@@ -146,10 +146,7 @@ const ConfigModalInner = ({
   const handleSubmitForm = (e) => {
     e.preventDefault();
 
-    if (!formData.tipoobligacionid) {
-      toast.warning("Por favor selecciona un producto financiero");
-      return;
-    }
+    if (faltanObligatorios) return;
 
     const payload = {
       tipoobligaciontipolimiteid: formData.tipoobligaciontipolimiteid || 0,
@@ -181,119 +178,48 @@ const ConfigModalInner = ({
     }
   };
 
+  const guardandoProducto = asociarMutation.isPending || actualizarProductoMutation.isPending;
+  const faltanObligatorios = !formData.tipoobligacionid || !String(formData.descripcionProducto || "").trim();
+
   return (
-    <form onSubmit={handleSubmitForm} style={{ padding: "0.5rem 0" }}>
-      <div
-        style={{
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1.5rem",
+    <form onSubmit={handleSubmitForm} className={styles.formProducto}>
+      <SelectSimple
+        label="Producto Base *"
+        options={allObligaciones}
+        value={formData.tipoobligacionid}
+        onChange={(val) => {
+          handleInputChange("tipoobligacionid", val);
+          const matchedOption = allObligaciones.find((o) => o.value === val);
+          if (matchedOption && !formData.descripcionProducto) {
+            handleInputChange("descripcionProducto", matchedOption.label);
+          }
         }}
-      >
-        {(asociarMutation.isPending ||
-          actualizarProductoMutation.isPending) && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(13, 17, 23, 0.7)",
-              zIndex: 10,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: "0.5rem",
-              backdropFilter: "blur(2px)",
-            }}
-          >
-            <Spinner size={50} />
-          </div>
-        )}
-
-        <div
-          style={{
-            background: "rgba(76, 101, 230, 0.1)",
-            border: "1px solid rgba(76, 101, 230, 0.2)",
-            padding: "1rem",
-            borderRadius: "0.5rem",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: "0.85rem",
-              color: "#a5b4fc",
-              lineHeight: "1.5",
-            }}
-          >
-            Seleccioná un producto base del catálogo del banco y asignale un
-            nombre para identificarlo fácilmente dentro de esta línea.
-          </p>
-        </div>
-
-        <div>
-          <SelectSimple
-            label="Producto Base *"
-            options={allObligaciones}
-            value={formData.tipoobligacionid}
-            onChange={(val) => {
-              handleInputChange("tipoobligacionid", val);
-              const matchedOption = allObligaciones.find(
-                (o) => o.value === val,
-              );
-              if (matchedOption && !formData.descripcionProducto) {
-                handleInputChange("descripcionProducto", matchedOption.label);
-              }
-            }}
-          />
-        </div>
-
-        <div>
-          <InputSimple
-            label="Nombre Comercial *"
-            value={formData.descripcionProducto}
-            onChange={(val) => handleInputChange("descripcionProducto", val)}
-          />
-        </div>
-
-        <div
-          className={styles.modalFooter}
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "1rem",
-            marginTop: "1rem",
-            paddingTop: "1.5rem",
-            borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-          }}
-        >
-          <Button
-            type="button"
-            variant="outlineBlue"
-            onClick={onClose}
-            disabled={
-              asociarMutation.isPending || actualizarProductoMutation.isPending
-            }
-          >
-            CANCELAR
-          </Button>
-          <Button
-            type="submit"
-            variant="blue"
-            disabled={
-              asociarMutation.isPending || actualizarProductoMutation.isPending
-            }
-          >
-            {formData.tipoobligaciontipolimiteid
-              ? "GUARDAR CAMBIOS"
-              : "VINCULAR"}
-          </Button>
-        </div>
+      />
+      <div className={styles.campoConAyuda}>
+        <InputSimple
+          label="Nombre Comercial *"
+          value={formData.descripcionProducto}
+          onChange={(val) => handleInputChange("descripcionProducto", val)}
+        />
+        <span className={styles.ayudaCampo}>Es el nombre con el que se identifica el producto dentro de esta línea.</span>
       </div>
+      <PieModal ayuda="Los campos con * son obligatorios">
+        <Button type="button" variant="adminNeutro" onClick={onClose} disabled={guardandoProducto}>
+          Cancelar
+        </Button>
+        <Button
+          type="submit"
+          variant="blue"
+          isLoading={guardandoProducto}
+          disabled={guardandoProducto || faltanObligatorios}
+          title={faltanObligatorios ? "Completá los campos obligatorios" : undefined}
+        >
+          {formData.tipoobligaciontipolimiteid ? "Guardar cambios" : "Vincular producto"}
+        </Button>
+      </PieModal>
     </form>
   );
 };
-
 // --- MAIN PAGE COMPONENT ---
 export default function LineasProducto() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
@@ -344,11 +270,13 @@ export default function LineasProducto() {
         </div>
         <div className={styles.headerActions}>
           <Button
-            variant="primary"
+            type="button"
+            variant="blue"
+            size="md"
             onClick={() => handleOpenConfigModal(null)}
             disabled={!selectedTipoLimiteId}
           >
-            + NUEVO PRODUCTO
+            <FiPlus /> Nuevo producto
           </Button>
         </div>
       </div>
@@ -400,8 +328,9 @@ export default function LineasProducto() {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={activeProducto ? "EDITAR PRODUCTO" : "NUEVO PRODUCTO VINCULADO"}
-        maxWidth="500px"
+        title={activeProducto ? "Editar producto" : "Nuevo producto vinculado"}
+        icono={<FiLink />}
+        maxWidth="540px"
         variant="blue"
       >
         <ConfigModalInner

@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronDown, FiSliders, FiRefreshCw, FiClock, FiFolder, FiLayers, FiEye } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
+import { LoadingScreen } from "../../../components/ui/LoadingScreen/LoadingScreen";
+import { obtenerInicialesEmpresa } from "../../../utils/empresaAvatar";
 import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
 import { Modal } from "../../../components/ui/Modal/Modal";
 import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
@@ -11,13 +13,18 @@ import { Skeleton } from "../../../components/ui";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
-import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
+import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea, useLimitesDeCadenas } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
 import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
+import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
+import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
+import { importeEnPesosDeLimite, importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
+import { SolicitudPanel } from "../../../components/features/admin/SolicitudPanel/SolicitudPanel";
+import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
 import { mensajeNegocio } from "../../../utils/mensajesError";
@@ -70,6 +77,17 @@ const dotYPillClaseDesde = (isAprobada, isRechazada, isCancelada) => {
   return "Pendiente";
 };
 
+const formatearFechaHoraFila = (iso) => {
+  if (!iso) return "—";
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "—";
+  const tieneHora = fecha.getHours() !== 0 || fecha.getMinutes() !== 0;
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "short",
+    ...(tieneHora ? { timeStyle: "short" } : {}),
+  }).format(fecha);
+};
+
 const getIniciales = (denominacion) => {
   if (!denominacion) return "?";
   const palabras = denominacion.trim().split(/\s+/).filter(Boolean);
@@ -87,22 +105,61 @@ const getIniciales = (denominacion) => {
 // cubrir 8 filas con ese overhead adicional. En vez de bajar la cantidad,
 // .listWrapper quedó con su propio tope de alto + scroll interno (ver
 // Dashboard.module.css) para no perder densidad.
+const faltantesContactoSocio = (socio) =>
+  [
+    !String(socio?.telefono ?? socio?.Telefono ?? "").trim() && "teléfono validado",
+    !String(socio?.emailfacturacion ?? socio?.EmailFacturacion ?? "").trim() && "email de facturación",
+  ].filter(Boolean);
+
+// Mismas precondiciones que Linea/Migrar en la API (TMigracionManager.MigrarLinea):
+// si falta alguna, la migración falla recién al final, con la línea ya
+// aprobada. null = todavía no se pudo leer la configuración.
+const faltantesConfiguracionMigracion = (cadena, lineasCadena, tipoLimiteId) => {
+  if (!cadena || !lineasCadena) return null;
+  const linea = lineasCadena.find(
+    (l) => Number(l.tipolimiteid) === Number(tipoLimiteId) && String(l.activa) === "1",
+  );
+  return [
+    !linea && "la línea activa en la cadena",
+    !(Number(cadena.tipocontratoid) > 0) && "el tipo de contrato de la cadena",
+    linea && !(Number(linea.monedacontratoid) > 0) && "la moneda del contrato de la línea",
+    linea && !(Number(linea.diasvigenciacontrato) > 0) && "los días de vigencia del contrato de la línea",
+    linea &&
+      String(linea.valorespordefecto) === "1" &&
+      !(Number(linea.montocontrato) > 0) &&
+      "el monto del contrato de la línea",
+  ].filter(Boolean);
+};
+
+const textoFaltantesConfiguracion = (faltantes) =>
+  faltantes === null
+    ? "Revisando la configuración de la cadena…"
+    : `Falta configurar ${faltantes.join(", ")}`;
+
 const ELEMENTOS_POR_PAGINA = 8;
 
 // Misma forma que una fila real, para que el loading no "salte" de tamaño
 // cuando llegan los datos.
 const SolicitudRowSkeleton = () => (
-  <div className={styles.row}>
+  <div className={styles.row} aria-hidden="true">
     <Skeleton width="2.35rem" height="2.35rem" radius="50%" />
     <div className={styles.rowIdentity}>
-      <Skeleton height="0.9rem" width="55%" />
-      <Skeleton height="0.75rem" width="75%" style={{ marginTop: "0.35rem" }} />
+      <Skeleton height="0.875rem" width="35%" />
+      <Skeleton height="0.75rem" width="55%" style={{ margin: "0.125rem 0" }} />
+      <span className={styles.rowChips}>
+        <Skeleton width="4rem" height="1.45rem" radius="0.4rem" />
+        <Skeleton width="6.75rem" height="1.45rem" radius="0.4rem" />
+        <Skeleton width="8rem" height="1.45rem" radius="0.4rem" />
+      </span>
     </div>
-    <Skeleton width="6rem" height="1.4rem" radius="9999px" />
-    <Skeleton width="7rem" height="1.1rem" />
-    <div className={styles.rowSpacer} />
-    <Skeleton width="10rem" height="1.9rem" radius="0.5rem" />
-    <Skeleton width="1rem" height="1rem" />
+    <Skeleton width="7.5rem" height="1.45rem" radius="pill" />
+    <div className={styles.rowAmountBlock}>
+      <Skeleton width="2.5rem" height="0.6rem" />
+      <Skeleton width="5.75rem" height="1.05rem" style={{ marginTop: "0.15rem" }} />
+    </div>
+    <div className={styles.rowActions}>
+      <Skeleton width="7.3rem" height="1.9rem" radius="0.6rem" />
+    </div>
   </div>
 );
 
@@ -114,20 +171,16 @@ export default function Dashboard() {
   const [fechaHasta, setFechaHasta] = useState(FILTROS_POR_DEFECTO.fechaHasta);
   const [selectedCadenaId, setSelectedCadenaId] = useState("all");
   const [pagina, setPagina] = useState(1);
-  // Colapsado por defecto solo en Rango 2 (pantalla chica/zoom alto, mismo
-  // umbral que AdminLayout.module.css): ahí es donde el espacio es
-  // crítico. En Rango 1 sobra aire, así que arranca abierto - cerrarlo ahí
-  // sería un clic gratis en contra. Es solo el estado INICIAL (no
-  // reacciona en vivo a un cambio de zoom con la pantalla montada): el
-  // operador lo puede abrir/cerrar con el botón en cualquier momento.
-  const [panelesVisibles, setPanelesVisibles] = useState(
-    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
-  );
+  const contenedorRef = useRef(null);
+  const listaRef = useRef(null);
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
   const [solicitudCda, setSolicitudCda] = useState(null);
   const [solicitudARechazar, setSolicitudARechazar] = useState(null);
+  const [empresaActividad, setEmpresaActividad] = useState(null);
   const [isChainModalOpen, setIsChainModalOpen] = useState(false);
   const { abrir: abrirModeloDocumento, pendienteId: pendienteModeloDocumentoId } = useAbrirModeloDocumento();
   const [chainSearchQuery, setChainSearchQuery] = useState("");
@@ -155,6 +208,17 @@ export default function Dashboard() {
     return map;
   }, [todasCadenasConEstado]);
 
+  const cadenaInfoPorId = useMemo(() => {
+    const map = new Map();
+    (todasCadenasConEstado || []).forEach((c) => {
+      map.set(String(c.cadenavalorid ?? c.CadenaValorID), {
+        nombre: (c.referencia || c.Referencia || "").trim() || c.denominacion || c.Denominacion || "",
+        nombreCompleto: c.denominacion || c.Denominacion || "",
+      });
+    });
+    return map;
+  }, [todasCadenasConEstado]);
+
   // Los parámetros de esos modelos se piden por adelantado para saber, ya
   // acá, si cada solicitud pendiente va a poder generar su documento (ver
   // evaluarModeloDocumento): el botón lo explica en su tooltip y no se
@@ -166,9 +230,9 @@ export default function Dashboard() {
   const { porModelo: parametrosPorModelo } = useParametrosModelosDocumento(modelosDocumentoIds);
 
   const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
-  const { data: limitesData, isLoading: isLoadingLimites } =
+  const { data: limitesData, isLoading: isLoadingLimites, refetch: refetchLimites } =
     useObtenerLimites(targetCadenaId > 0 ? targetCadenaId : undefined);
-  const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
+  const { data: sociosData, isLoading: isLoadingSocios, refetch: refetchSocios } = useObtenerSocios();
   const actualizarEstadoMutation = useActualizarLimiteSocio();
   const migrarLineaMutation = useMigrarLinea();
   const queryClient = useQueryClient();
@@ -184,19 +248,30 @@ export default function Dashboard() {
   // global, igual que del lado cliente.
   const { data: tiposLimiteGlobal } = useTiposProducto();
   const familiaDeLinea = useCallback(
-    (tipoLimiteId) => {
-      const item = tiposLimiteGlobal?.raw?.find(
-        (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
-      );
-      const desc = (item?.descripcion || "").toUpperCase();
-      if (desc.includes("CHEQUE")) return "Alta de línea (Cheque)";
-      if (desc.includes("PAGARE")) return "Alta de línea (Pagaré)";
-      return "Alta de línea (Préstamo)";
-    },
+    (tipoLimiteId) =>
+      `Alta de línea (${etiquetaFamiliaDeLinea(tiposLimiteGlobal, tipoLimiteId)})`,
     [tiposLimiteGlobal],
   );
 
   const loading = isLoadingLimites || isLoadingSocios;
+  const cargaInicial = loading && !limitesData && !sociosData;
+  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
+    porDefecto: ELEMENTOS_POR_PAGINA,
+    activo: !cargaInicial,
+  });
+  const [cargaDemorada, setCargaDemorada] = useState(false);
+
+  useEffect(() => {
+    if (!cargaInicial) return undefined;
+    const id = setTimeout(() => setCargaDemorada(true), 15000);
+    return () => clearTimeout(id);
+  }, [cargaInicial]);
+
+  const reintentarCarga = () => {
+    setCargaDemorada(false);
+    refetchLimites();
+    refetchSocios();
+  };
 
   // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
   // porque migrarSocioSiCorresponde necesita leer el MarcaVinculacion del
@@ -302,9 +377,13 @@ export default function Dashboard() {
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
       const tipoText = familiaDeLinea(tipoLimiteId);
+      const lineaCatalogo = tiposLimiteGlobal?.raw?.find(
+        (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
+      );
+      const cadenaValorId = l.cadenavalorid || l.CadenaValorID;
 
-      const importeLimite = l.importelimite || l.ImporteLimite;
-      const monedaId = l.monedaid || l.MonedaID;
+      const importeLimite = importeOriginalDeLimite(l);
+      const monedaId = l.monedaid ?? l.MonedaId ?? l.MonedaID;
       const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
       const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
       const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
@@ -316,12 +395,19 @@ export default function Dashboard() {
         monto: importeLimite
           ? new Intl.NumberFormat("es-AR").format(importeLimite)
           : "0",
-        moneda: monedaId === 2 ? "U$D" : "$",
+        moneda: simboloMoneda(monedaId),
+        importePesos: importeEnPesosDeLimite(l),
         cliente: socio?.denominacion || "Socio no encontrado",
         cuit: socio?.cuit || "—",
         usuario: socio?.email || "—",
         socioid: socioId,
-        cadenavalorid: l.cadenavalorid || l.CadenaValorID,
+        tipoPersonaId: socio?.tipopersonaid,
+        faltantesContacto: faltantesContactoSocio(socio),
+        cadenavalorid: cadenaValorId,
+        cadenaNombre: cadenaInfoPorId.get(String(cadenaValorId))?.nombre || "",
+        cadenaNombreCompleto: cadenaInfoPorId.get(String(cadenaValorId))?.nombreCompleto || "",
+        lineaNombre: lineaCatalogo?.descripcion || "",
+        legajoMigrado: String(socio?.marcavinculacion ?? socio?.MarcaVinculacion ?? "") === "1",
         estado: estadoText,
         accionPendiente: accionText,
         creado: fchVigenciaDesde
@@ -335,7 +421,28 @@ export default function Dashboard() {
         raw: l,
       };
     });
-  }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId, familiaDeLinea]);
+  }, [
+    limitesData,
+    sociosData,
+    isRestricted,
+    restrictedIds,
+    targetCadenaId,
+    familiaDeLinea,
+    tiposLimiteGlobal,
+    cadenaInfoPorId,
+  ]);
+
+  const lineasPorCadena = useLimitesDeCadenas(solicitudesCanal.map((s) => s.cadenavalorid));
+  const cadenaPorId = useMemo(
+    () => new Map((todasCadenasConEstado || []).map((c) => [String(c.cadenavalorid), c])),
+    [todasCadenasConEstado],
+  );
+  const faltantesConfiguracionDe = (item) =>
+    faltantesConfiguracionMigracion(
+      cadenaPorId.get(String(item.cadenavalorid)),
+      lineasPorCadena.get(String(item.cadenavalorid)),
+      item.raw?.tipolimiteid ?? item.raw?.TipoLimiteID,
+    );
 
   // La migración a SGR+ es un paso aparte de la aprobación en TipoLimiteSocio
   // (que ya quedó guardada) — si falla acá, no hay que revertir nada, solo
@@ -389,6 +496,17 @@ export default function Dashboard() {
     // normal de aprobar una segunda línea del mismo socio).
     if (String(socio.marcavinculacion ?? "") === "1") return;
 
+    const faltantes = faltantesContactoSocio(socio);
+    if (faltantes.length > 0) {
+      toast.warning(
+        contexto === "aprobar"
+          ? `La línea N°${item.id} se aprobó, pero la empresa todavía no tiene ${faltantes.join(" ni ")}`
+          : `La empresa de la línea N°${item.id} todavía no tiene ${faltantes.join(" ni ")}`,
+        { description: "El socio va a quedar sin migrar a SGR+ hasta que la empresa complete esos datos." },
+      );
+      return;
+    }
+
     let tieneCertificadoFresco = false;
     try {
       const certificados = await sociosService.obtenerCertificadoPyme(socioId);
@@ -425,6 +543,16 @@ export default function Dashboard() {
   // Primero el socio y despues la linea: Linea/Migrar necesita que el socio ya exista en SGR+ (si no, responde 409 y
   // la linea quedaba sin migrar hasta un segundo clic).
   const migrarSocioYLinea = async (item, opciones) => {
+    const faltantesConfiguracion = faltantesConfiguracionDe(item);
+    if (faltantesConfiguracion === null || faltantesConfiguracion.length > 0) {
+      toast.warning(
+        opciones?.contexto === "reintento"
+          ? `No se puede migrar la línea N°${item.id} a SGR+`
+          : `La línea N°${item.id} se aprobó, pero no se puede migrar a SGR+`,
+        { description: textoFaltantesConfiguracion(faltantesConfiguracion) },
+      );
+      return;
+    }
     await migrarSocioSiCorresponde(item, opciones);
     migrarLinea(item, opciones);
   };
@@ -591,19 +719,16 @@ export default function Dashboard() {
       return orden === "desc" ? idB - idA : idA - idB;
     });
 
-  const totalMonto = solicitudesCanal.reduce((acc, curr) => {
-    const val = parseFloat(curr.monto.replace(/\./g, "")) || 0;
-    return acc + (curr.moneda === "U$D" ? val * 1500 : val);
-  }, 0);
+  const totalMonto = solicitudesCanal.reduce((acc, curr) => acc + (curr.importePesos || 0), 0);
 
   const totalPendientes = solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length;
   const totalAprobadas = solicitudesCanal.filter((s) => s.estado === "Aprobada").length;
 
-  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ELEMENTOS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / filasPorPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const filtradasPagina = filtradas.slice(
-    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
-    paginaActual * ELEMENTOS_POR_PAGINA,
+    (paginaActual - 1) * filasPorPagina,
+    paginaActual * filasPorPagina,
   );
 
   const apoderadoFirmantePorSocio = useApoderadoFirmantePorSocio(
@@ -612,153 +737,182 @@ export default function Dashboard() {
       .map((s) => s.socioid),
   );
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Gestión de Solicitudes</h1>
-        <button
-          type="button"
-          className={styles.toggleFiltersBtn}
-          onClick={() => setPanelesVisibles((v) => !v)}
-          aria-expanded={panelesVisibles}
-          title={panelesVisibles ? "Ocultar cadena y filtros" : "Mostrar cadena y filtros"}
-        >
-          {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
-          {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
-          {/* Con el panel colapsado, esta es la única señal de que la lista
-              de abajo está filtrada y no es el total real - sin esto el
-              operador puede leerla como completa por error. */}
-          {!panelesVisibles && hayFiltrosActivos && (
-            <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
-          )}
-        </button>
-      </div>
+  const solicitudDetalleActual = solicitudDetalle
+    ? solicitudesCanal.find((s) => s.id === solicitudDetalle.id) || solicitudDetalle
+    : null;
+  const argumentosDocumentoDetalle = solicitudDetalleActual
+    ? [
+        modeloDocumentoIdPorCadena.get(String(solicitudDetalleActual.cadenavalorid)),
+        parametrosPorModelo.get(
+          Number(modeloDocumentoIdPorCadena.get(String(solicitudDetalleActual.cadenavalorid))),
+        ),
+        apoderadoFirmantePorSocio.get(Number(solicitudDetalleActual.socioid)),
+      ]
+    : [];
+  const modeloDocumentoDetalle =
+    solicitudDetalleActual &&
+    Number(solicitudDetalleActual.tipoLimiteEstadoId) === ESTADO_PENDIENTE
+      ? evaluarModeloDocumento({
+          solicitud: solicitudDetalleActual,
+          modeloDocumentoId: argumentosDocumentoDetalle[0],
+          parametrosCatalogo: argumentosDocumentoDetalle[1],
+          tieneApoderadoFirmante: argumentosDocumentoDetalle[2],
+        })
+      : null;
 
-      {/* Colapsable: subtítulo + franja de contexto + filtros. En pantallas
-          chicas (no full HD) este bloque es el que más espacio vertical le
-          come a la lista, así que se puede ocultar entero con un clic y
-          ver más solicitudes sin scrollear. */}
-      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
-        <div className={styles.collapsiblePanelInner}>
-        <p className={styles.subtitle}>Procesá las solicitudes de línea de todas las cadenas de valor activas en el sistema.</p>
-
-        {/* Franja de contexto: cadena seleccionada + métricas, en una sola línea */}
-        <div className={styles.contextBar}>
-        {loading ? (
-          <>
-            <div className={styles.contextChain}>
-              <Skeleton width="2.5rem" height="2.5rem" radius="0.625rem" />
-              <div style={{ flex: 1 }}>
-                <Skeleton height="0.9rem" width="55%" />
-                <Skeleton height="0.7rem" width="35%" style={{ marginTop: "0.3rem" }} />
-              </div>
-            </div>
-            <Skeleton width="9rem" height="1.5rem" />
-          </>
-        ) : (
-          <>
-            <div className={styles.contextChain}>
-              {selectedCadenaId === "all" ? (
-                <div className={styles.contextChainIcon}>
-                  <FiGlobe size={20} />
-                </div>
-              ) : selectedChain?.logo ? (
-                <div className={styles.contextChainLogo}>
-                  <img
-                    src={
-                      selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
-                        ? selectedChain.logo
-                        : `data:image/png;base64,${selectedChain.logo}`
-                    }
-                    alt={selectedChain.denominacion}
-                  />
-                </div>
-              ) : (
-                <div className={styles.contextChainIcon}>
-                  <FiGrid size={20} />
-                </div>
-              )}
-              <div className={styles.contextChainInfo}>
-                <span className={styles.contextChainName}>
-                  {selectedCadenaId === "all"
-                    ? "Consolidado General"
-                    : selectedChain?.denominacion || "Cargando..."}
-                </span>
-                <span className={styles.contextChainMeta}>
-                  {selectedCadenaId === "all"
-                    ? "Todas las cadenas de valor"
-                    : `Ref: ${selectedChain?.referencia || "Sin ref"} · #${selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}`}
-                </span>
-              </div>
-              {/* Con una sola cadena vinculada (unicaCadenaRestringida) no hay
-                  nada para elegir ni para "ver todas" — ambos botones
-                  implican una alternativa que no existe. */}
-              {!unicaCadenaRestringida && (
-                <div className={styles.contextChainActions}>
-                  <button
-                    type="button"
-                    className={styles.contextChainBtn}
-                    onClick={() => {
-                      setChainSearchQuery("");
-                      setIsChainModalOpen(true);
-                    }}
-                  >
-                    {selectedCadenaId === "all" ? "Seleccionar cadena" : "Cambiar"} <FiChevronRight size={13} />
-                  </button>
-                  {selectedCadenaId !== "all" && (
-                    <button
-                      type="button"
-                      className={`${styles.contextChainBtn} ${styles.contextChainBtnGhost}`}
-                      onClick={() => handleSelectCadena("all")}
-                    >
-                      Ver todas
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className={styles.contextDivider} />
-
-            <div className={styles.contextStats}>
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Líneas</span>
-                <span className={styles.statValue}>{solicitudesCanal.length}</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Volumen</span>
-                <span className={styles.statValue}>$ {(totalMonto / 1000000).toFixed(1)}M</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Pendientes</span>
-                <span className={`${styles.statValue} ${styles.statValueWarning}`}>{totalPendientes}</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statLabel}>Aprobadas</span>
-                <span className={`${styles.statValue} ${styles.statValueSuccess}`}>{totalAprobadas}</span>
-              </div>
-            </div>
-          </>
+  if (cargaInicial) {
+    return (
+      <LoadingScreen
+        title={cargaDemorada ? "Está tardando más de lo habitual" : "Preparando el panel"}
+        message={
+          cargaDemorada
+            ? "Seguimos esperando la respuesta del servidor. Podés esperar o volver a intentar."
+            : "Cargando solicitudes y empresas..."
+        }
+      >
+        {cargaDemorada && (
+          <Button variant="adminSuave" onClick={reintentarCarga}>
+            <FiRefreshCw aria-hidden="true" /> Reintentar
+          </Button>
         )}
+      </LoadingScreen>
+    );
+  }
+
+  const contarEstado = (valor) =>
+    valor === "todos"
+      ? solicitudesCanal.length
+      : solicitudesCanal.filter((s) => s.estado.toLowerCase().includes(valor)).length;
+
+  const cantidadFiltrosActivos = [
+    busqueda,
+    filtroEstado !== FILTROS_POR_DEFECTO.filtroEstado,
+    orden !== FILTROS_POR_DEFECTO.orden,
+    fechaDesde,
+    fechaHasta,
+  ].filter(Boolean).length;
+
+  const abrirSelectorCadena = () => {
+    setChainSearchQuery("");
+    setIsChainModalOpen(true);
+  };
+
+  const logoCadena = selectedChain?.logo
+    ? selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
+      ? selectedChain.logo
+      : `data:image/png;base64,${selectedChain.logo}`
+    : null;
+
+  const fichaCadena = loading ? (
+    <div className={styles.panelCadena}>
+      <Skeleton width="2.25rem" height="2.25rem" radius="0.6rem" />
+      <div style={{ flex: 1 }}>
+        <Skeleton height="0.85rem" width="70%" />
+        <Skeleton height="0.7rem" width="50%" style={{ marginTop: "0.3rem" }} />
+      </div>
+    </div>
+  ) : (
+    <div className={styles.panelCadenaGrupo}>
+      <button
+        type="button"
+        className={styles.panelCadena}
+        onClick={abrirSelectorCadena}
+        disabled={unicaCadenaRestringida}
+        title={unicaCadenaRestringida ? undefined : "Cambiar de cadena"}
+      >
+        {selectedCadenaId !== "all" && logoCadena ? (
+          <span className={styles.panelCadenaLogo}>
+            <img src={logoCadena} alt="" />
+          </span>
+        ) : (
+          <span className={styles.panelCadenaIcono}>
+            {selectedCadenaId === "all" ? <FiGlobe /> : <FiGrid />}
+          </span>
+        )}
+        <span className={styles.panelCadenaTextos}>
+          <strong>{selectedCadenaId === "all" ? "Consolidado general" : selectedChain?.denominacion || "Cargando..."}</strong>
+          <span>
+            {selectedCadenaId === "all"
+              ? "Todas las cadenas"
+              : `Ref: ${selectedChain?.referencia || "Sin ref"} · #${selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}`}
+          </span>
+        </span>
+        {!unicaCadenaRestringida && <FiChevronDown className={styles.panelCadenaChevron} aria-hidden="true" />}
+      </button>
+      {selectedCadenaId !== "all" && !unicaCadenaRestringida && (
+        <button type="button" className={styles.panelEnlace} onClick={() => handleSelectCadena("all")}>
+          Ver todas las cadenas
+        </button>
+      )}
+    </div>
+  );
+
+  const metricas = [
+    { etiqueta: "Líneas", valor: solicitudesCanal.length },
+    { etiqueta: "Volumen", valor: `$ ${(totalMonto / 1000000).toFixed(1)}M` },
+    { etiqueta: "Pendientes", valor: totalPendientes, clase: styles.statValueWarning },
+    { etiqueta: "Aprobadas", valor: totalAprobadas, clase: styles.statValueSuccess },
+  ];
+
+  const renderMetricas = (clase) => (
+    <div className={clase}>
+      {metricas.map(({ etiqueta, valor, clase: claseValor }) => (
+        <div key={etiqueta} className={styles.metrica}>
+          <span className={styles.metricaEtiqueta}>{etiqueta}</span>
+          {loading ? (
+            <Skeleton height="1rem" width="60%" />
+          ) : (
+            <span className={`${styles.metricaValor} ${claseValor || ""}`}>{valor}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const filtros = (
+    <>
+      <div className={styles.searchBox}>
+        <FiSearch className={styles.searchIcon} />
+        <input
+          type="text"
+          placeholder="Cliente, CUIT, usuario o N°"
+          value={busqueda}
+          onChange={(e) => handleBusqueda(e.target.value)}
+          className={styles.searchInput}
+          aria-label="Buscar por cliente, CUIT, usuario o N° de solicitud"
+        />
       </div>
 
-      {/* Barra de filtros — mismo patrón que Solicitudes.jsx del cliente */}
-      <div className={styles.filterBar}>
-        <div className={styles.searchBox}>
-          <FiSearch className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Buscar por Cliente, CUIT, Usuario o N° Solicitud..."
-            value={busqueda}
-            onChange={(e) => handleBusqueda(e.target.value)}
-            className={styles.searchInput}
-          />
+      <div className={styles.panelGrupo}>
+        <div className={styles.panelGrupoCabecera}>
+          <span className={styles.panelRotulo}>Estado</span>
+          {hayFiltrosActivos && (
+            <button type="button" className={styles.panelEnlace} onClick={handleLimpiarFiltros}>
+              Limpiar
+            </button>
+          )}
         </div>
+        <div className={styles.estados} role="radiogroup" aria-label="Estado">
+          {opcionesEstado.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={filtroEstado === value}
+              className={`${styles.estado} ${styles[`estado_${value}`]} ${filtroEstado === value ? styles.estadoActivo : ""}`}
+              onClick={() => handleFiltroEstado(value)}
+            >
+              <span className={styles.estadoPunto} aria-hidden="true" />
+              {value === "todos" ? "Todos" : label}
+              <span className={styles.estadoCantidad}>{loading ? "–" : contarEstado(value)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-        <div className={styles.filterFieldsRow}>
+      <div className={styles.panelGrupo}>
+        <span className={styles.panelRotulo}>Fecha de creación</span>
+        <div className={styles.fechas}>
           <SelectFechaSimple
             label="Desde"
             value={fechaDesde}
@@ -768,7 +922,6 @@ export default function Dashboard() {
             variant="admin"
             compact
             hideErrorSpace
-            className={styles.filterField}
           />
           <SelectFechaSimple
             label="Hasta"
@@ -779,303 +932,288 @@ export default function Dashboard() {
             variant="admin"
             compact
             hideErrorSpace
-            className={styles.filterField}
           />
-          <SelectSimple
-            label="Estado"
-            value={filtroEstado}
-            onChange={handleFiltroEstado}
-            options={opcionesEstado}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-          <SelectSimple
-            label="Orden"
-            value={orden}
-            onChange={handleOrden}
-            options={opcionesOrden}
-            isSearchable={false}
-            hideErrorSpace
-            compact
-            variant="admin"
-            className={styles.filterField}
-          />
-        </div>
-
-        <button
-          type="button"
-          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
-          onClick={handleLimpiarFiltros}
-          disabled={!hayFiltrosActivos}
-          tabIndex={hayFiltrosActivos ? 0 : -1}
-          title="Limpiar filtros"
-          aria-label="Limpiar filtros"
-        >
-          <FiX />
-        </button>
-        </div>
         </div>
       </div>
 
-      {/* Lista de solicitudes */}
-      <div className={styles.listWrapper}>
-        {loading ? (
-          Array.from({ length: 5 }).map((_, i) => <SolicitudRowSkeleton key={i} />)
-        ) : filtradas.length === 0 ? (
-          <SinResultados
-            className={styles.emptyState}
-            message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
-          />
-        ) : (
-          filtradasPagina.map((item) => {
-            const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
-            const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
-            const isCancelada =
-              item.tipoLimiteEstadoId === ESTADO_CANCELADA ||
-              item.tipoLimiteEstadoId === ESTADO_VENCIDA;
-            const isPendiente = Number(item.tipoLimiteEstadoId) === ESTADO_PENDIENTE;
-            const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
+      <div className={styles.panelGrupo}>
+        <span className={styles.panelRotulo}>Orden</span>
+        <div className={styles.orden} role="radiogroup" aria-label="Orden">
+          {opcionesOrden.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={orden === value}
+              className={`${styles.ordenOpcion} ${orden === value ? styles.ordenOpcionActiva : ""}`}
+              onClick={() => handleOrden(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
 
-            // La previsualización del documento es solo para solicitudes
-            // pendientes: en los demás estados la operación ya se resolvió.
-            const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
-            const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
-            const tieneApoderadoFirmante = apoderadoFirmantePorSocio.get(Number(item.socioid));
-            const modeloDocumento = isPendiente
-              ? evaluarModeloDocumento({
-                  solicitud: item,
-                  modeloDocumentoId,
-                  parametrosCatalogo: parametrosModelo,
-                  tieneApoderadoFirmante,
-                })
-              : null;
+  return (
+    <div className={styles.container} ref={contenedorRef}>
+      <div className={styles.layout}>
+        <aside className={styles.panel} aria-label="Cadena y filtros">
+          {fichaCadena}
+          {renderMetricas(styles.metricas)}
+          {filtros}
+        </aside>
 
-            return (
-              <div
-                key={item.id}
-                className={`${styles.row} ${styles.rowClickable} ${styles[`row${estadoKey}`]}`}
-                onClick={() => setSolicitudDetalle(item)}
-                title="Ver detalle de la solicitud"
-              >
-                <div className={`${styles.rowAvatar} ${styles[`avatar${estadoKey}`] || ""}`}>
-                  {getIniciales(item.cliente)}
-                </div>
+        <section className={styles.principal}>
+          <div className={styles.header}>
+            <h1>Gestión de Solicitudes</h1>
+            {!loading && (
+              <span className={styles.headerResumen}>
+                {filtradas.length === solicitudesCanal.length
+                  ? `${solicitudesCanal.length} solicitudes`
+                  : `${filtradas.length} de ${solicitudesCanal.length} solicitudes`}
+              </span>
+            )}
+            {!loading && filtradas.length > 0 && (
+              <div className={styles.paginacionCompacta}>
+                <Paginacion
+                  page={paginaActual}
+                  onPageChange={setPagina}
+                  hasMoreData={paginaActual < totalPaginas}
+                  knownEndPage={totalPaginas}
+                  variant="admin"
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              className={styles.filtrosBtn}
+              onClick={() => setFiltrosAbiertos(true)}
+            >
+              <FiSliders aria-hidden="true" /> Filtros
+              {cantidadFiltrosActivos > 0 && <span className={styles.filtrosBadge}>{cantidadFiltrosActivos}</span>}
+            </button>
+          </div>
 
-                <div className={styles.rowIdentity}>
-                  <span className={styles.rowClientName}>{item.cliente}</span>
-                  <span className={styles.rowMeta}>
-                    N°{item.id} · {item.creado} · {item.tipo} · CUIT {item.cuit} · {item.usuario}
-                  </span>
-                </div>
+          {renderMetricas(styles.metricasMovil)}
 
-                <span className={`${styles.rowPill} ${styles[`pill${estadoKey}`]}`}>
-                  <span className={styles.statusDot} />
-                  {item.estado}
-                </span>
+          {/* Lista de solicitudes */}
+          <div className={styles.listWrapper} ref={listaRef}>
+            {loading ? (
+              Array.from({ length: filasPorPagina }).map((_, i) => <SolicitudRowSkeleton key={i} />)
+            ) : filtradas.length === 0 ? (
+              <SinResultados
+                className={styles.emptyState}
+                message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
+              />
+            ) : (
+              filtradasPagina.map((item) => {
+                const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
+                const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
+                const isCancelada =
+                  item.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+                  item.tipoLimiteEstadoId === ESTADO_VENCIDA;
+                const isPendiente = Number(item.tipoLimiteEstadoId) === ESTADO_PENDIENTE;
+                const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
 
-                <div className={styles.rowAmountBlock}>
-                  <span className={styles.rowAmountLabel}>Monto</span>
-                  <span className={styles.rowAmount}>
-                    {item.moneda || "$"} {item.monto}
-                  </span>
-                </div>
+                // La previsualización del documento es solo para solicitudes
+                // pendientes: en los demás estados la operación ya se resolvió.
+                const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
+                const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
+                const tieneApoderadoFirmante = apoderadoFirmantePorSocio.get(Number(item.socioid));
+                const modeloDocumento = isPendiente
+                  ? evaluarModeloDocumento({
+                      solicitud: item,
+                      modeloDocumentoId,
+                      parametrosCatalogo: parametrosModelo,
+                      tieneApoderadoFirmante,
+                    })
+                  : null;
+                const faltantesConfiguracion = isAprobada ? faltantesConfiguracionDe(item) : [];
+                const configuracionIncompleta = faltantesConfiguracion === null || faltantesConfiguracion.length > 0;
+                const faltaContactoSinMigrar = item.faltantesContacto.length > 0 && !item.legajoMigrado;
 
-                <div className={styles.rowSpacer} />
+                return (
+                  <div
+                    key={item.id}
+                    data-fila
+                    className={`${styles.row} ${styles.rowClickable} ${styles[`row${estadoKey}`]}`}
+                    onClick={() => setSolicitudDetalle(item)}
+                    title="Ver detalle de la solicitud"
+                  >
+                    <div className={`${styles.rowAvatar} ${styles[`avatar${estadoKey}`] || ""}`}>
+                      {getIniciales(item.cliente)}
+                    </div>
 
-                {/* "Ver detalle" ya no es un botón acá: toda la fila lo abre
-                    (ver onClick arriba) - el chevron solo la señaliza. Los
-                    botones que quedan son decisiones reales, por eso cortan
-                    la propagación del click para no disparar el detalle
-                    encima. */}
-                <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
-                  {/* Siempre seguido de otra acción (CRITERIOS si el admin
-                      está restringido, ACEPTAR/RECHAZAR si no), así que el
-                      divisor va sin condición extra. */}
-                  {isPendiente && (
-                    <>
-                      <BotonIcono
-                        icon={FiFileText}
-                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo, tieneApoderadoFirmante)}
-                        title={modeloDocumento.motivo || "Previsualizar documento"}
-                        isLoading={pendienteModeloDocumentoId === item.id}
-                        className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}
-                      />
-                      <span className={styles.actionsDivider} />
-                    </>
-                  )}
-                  {isRestricted ? (
-                    <Button
-                      onClick={() => setSolicitudCda(item)}
-                      variant="outlineBlue"
-                      size="sm"
-                    >
-                      <FiList /> CRITERIOS
-                    </Button>
-                  ) : (
-                    <>
-                      {isPendiente && (
+                    <div className={styles.rowIdentity}>
+                      <span className={styles.rowClientName}>{item.cliente}</span>
+                      <span className={styles.rowMeta}>
+                        N°{item.id} · {item.lineaNombre || item.tipo} · CUIT {item.cuit}
+                      </span>
+                      <span className={styles.rowChips}>
+                        {item.cadenaNombre && (
+                          <span className={styles.rowCadena} title={item.cadenaNombreCompleto || item.cadenaNombre}>
+                            {item.cadenaNombre}
+                          </span>
+                        )}
+                        <span className={styles.rowChip}>
+                          <FiClock aria-hidden="true" /> Creada {formatearFechaHoraFila(item.creadoISO)}
+                        </span>
+                        <span
+                          className={`${styles.rowChip} ${item.legajoMigrado ? styles.rowChipOk : styles.rowChipPendiente}`}
+                        >
+                          {item.legajoMigrado ? <FiCheck aria-hidden="true" /> : <FiFolder aria-hidden="true" />}
+                          {item.legajoMigrado ? "Migrado a SGR+" : "Sin migrar a SGR+"}
+                        </span>
+                      </span>
+                    </div>
+
+                    <span className={`${styles.rowPill} ${styles[`pill${estadoKey}`]}`}>
+                      <span className={styles.statusDot} />
+                      {item.estado}
+                    </span>
+
+                    <div className={styles.rowAmountBlock}>
+                      <span className={styles.rowAmountLabel}>Monto</span>
+                      <span className={styles.rowAmount}>
+                        {item.moneda || "$"} {item.monto}
+                      </span>
+                    </div>
+
+                    <div className={styles.rowSpacer} />
+
+                    {/* "Ver detalle" ya no es un botón acá: toda la fila lo abre
+                        (ver onClick arriba) - el chevron solo la señaliza. Los
+                        botones que quedan son decisiones reales, por eso cortan
+                        la propagación del click para no disparar el detalle
+                        encima. */}
+                    <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                      {/* Siempre seguido de otra acción (CRITERIOS si el admin
+                          está restringido, ACEPTAR/RECHAZAR si no), así que el
+                          divisor va sin condición extra. */}
+                      {isPendiente && !isRestricted && (
                         <>
+                          <BotonIcono
+                            icon={FiFileText}
+                            onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo, tieneApoderadoFirmante)}
+                            title={modeloDocumento.motivo || "Previsualizar documento"}
+                            isLoading={pendienteModeloDocumentoId === item.id}
+                            className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}
+                          />
+                          <span className={styles.actionsDivider} />
+                        </>
+                      )}
+                      {isRestricted ? (
+                        <Button
+                          onClick={() => setSolicitudCda(item)}
+                          variant="outlineBlue"
+                          size="sm"
+                        >
+                          <FiList /> CRITERIOS
+                        </Button>
+                      ) : (
+                        <>
+                          {isAprobada && (
+                            <Button
+                              onClick={() => handleReintentarMigracion(item)}
+                              variant="outlineBlue"
+                              size="sm"
+                              title={
+                                faltaContactoSinMigrar
+                                  ? `La empresa todavía no tiene ${item.faltantesContacto.join(" ni ")}`
+                                  : configuracionIncompleta
+                                    ? textoFaltantesConfiguracion(faltantesConfiguracion)
+                                    : "Reintentar la migración de esta línea a SGR+"
+                              }
+                              disabled={migrarLineaMutation.isPending || faltaContactoSinMigrar || configuracionIncompleta}
+                            >
+                              <FiRefreshCw /> MIGRAR
+                            </Button>
+                          )}
+
                           <Button
-                            onClick={() => handleAceptar(item)}
-                            variant="success"
+                            onClick={() => setSolicitudDetalle(item)}
+                            variant="outlineBlue"
                             size="sm"
-                            title="Aprobar Solicitud"
-                            disabled={actualizarEstadoMutation.isPending}
+                            title={isPendiente ? "Revisar el legajo y decidir la solicitud" : "Ver el detalle de la solicitud"}
                           >
-                            <FiCheck /> ACEPTAR
-                          </Button>
-                          <Button
-                            onClick={() => handleRechazar(item)}
-                            variant="danger"
-                            size="sm"
-                            title="Rechazar Solicitud"
-                            disabled={actualizarEstadoMutation.isPending}
-                          >
-                            <FiX /> RECHAZAR
+                            <FiEye /> REVISAR
                           </Button>
                         </>
                       )}
+                    </div>
 
-                      {isAprobada && (
-                        <Button
-                          onClick={() => handleReintentarMigracion(item)}
-                          variant="outlineBlue"
-                          size="sm"
-                          title="Reintentar la migración de esta línea a SGR+"
-                          disabled={migrarLineaMutation.isPending}
-                        >
-                          <FiRefreshCw /> MIGRAR
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
+                    <FiChevronRight className={styles.rowChevron} />
+                  </div>
+                );
+              })
+            )}
+          </div>
 
-                <FiChevronRight className={styles.rowChevron} />
-              </div>
-            );
-          })
-        )}
+          {!loading && filtradas.length > 0 && (
+            <div className={styles.paginacionPie}>
+              <Paginacion
+                page={paginaActual}
+                onPageChange={setPagina}
+                hasMoreData={paginaActual < totalPaginas}
+                knownEndPage={totalPaginas}
+                variant="admin"
+                totalItems={filtradas.length}
+                pageSize={filasPorPagina}
+                itemLabel="solicitudes"
+              />
+            </div>
+          )}
+        </section>
       </div>
 
-      {!loading && filtradas.length > 0 && (
-        <Paginacion
-          page={paginaActual}
-          onPageChange={setPagina}
-          hasMoreData={paginaActual < totalPaginas}
-          knownEndPage={totalPaginas}
-          variant="admin"
-          totalItems={filtradas.length}
-          pageSize={ELEMENTOS_POR_PAGINA}
-          itemLabel="solicitudes"
-        />
-      )}
-
-      {/* Mock Detail Modal */}
       <Modal
-        isOpen={!!solicitudDetalle}
-        onClose={() => setSolicitudDetalle(null)}
-        title="DETALLE DE SOLICITUD"
-        maxWidth="40rem"
+        isOpen={filtrosAbiertos}
+        onClose={() => setFiltrosAbiertos(false)}
+        title="Filtros"
+        subtitle="Cadena, estado, fechas y orden de la lista."
+        icono={<FiSliders />}
+        maxWidth="480px"
         variant="blue"
+        footer={
+          <Button variant="blue" onClick={() => setFiltrosAbiertos(false)}>
+            Ver {filtradas.length} solicitudes
+          </Button>
+        }
       >
-        {solicitudDetalle && (
-          <>
-            <div className={styles.modalBodyCustom}>
-              {/* Solicitud Hero Card */}
-              <div className={styles.solicitudHeroCard}>
-                <div className={styles.solicitudAvatar}>
-                  <FiFileText size={20} />
-                </div>
-                <div className={styles.solicitudHeaderDetails}>
-                  <div className={styles.solicitudMeta}>
-                    <span className={styles.solicitudNumber}>SOLICITUD N°{solicitudDetalle.id}</span>
-                    <span className={`${styles.solicitudStatusBadge} ${
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_APROBADA ? styles.badgeAproved :
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_RECHAZADA ? styles.badgeRejected :
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ||
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_VENCIDA ? styles.badgeCancelled :
-                      styles.badgePending
-                    }`}>
-                      {solicitudDetalle.estado}
-                    </span>
-                  </div>
-                  <h3 className={styles.solicitudProduct}>{solicitudDetalle.tipo}</h3>
-                </div>
-                <div className={styles.solicitudAmount}>
-                  <span className={styles.amountLabel}>Monto Solicitado</span>
-                  <strong className={styles.amountValue}>
-                    {solicitudDetalle.moneda || "$"} {solicitudDetalle.monto}
-                  </strong>
-                </div>
-              </div>
-
-              {/* Grid with 2 columns */}
-              <div className={styles.detailsGridSplit}>
-                <div className={styles.detailsBlock}>
-                  <h4 className={styles.detailsBlockTitle}>Datos del Solicitante</h4>
-                  <div className={styles.detailFields}>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Razón Social</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.cliente}</span>
-                    </div>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>CUIT / Identificador</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.cuit}</span>
-                    </div>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Email Operador</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.usuario}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.detailsBlock}>
-                  <h4 className={styles.detailsBlockTitle}>Detalle de la Operación</h4>
-                  <div className={styles.detailFields}>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Línea / Producto</span>
-                      <span className={styles.fieldValue}>{solicitudDetalle.tipo}</span>
-                    </div>
-                    <div className={styles.detailField}>
-                      <span className={styles.fieldLabel}>Último Hito de Control</span>
-                      <span className={styles.fieldValueHighlight}>{solicitudDetalle.accionPendiente}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom metadata banner */}
-              <div className={styles.trazabilidadBanner}>
-                <div className={styles.trazabilidadItem}>
-                  <span className={styles.trazabilidadLabel}>Carga Inicial:</span>
-                  <span className={styles.trazabilidadValue}>{solicitudDetalle.creado}</span>
-                </div>
-                <div className={styles.trazabilidadItem}>
-                  <span className={styles.trazabilidadLabel}>Última Modificación:</span>
-                  <span className={styles.trazabilidadValue}>{solicitudDetalle.actualizado}</span>
-                </div>
-                <div className={styles.trazabilidadItem}>
-                  <span className={styles.trazabilidadLabel}>Canal Origen:</span>
-                  <span className={styles.trazabilidadValue}>BIND Garantías Portal Web</span>
-                </div>
-              </div>
-            </div>
-            <div className={styles.modalFootCustom}>
-              <Button
-                variant="outlineBlue"
-                size="sm"
-                onClick={() => setSolicitudDetalle(null)}
-              >
-                Cerrar
-              </Button>
-            </div>
-          </>
-        )}
+        <div className={styles.filtrosHoja}>
+          {fichaCadena}
+          {filtros}
+        </div>
       </Modal>
+
+      <SolicitudPanel
+        key={solicitudDetalleActual?.id ?? "ninguna"}
+        isOpen={!!solicitudDetalleActual}
+        onClose={() => setSolicitudDetalle(null)}
+        solicitud={solicitudDetalleActual}
+        soloLectura={isRestricted}
+        pausado={!!solicitudCda || !!solicitudARechazar || !!empresaActividad}
+        modeloDocumento={modeloDocumentoDetalle}
+        faltantesConfiguracion={solicitudDetalleActual ? faltantesConfiguracionDe(solicitudDetalleActual) : null}
+        cargandoDocumento={pendienteModeloDocumentoId === solicitudDetalleActual?.id}
+        decidiendo={actualizarEstadoMutation.isPending}
+        migrando={migrarLineaMutation.isPending}
+        onAceptar={() => handleAceptar(solicitudDetalleActual)}
+        onRechazar={() => handleRechazar(solicitudDetalleActual)}
+        onMigrar={() => handleReintentarMigracion(solicitudDetalleActual)}
+        onDocumento={() => abrirModeloDocumento(solicitudDetalleActual, ...argumentosDocumentoDetalle)}
+        onVerCriterios={() => setSolicitudCda(solicitudDetalleActual)}
+        onVerActividad={() => setEmpresaActividad(solicitudDetalleActual)}
+      />
+
+      <ActividadSocioModal
+        isOpen={!!empresaActividad}
+        onClose={() => setEmpresaActividad(null)}
+        cuit={empresaActividad?.cuit}
+        denominacion={empresaActividad?.cliente}
+      />
 
       <CriteriosAceptacionModal
         isOpen={!!solicitudCda}
@@ -1096,87 +1234,112 @@ export default function Dashboard() {
       <Modal
         isOpen={isChainModalOpen}
         onClose={() => setIsChainModalOpen(false)}
-        title="SELECCIONAR CADENA DE VALOR"
-        maxWidth="50rem"
+        title="Elegí una cadena de valor"
+        subtitle="El tablero muestra las solicitudes de la cadena que elijas."
+        icono={<FiLayers />}
+        maxWidth="640px"
         variant="blue"
+        footer={
+          <Button variant="adminNeutro" onClick={() => setIsChainModalOpen(false)}>
+            Cancelar
+          </Button>
+        }
       >
         <div className={styles.modalChainContent}>
           <div className={styles.modalSearchWrap}>
             <FiSearch className={styles.iconSearchModal} />
             <input
               type="text"
-              placeholder="Buscar cadena por denominación o referencia..."
+              placeholder="Buscar por denominación o referencia"
               value={chainSearchQuery}
               onChange={(e) => setChainSearchQuery(e.target.value)}
               className={styles.modalSearchInput}
             />
           </div>
 
-          <div className={styles.chainGridModal}>
-            {/* Option: All Chains */}
-            <div
-              className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
-              onClick={() => {
-                handleSelectCadena("all");
-                setIsChainModalOpen(false);
-              }}
-            >
-              <div className={styles.chainCardLogo}>
-                <FiGlobe size={28} />
-              </div>
-              <div className={styles.chainCardModalInfo}>
-                <h3>Todas las cadenas</h3>
-                <p>Consolidado General de solicitudes</p>
-              </div>
-            </div>
+          <button
+            type="button"
+            className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
+            onClick={() => {
+              handleSelectCadena("all");
+              setIsChainModalOpen(false);
+            }}
+          >
+            <span className={styles.chainCardLogo}>
+              <FiGlobe />
+            </span>
+            <span className={styles.chainCardModalInfo}>
+              <strong>Todas las cadenas</strong>
+              <span>Consolidado general de solicitudes</span>
+            </span>
+            {selectedCadenaId === "all" && (
+              <span className={styles.chainCardActual}>
+                <FiCheck /> Actual
+              </span>
+            )}
+            <FiChevronRight className={styles.chainCardChevron} aria-hidden="true" />
+          </button>
 
-            {/* Filter and map visible chains */}
-            {visibleCadenas
-              .filter((c) => {
-                const denom = (c.denominacion || "").toLowerCase();
-                const ref = (c.referencia || "").toLowerCase();
-                const q = chainSearchQuery.toLowerCase();
-                return denom.includes(q) || ref.includes(q);
-              })
-              .map((c) => {
-                const id = String(c.cadenavalorid || c.CadenaValorID);
-                const isSelected = String(selectedCadenaId) === id;
-                return (
-                  <div
-                    key={id}
-                    className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
-                    onClick={() => {
-                      handleSelectCadena(id);
-                      setIsChainModalOpen(false);
-                    }}
-                  >
-                    <div className={styles.chainCardLogo}>
-                      {c.logo ? (
-                        <img
-                          src={
-                            c.logo.startsWith("data:") || c.logo.startsWith("http")
-                              ? c.logo
-                              : `data:image/png;base64,${c.logo}`
-                          }
-                          alt={c.denominacion}
-                        />
-                      ) : (
-                        <FiGrid size={28} />
+          {(() => {
+            const filtradas = visibleCadenas.filter((c) => {
+              const denom = (c.denominacion || "").toLowerCase();
+              const ref = (c.referencia || "").toLowerCase();
+              const q = chainSearchQuery.toLowerCase();
+              return denom.includes(q) || ref.includes(q);
+            });
+            return (
+              <>
+                <div className={styles.chainSeccion}>
+                  <span>Cadenas</span>
+                  <span className={styles.chainSeccionContador}>{filtradas.length}</span>
+                  <span className={styles.chainSeccionLinea} aria-hidden="true" />
+                </div>
+                {filtradas.length === 0 && (
+                  <p className={styles.chainVacio}>Ninguna cadena coincide con la búsqueda.</p>
+                )}
+                {filtradas.map((c) => {
+                  const id = String(c.cadenavalorid || c.CadenaValorID);
+                  const isSelected = String(selectedCadenaId) === id;
+                  return (
+                    <button
+                      type="button"
+                      key={id}
+                      className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
+                      onClick={() => {
+                        handleSelectCadena(id);
+                        setIsChainModalOpen(false);
+                      }}
+                    >
+                      <span className={styles.chainCardLogo}>
+                        {c.logo ? (
+                          <img
+                            src={
+                              c.logo.startsWith("data:") || c.logo.startsWith("http")
+                                ? c.logo
+                                : `data:image/png;base64,${c.logo}`
+                            }
+                            alt={c.denominacion}
+                          />
+                        ) : (
+                          obtenerInicialesEmpresa(c.denominacion || "?")
+                        )}
+                      </span>
+                      <span className={styles.chainCardModalInfo}>
+                        <strong>{c.denominacion}</strong>
+                        <span>{c.referencia || `ID: #${id}`}</span>
+                      </span>
+                      {isSelected && (
+                        <span className={styles.chainCardActual}>
+                          <FiCheck /> Actual
+                        </span>
                       )}
-                    </div>
-                    <div className={styles.chainCardModalInfo}>
-                      <h3>{c.denominacion}</h3>
-                      <p>{c.referencia || `ID: #${id}`}</p>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-        <div className={styles.modalFootCustom}>
-          <Button variant="outlineBlue" size="sm" onClick={() => setIsChainModalOpen(false)}>
-            Cancelar
-          </Button>
+                      <FiChevronRight className={styles.chainCardChevron} aria-hidden="true" />
+                    </button>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
       </Modal>
     </div>

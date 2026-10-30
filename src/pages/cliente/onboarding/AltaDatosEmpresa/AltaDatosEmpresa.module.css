@@ -1,20 +1,30 @@
+/* Rediseño 2026-10: una sola columna centrada (stepper compacto → cabecera
+   → contenido del paso), sin la tarjeta envolvente ni el stepper lateral.
+   Mobile first; desde 64rem entra el shell de escritorio (sidebar) y los
+   dos rangos de escritorio comparten el umbral único de la app:
+   Rango 2 = (max-width: 1440px) o (max-height: 716px). */
+
 /* ── BASE MOBILE ─────────────────────────────────────────────────────────────── */
 
 .pageContainer {
   position: relative;
   z-index: 1;
-  color: var(--white-muted, #f0f0f0);
+  color: var(--white-muted);
   display: flex;
   flex-direction: column;
-  font-family: var(--font-secundaria, serif);
   min-height: 100%;
 }
 
+/* Mismo fondo degradado azul que Legajo (SociosView): sin tarjeta
+   envolvente, es lo que le da profundidad a la pantalla. */
 .pageContainer::before {
   content: "";
   position: fixed;
   inset: 0;
-  width: 100vw;
+  /* Deja libre el carril de la barra de scroll de la página (ver
+     --gutter-scroll en DashboardLayout): esta capa fija la tapaba. */
+  right: var(--gutter-scroll, 0px);
+  width: auto;
   height: 100vh;
   z-index: -1;
   pointer-events: none;
@@ -36,12 +46,12 @@
   flex: 1;
   display: flex;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.5rem 1rem 2.5rem;
 }
 
 .contentWrapper {
   width: 100%;
-  max-width: 52rem;
+  max-width: 40rem;
   display: flex;
   flex-direction: column;
 }
@@ -56,18 +66,17 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 0;
+  gap: 1.75rem;
 }
 
-/* ── TÍTULO FLOTANTE ────────────────────────────────────────────────── */
+/* ── CABECERA ────────────────────────────────────────────────────────────── */
 
 .bienvenidaHeader {
-  padding: 1.5rem 0 1.25rem;
-  animation: fadeIn 0.4s ease;
-  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  gap: 0.875rem;
+  animation: fadeIn 0.4s ease;
 }
 
 .bienvenidaBadge {
@@ -79,54 +88,55 @@
   border: 1px solid var(--badge-amarillo-border);
   border-radius: 999px;
   color: var(--badge-amarillo-text);
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.1em;
 }
 
 .tituloBienvenida {
-  color: var(--white, #fff);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
   margin: 0;
-  line-height: 1.15;
+  color: var(--white);
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .subtituloBienvenida {
-  color: var(--text-muted, #666);
-  font-size: 0.9rem;
   margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
   line-height: 1.55;
-  margin-top: 0.5rem;
+  max-width: 34rem;
 }
 
-.titleAccent {
-  width: 2.25rem;
-  height: 2px;
-  background: var(--yellow, #f4f500);
-  border-radius: 999px;
-  margin: 0.75rem auto 0;
-  opacity: 0.6;
+/* Paso 2: la cabecera baja de jerarquía para que lo prioritario sea lo que
+   falta completar (las tareas de Paso2Datos), no el título. */
+.headerCompacto {
+  gap: 0.5rem;
 }
 
-/* ── CARD (Elevated Solid UI) ────────────────────────────────────────────────── */
+.headerCompacto .tituloBienvenida {
+  font-size: 1.5rem;
+}
+
+.headerCompacto .subtituloBienvenida {
+  font-size: 0.9375rem;
+}
+
+@media (min-width: 48rem) {
+  .headerCompacto .tituloBienvenida {
+    font-size: 1.875rem;
+  }
+}
+
+/* ── CONTENIDO DEL PASO ──────────────────────────────────────────────────── */
 
 .seccionFormulario {
-  background: var(--carbon-black, #1a1a1a);
-  border: 1px solid var(--border, #252525);
-  border-radius: 1.125rem;
-  padding: 1.75rem 1.5rem;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    inset 3px 0 0 rgba(244, 245, 0, 0.2),
-    0 8px 40px rgba(0, 0, 0, 0.35);
 }
-
-/* ── FORM ────────────────────────────────────────────────────────────────────── */
 
 .formContent {
   display: flex;
@@ -141,9 +151,9 @@
   flex: 1;
 }
 
-/* ── DESKTOP ───────────────────────────── */
+/* ── TABLET ──────────────────────────────────────────────────────────────── */
 
-@media (min-width: 64rem) {
+@media (min-width: 48rem) {
   .pageContainer::before {
     background-image:
       radial-gradient(
@@ -159,71 +169,66 @@
   }
 
   .formMainContainer {
-    padding: 2.5rem 4.5rem;
+    padding: 3rem 2rem 3.5rem;
   }
 
   .contentWrapper {
-    max-width: 74rem;
-  }
-
-  .contenedorPrincipal {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
+    max-width: 46rem;
   }
 
   .columnaFormulario {
-    display: grid;
-    grid-template-columns: 16rem 1fr;
-    grid-template-rows: max-content 1fr;
-    grid-template-areas:
-      "stepper header"
-      "stepper form";
-    gap: 2.5rem 5rem;
-    align-items: start;
-    align-content: start;
+    gap: 2.25rem;
   }
 
-  .columnaFormulario > nav {
-    grid-area: stepper;
-    position: sticky;
-    top: 2.5rem;
+  .tituloBienvenida {
+    font-size: 2.5rem;
   }
 
-  .bienvenidaHeader {
-    grid-area: header;
-    text-align: left;
-    align-items: flex-start;
-    margin: 0;
-    padding: 0;
+  .subtituloBienvenida {
+    font-size: 1.0625rem;
+  }
+}
+
+/* ── ESCRITORIO · RANGO 1 ────────────────────────────────────────────────── */
+
+@media (min-width: 64rem) {
+  .formMainContainer {
+    padding: clamp(2rem, 7vh, 4.5rem) 2.5rem 3rem;
   }
 
-  .titleAccent {
-    margin: 0.75rem 0 0;
+  /* Más ancho que en el diseño de referencia: con el sidebar y el navbar
+     del layout la columna de 40rem quedaba con demasiado aire a los lados. */
+  .contentWrapper {
+    max-width: 56rem;
   }
 
-  .seccionFormulario {
-    grid-area: form;
-    margin-top: 0rem;
-    height: fit-content;
-    align-self: start;
-    padding: 2.5rem 3.5rem;
+  .subtituloBienvenida {
+    max-width: 42rem;
+  }
+
+  .tituloBienvenida {
+    font-size: 2.875rem;
+  }
+}
+
+/* ── ESCRITORIO · RANGO 2 ────────────────────────────────────────────────── */
+
+@media (min-width: 64rem) and (max-width: 1440px),
+  (min-width: 64rem) and (max-height: 716px) {
+  .formMainContainer {
+    padding: 1.75rem 2rem 2.5rem;
+  }
+
+  .contentWrapper {
+    max-width: 48rem;
+  }
+
+  .columnaFormulario {
+    gap: 1.75rem;
   }
 
   .tituloBienvenida {
     font-size: 2.25rem;
-  }
-}
-
-@media (min-width: 80rem) {
-  .contentWrapper {
-    max-width: 84rem;
-  }
-  .columnaFormulario {
-    grid-template-columns: 16rem 1fr;
-    gap: 2rem 0rem;
   }
 }
 
@@ -257,57 +262,198 @@
   animation: fadeIn 0.3s ease;
 }
 
+/* Modal "Empresa ya registrada" (correo no coincide / otro usuario).
+   Rediseño 2026-10, opción A del lienzo. */
 .modalContent {
   display: flex;
   flex-direction: column;
   gap: 1.125rem;
-  padding: 0.25rem 0;
+}
+
+.modalCabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.modalIcono {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--warning);
+}
+
+.modalCabeceraTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .modalBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.625rem;
-  background: var(--badge-amarillo-bg);
-  border: 1px solid var(--badge-amarillo-border);
-  border-radius: 999px;
-  color: var(--badge-amarillo-text);
-  font-size: 0.65rem;
+  color: var(--warning);
+  font-size: 0.6875rem;
   font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  align-self: flex-start;
 }
 
 .modalTitle {
   margin: 0;
-  font-size: 1.125rem;
+  color: var(--white);
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--white, #fff);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .modalText {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.65;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.modalHighlight {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid var(--border);
+}
+
+.modalAvatar {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
+  display: grid;
+  place-items: center;
+  background: rgba(var(--overlay-rgb), 0.08);
+  color: var(--white-muted);
+  font-weight: 700;
+}
+
+.modalHighlightTexto {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.modalHighlightTitle {
+  color: var(--white);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .modalHighlightSubtitle {
-  margin-left: 0.75rem;
   color: var(--text-muted);
-  font-size: 0.78rem;
-  font-family: var(--font-mono, monospace);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.modalActionsSingle {
+.modalSoporte {
+  margin: 0;
+  color: var(--white-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.linkText {
+  color: var(--color-azul-bind-300);
+  font-weight: 600;
+}
+
+/* El azul claro no contrasta sobre blanco: en modo claro va el oscuro. */
+:global(:root[data-theme="light"]) .linkText {
+  color: var(--color-azul-bind-600);
+}
+
+.modalActions {
+  width: 100%;
   display: flex;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
   justify-content: flex-end;
+  gap: 0.625rem;
 }
 
-.modalButton {
-  min-width: 8rem;
+.modalBoton,
+.modalBotonSecundario {
+  min-height: 2.875rem;
+  padding: 0 1.25rem;
+  border-radius: 0.75rem;
+}
+
+.modalBotonSecundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border-hover);
+  color: var(--white-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.modalBotonSecundario:hover {
+  color: var(--white);
+}
+
+.bloqueo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 36rem;
+  margin: 2rem auto 0;
+  padding: 1.75rem;
+  background: rgba(var(--glass-rgb), 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 1.2rem;
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(var(--overlay-rgb), 0.04);
+}
+
+.bloqueoIcono {
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.28);
+  color: #ff7b72;
+}
+
+.bloqueoBadge {
+  color: #ff7b72;
+}
+
+.bloqueo .modalActions {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 47.99rem) {
+  .bloqueo {
+    margin-top: 1rem;
+    padding: 1.25rem;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalBoton,
+  .modalBotonSecundario {
+    width: 100%;
+  }
 }

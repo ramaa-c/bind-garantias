@@ -9,6 +9,8 @@ export const CadenaHeaderCard = ({
   cadenavalorid,
   cuittercero,
   avatarColor,
+  compacta = false,
+  extra,
 }) => {
   const getLogoSrc = (logoData) => {
     if (!logoData) return "";
@@ -47,6 +49,25 @@ export const CadenaHeaderCard = ({
     }
     return colors[Math.abs(hash) % colors.length];
   };
+
+  if (compacta) {
+    return (
+      <div className={styles.ficha}>
+        <span className={styles.fichaAvatar} aria-hidden="true">
+          {logoSrc ? <img src={logoSrc} alt="" className={styles.fichaLogo} /> : getInitials(denominacion)}
+        </span>
+        <span className={styles.fichaTextos}>
+          <strong className={styles.fichaNombre} title={denominacion}>{denominacion || "Cadena de Valor"}</strong>
+          <span className={styles.fichaDetalle}>
+            {[cadenavalorid && `ID ${cadenavalorid}`, referencia && `Ref. ${referencia}`, cuittercero && `CUIT ${cuittercero}`]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        </span>
+        {extra}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.headerCard}>

@@ -3,10 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiMenu,
   FiChevronDown,
+  FiChevronRight,
   FiHelpCircle,
-  FiRepeat,
   FiLogOut,
-  FiBriefcase,
   FiUser,
   FiSun,
   FiMoon,
@@ -17,6 +16,7 @@ import styles from "./Navbar.module.css";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useThemeStore, LIGHT_MODE_ENABLED } from "../../../../store/useThemeStore";
+import { useSidebarStore } from "../../../../store/useSidebarStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
@@ -39,7 +39,6 @@ const Navbar = ({
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
   const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
@@ -52,6 +51,8 @@ const Navbar = ({
   // empresa "activa" real que mostrar todavía.
   const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
   const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
+  // Con el sidebar compacto la empresa activa ya no se ve ahí: pasa acá.
+  const sidebarCompacto = useSidebarStore((state) => state.compacto);
 
   const emailUsuario =
     typeof user === "string"
@@ -61,21 +62,18 @@ const Navbar = ({
         : "Usuario";
 
   // La denominación (nombre visible elegido por el usuario, ver "Mi cuenta"
-  // en PerfilModal) pasa a ser el dato principal del menú; el email queda
-  // como secundario. Mismo query que ya usa PerfilModal (misma queryKey),
-  // así que no duplica el pedido si esa modal ya lo cacheó.
-  const { data: usuarioDb } = useObtenerPorNombreOEmail(
-    user ? emailUsuario : "",
-  );
+  // en PerfilModal) es el dato principal del menú; el email queda como
+  // secundario. Mismo query que ya usa PerfilModal (misma queryKey).
+  const { data: usuarioDb } = useObtenerPorNombreOEmail(user ? emailUsuario : "");
   const denominacion = (
     extraerRegistroUsuario(usuarioDb)?.denominacion ||
     extraerRegistroUsuario(usuarioDb)?.Denominacion ||
     ""
   ).trim();
   const nombrePrincipal = denominacion || emailUsuario;
-  const inicialesUsuario = obtenerInicialesEmpresa(
-    denominacion || emailUsuario.split("@")[0],
-  );
+  const inicialesUsuario = obtenerInicialesEmpresa(denominacion || emailUsuario.split("@")[0]);
+  const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio" : "Sin empresa";
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -83,8 +81,15 @@ const Navbar = ({
         setIsDropdownOpen(false);
       }
     };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setIsDropdownOpen(false);
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -92,69 +97,50 @@ const Navbar = ({
     navigate(`${basePath}/login`);
   };
 
-  // Logout "suave": tira formularios/empresa activa/verificación de
-  // términos de la sesión anterior (ver cambiarEmpresa en useAuthStore) pero
-  // conserva user/isAuthenticated — no hace falta reingresar credenciales.
-  // Solo para vendors: son los únicos con más de una empresa para elegir.
-  const handleCambiarEmpresa = () => {
-    setIsDropdownOpen(false);
-    cambiarEmpresa();
-    navigate(`${basePath}/seleccionar-empresa`);
+  const handleOpenHelp = () => {
+    document.dispatchEvent(new CustomEvent("bindHelp:toggle"));
   };
 
-  const handleOpenHelp = () => {
-    const event = new CustomEvent("bindHelp:toggle");
-    document.dispatchEvent(event);
-  };
+  const irAlInicio = () => navigate(`${basePath}${isSolicitudesEnabled ? "/solicitudes" : "/legajo"}`);
 
   return (
     <header className={styles.header}>
-      <div className={styles.leftSection}>
-        <button type="button"
-          className={styles.menuButton}
-          onClick={onToggleSidebar}
-          aria-label="Menú"
-        >
-          <FiMenu size={24} color="var(--white)" />
+      <div className={styles.izquierda}>
+        <button type="button" className={styles.menuButton} onClick={onToggleSidebar} aria-label="Abrir menú">
+          <FiMenu />
         </button>
-        <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`${basePath}${isSolicitudesEnabled ? "/solicitudes" : "/legajo"}`)}>
+
+        <button type="button" className={styles.logoContainer} onClick={irAlInicio} aria-label="Ir al inicio">
           <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} />
           {channelInfo.id !== "default" && channelInfo.logo && (
             <>
-              <div className={styles.logoSeparator} />
-              <img
-                src={channelInfo.logo}
-                alt={channelInfo.nombre}
-                className={styles.channelLogo}
-              />
+              <span className={styles.logoSeparator} aria-hidden="true" />
+              <img src={channelInfo.logo} alt={channelInfo.nombre} className={styles.channelLogo} />
             </>
           )}
-        </div>
+        </button>
 
-        {/* Versión de escritorio de vendorCard (ver Sidebar.jsx): en mobile
-            sigue viviendo en el sidebar, tal cual. Acá va compacta - sin
-            repetir el email, que ya se ve al lado en el menú de usuario -
-            para no volver a parecerse a companyCard. */}
-        {isVendor && (
-          <div className={styles.vendorBadge}>
-            <FiBriefcase size={14} className={styles.vendorBadgeIcon} />
-            <span className={styles.vendorBadgeLabel}>Vendor</span>
-            <span className={styles.vendorBadgeSep}>·</span>
-            <span className={styles.vendorBadgeChain}>{channelInfo?.nombre || "Cadena"}</span>
-          </div>
+        {sidebarCompacto && isVinculado && (
+          <span className={styles.empresaPill} title={nombreEmpresa}>
+            <span className={styles.empresaPillAvatar} aria-hidden="true">
+              {obtenerInicialesEmpresa(nombreEmpresa)}
+            </span>
+            <span className={styles.empresaPillNombre}>{nombreEmpresa}</span>
+          </span>
         )}
+
       </div>
 
-      <div className={styles.rightSection}>
+      <div className={styles.derecha}>
         {LIGHT_MODE_ENABLED && (
           <button
             type="button"
-            className={styles.themeButton}
+            className={styles.iconButton}
             onClick={toggleTheme}
             aria-label={theme === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
             title={theme === "light" ? "Modo oscuro" : "Modo claro"}
           >
-            {theme === "light" ? <FiMoon className={styles.themeIcon} /> : <FiSun className={styles.themeIcon} />}
+            {theme === "light" ? <FiMoon /> : <FiSun />}
           </button>
         )}
 
@@ -164,75 +150,88 @@ const Navbar = ({
                 (ej. Seleccionar Empresa) - mejor ocultar el botón ahí que
                 abrir un drawer vacío. */}
             {!hideHelpButton && (
-              <button type="button"
-                className={styles.helpButton}
+              <button
+                type="button"
+                className={styles.iconButton}
                 onClick={handleOpenHelp}
                 aria-label="Abrir ayuda"
-                title="Centro de Ayuda"
+                title="Centro de ayuda"
               >
-                <FiHelpCircle className={styles.helpIcon} />
+                <FiHelpCircle />
               </button>
             )}
 
             <div className={styles.userMenuContainer} ref={dropdownRef}>
-              <div
-                className={styles.userTrigger}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              <button
+                type="button"
+                className={`${styles.userTrigger} ${isDropdownOpen ? styles.userTriggerAbierto : ""}`}
+                onClick={() => setIsDropdownOpen((abierto) => !abierto)}
+                aria-expanded={isDropdownOpen}
+                aria-haspopup="menu"
+                title={nombrePrincipal}
               >
-                <div className={styles.avatarWrapper} aria-hidden="true">
+                <span className={styles.avatar} aria-hidden="true">
                   {inicialesUsuario}
-                </div>
-                <span className={styles.userTextStack}>
-                  <span className={styles.userPrimary}>{nombrePrincipal}</span>
-                  {!!denominacion && (
-                    <span className={styles.userSecondary}>{emailUsuario}</span>
-                  )}
                 </span>
-                <FiChevronDown
-                  className={`${styles.chevron} ${isDropdownOpen ? styles.chevronOpen : ""}`}
-                />
-              </div>
+                <span className={styles.userNombre}>{nombrePrincipal}</span>
+                <FiChevronDown className={`${styles.chevron} ${isDropdownOpen ? styles.chevronAbierto : ""}`} />
+              </button>
 
               {isDropdownOpen && (
-                <div className={styles.dropdownMenu}>
-                  {/* La identidad (avatar + nombre + email) ya se ve arriba,
-                      en el trigger siempre visible - repetirla acá era
-                      redundante y además con proporciones distintas (avatar
-                      más grande, card centrada) que no calzaban con el
-                      trigger. El estado es el único dato que el trigger no
-                      muestra, así que es lo único que se agrega acá, como
-                      una fila angosta en vez de una segunda tarjeta. */}
-                  <div className={styles.dropdownStatusRow}>
-                    <span className={`${styles.rolePill} ${isVendor ? styles.rolePillVendor : isVinculado ? styles.rolePillVinculado : styles.rolePillNeutro}`}>
-                      {isVendor ? "Vendor" : isVinculado ? "Socio vinculado" : "No vinculado"}
+                <div className={styles.dropdownMenu} role="menu">
+                  <div className={styles.dropdownHeader}>
+                    <span className={styles.dropdownAvatar} aria-hidden="true">
+                      {inicialesUsuario}
                     </span>
+                    <div className={styles.dropdownIdentidad}>
+                      <div className={styles.dropdownNombreFila}>
+                        <p className={styles.dropdownNombre}>{nombrePrincipal}</p>
+                        <span
+                          className={`${styles.rolPill} ${!isVinculado && !isVendor ? styles.rolPillNeutro : ""}`}
+                        >
+                          {rolUsuario}
+                        </span>
+                      </div>
+                      {!!denominacion && <p className={styles.dropdownEmail}>{emailUsuario}</p>}
+                      {isVinculado && <p className={styles.dropdownEmail}>{nombreEmpresa}</p>}
+                    </div>
                   </div>
 
-                  <div className={styles.dropdownBody}>
-                    <button type="button"
+                  <div className={styles.dropdownLista}>
+                    <button
+                      type="button"
+                      role="menuitem"
                       className={styles.dropdownItem}
                       onClick={() => {
                         setIsDropdownOpen(false);
                         setIsPerfilModalOpen(true);
                       }}
                     >
-                      <FiUser className={styles.itemIcon} /> Mi perfil
+                      <span className={styles.dropdownItemIcono} aria-hidden="true">
+                        <FiUser />
+                      </span>
+                      <span className={styles.dropdownItemTexto}>
+                        <span className={styles.dropdownItemLabel}>Mi perfil</span>
+                        <span className={styles.dropdownItemAyuda}>Tus datos y tu cuenta</span>
+                      </span>
+                      <FiChevronRight className={styles.dropdownItemFlecha} aria-hidden="true" />
                     </button>
+
                   </div>
 
-                  <div className={styles.dropdownFooter}>
-                    {/* Solo tiene sentido si ya hay una empresa activa para
-                        "cambiar" — sin eso (vendor recién entrando, sin
-                        elegir ninguna todavía) no hay nada que cambiar; para
-                        ese caso ya existe el botón "Volver a Inicio" en
-                        Paso1Cuit/BarraProgreso. */}
-                    {isVendor && isVinculado && (
-                      <button type="button" className={styles.changeCompanyBtn} onClick={handleCambiarEmpresa}>
-                        <FiRepeat size={14} /> Cambiar empresa
-                      </button>
-                    )}
-                    <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
-                      <FiLogOut size={14} /> Cerrar sesión
+                  <div className={styles.dropdownDivisor} />
+
+                  <div className={styles.dropdownLista}>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={`${styles.dropdownItem} ${styles.dropdownItemPeligro}`}
+                      onClick={handleLogout}
+                    >
+                      <span className={styles.dropdownItemIcono} aria-hidden="true">
+                        <FiLogOut />
+                      </span>
+                      <span className={styles.dropdownItemLabel}>Cerrar sesión</span>
                     </button>
                   </div>
                 </div>
@@ -240,20 +239,22 @@ const Navbar = ({
             </div>
           </>
         ) : (
-          <div className={styles.loginContainer}>
-            {texto}
-            <span className={styles.link} role="button" tabIndex={0} onClick={() => navigate(`${basePath}${rutaDestino.startsWith('/') ? rutaDestino : '/' + rutaDestino}`)}>
-              {" "}
+          <p className={styles.loginContainer}>
+            {texto}{" "}
+            <button
+              type="button"
+              className={styles.link}
+              onClick={() =>
+                navigate(`${basePath}${rutaDestino.startsWith("/") ? rutaDestino : "/" + rutaDestino}`)
+              }
+            >
               {textoEnlace}
-            </span>
-          </div>
+            </button>
+          </p>
         )}
       </div>
 
-      <PerfilModal
-        isOpen={isPerfilModalOpen}
-        onClose={() => setIsPerfilModalOpen(false)}
-      />
+      <PerfilModal isOpen={isPerfilModalOpen} onClose={() => setIsPerfilModalOpen(false)} />
     </header>
   );
 };

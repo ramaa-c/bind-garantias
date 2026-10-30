@@ -12,7 +12,7 @@ import {
   FiSearch,
   FiX,
 } from "react-icons/fi";
-import { Modal, SelectSimple, SelectFechaSimple } from "../../../ui";
+import { Modal, SelectSimple, SelectFechaSimple, Button } from "../../../ui";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { useActividadSocio } from "../../../../hooks/useSocios";
 import { useObtenerUsuarioPorId } from "../../../../hooks/useUsuario";
@@ -82,19 +82,6 @@ const parseActividad = (descripcion) => {
   return { verbo, label };
 };
 
-const formatearRelativo = (iso) => {
-  const fecha = new Date(iso);
-  if (Number.isNaN(fecha.getTime())) return "-";
-  const diffMin = Math.round((Date.now() - fecha.getTime()) / 60000);
-  if (diffMin < 1) return "Recién";
-  if (diffMin < 60) return `Hace ${diffMin} min`;
-  const diffH = Math.round(diffMin / 60);
-  if (diffH < 24) return `Hace ${diffH} h`;
-  const diffD = Math.round(diffH / 24);
-  if (diffD < 30) return `Hace ${diffD} d`;
-  return fecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
-};
-
 const formatearAbsoluto = (iso) => {
   const fecha = new Date(iso);
   if (Number.isNaN(fecha.getTime())) return "";
@@ -110,6 +97,34 @@ const parseDetalle = (detalle) => {
   }
 };
 
+const formatearHora = (iso) => {
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "";
+  return fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
+};
+
+const claveDia = (iso) => {
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "";
+  return fecha.toDateString();
+};
+
+const etiquetaDia = (iso) => {
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "Sin fecha";
+  const hoy = new Date();
+  const ayer = new Date();
+  ayer.setDate(hoy.getDate() - 1);
+  const corta = fecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
+  if (fecha.toDateString() === hoy.toDateString()) return "Hoy";
+  if (fecha.toDateString() === ayer.toDateString()) return `Ayer · ${corta}`;
+  const dia = fecha.toLocaleDateString("es-AR", { weekday: "long" });
+  const anio = fecha.getFullYear() !== hoy.getFullYear() ? `/${fecha.getFullYear()}` : "";
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} · ${corta}${anio}`;
+};
+
+const tonoDe = (item) => (VERBOS[parseActividad(item.descripcion).verbo] || VERBOS.get).tono;
+
 const ActividadItem = ({ item }) => {
   const [expandido, setExpandido] = useState(false);
   const { verbo, label } = useMemo(() => parseActividad(item.descripcion), [item.descripcion]);
@@ -117,42 +132,39 @@ const ActividadItem = ({ item }) => {
   const detalle = useMemo(() => parseDetalle(item.detalleactividad), [item.detalleactividad]);
   const usuarioWebId = item.usuariowebid;
 
-  // Solo se pide el email cuando la fila efectivamente se renderiza (queda
-  // dentro de la tanda visible) — react-query dedupea automáticamente las
-  // filas que comparten el mismo UsuarioWebID (ej. el usuario "sistema" que
-  // dispara la mayoría de las consultas de CDAs).
   const { data: usuarioData, isLoading: cargandoUsuario } = useObtenerUsuarioPorId(usuarioWebId);
   const emailUsuario = usuarioData?.email;
 
   return (
     <li className={styles.item}>
+      <span className={`${styles.itemPunto} ${styles[`tono-${meta.tono}`]}`} aria-hidden="true" />
       <button
         type="button"
         className={styles.itemMain}
         onClick={() => setExpandido((v) => !v)}
         aria-expanded={expandido}
       >
-        <span className={`${styles.verboIcon} ${styles[`tono-${meta.tono}`]}`}>
-          <meta.Icon size={13} />
+        <span className={styles.itemHora} title={formatearAbsoluto(item.momento)}>
+          {formatearHora(item.momento)}
         </span>
-        <span className={styles.itemInfo}>
-          <span className={styles.itemLabel}>{label}</span>
-          <span className={styles.itemMeta}>
-            <span className={`${styles.verboPill} ${styles[`tono-${meta.tono}`]}`}>{meta.label}</span>
-            {!!usuarioWebId && (
-              <span className={styles.itemUsuario} title={emailUsuario || ""}>
-                <FiUser size={10} />
-                {emailUsuario || (cargandoUsuario ? "Cargando usuario…" : `Usuario #${usuarioWebId}`)}
-              </span>
-            )}
+        <span className={styles.itemTipo}>
+          <span className={`${styles.verboPill} ${styles[`tono-${meta.tono}`]}`}>
+            <meta.Icon size={11} aria-hidden="true" />
+            {meta.label}
           </span>
         </span>
-        <span className={styles.itemRight}>
-          <span className={styles.itemFecha} title={formatearAbsoluto(item.momento)}>
-            {formatearRelativo(item.momento)}
+        <span className={styles.itemLabel}>{label}</span>
+        {!!usuarioWebId && (
+          <span className={styles.itemUsuario} title={emailUsuario || ""}>
+            <FiUser size={11} aria-hidden="true" />
+            {emailUsuario || (cargandoUsuario ? "Cargando usuario…" : `Usuario #${usuarioWebId}`)}
           </span>
-          {expandido ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
-        </span>
+        )}
+        {expandido ? (
+          <FiChevronDown className={styles.itemChevron} size={14} />
+        ) : (
+          <FiChevronRight className={styles.itemChevron} size={14} />
+        )}
       </button>
       {expandido && (
         <div className={styles.itemDetalle}>
@@ -198,17 +210,21 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
   // tiene sentido ofrecer "DELETE" en el desplegable si nunca hubo una baja)
   // — se calcula sobre el total sin filtrar para que las opciones no
   // aparezcan/desaparezcan al jugar con los otros filtros.
-  const opcionesVerbo = useMemo(() => {
+  const chipsTipo = useMemo(() => {
     const conteos = {};
     actividad.forEach((item) => {
-      const { verbo: v } = parseActividad(item.descripcion);
-      conteos[v] = (conteos[v] || 0) + 1;
+      const tono = tonoDe(item);
+      conteos[tono] = (conteos[tono] || 0) + 1;
     });
-    const dinamicas = ORDEN_VERBOS.filter((v) => conteos[v] > 0).map((v) => ({
-      value: v,
-      label: `${v.toUpperCase()} (${conteos[v]})`,
-    }));
-    return [{ value: "todas", label: "Todos los tipos" }, ...dinamicas];
+    const tipos = [
+      { value: "get", label: "Consulta" },
+      { value: "post", label: "Alta" },
+      { value: "put", label: "Modificación" },
+      { value: "delete", label: "Baja" },
+    ]
+      .filter((t) => conteos[t.value] > 0)
+      .map((t) => ({ ...t, cantidad: conteos[t.value] }));
+    return [{ value: "todas", label: "Todo", cantidad: actividad.length }, ...tipos];
   }, [actividad]);
 
   const fechaDesdeDate = fechaDesde ? new Date(fechaDesde) : undefined;
@@ -218,7 +234,7 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
     let lista = actividad;
 
     if (verbo !== "todas") {
-      lista = lista.filter((item) => parseActividad(item.descripcion).verbo === verbo);
+      lista = lista.filter((item) => tonoDe(item) === verbo);
     }
 
     if (fechaDesde) {
@@ -293,34 +309,57 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
     onClose();
   };
 
+  const visiblesLista = actividadFiltrada.slice(0, visibles);
+  const dias = [];
+  visiblesLista.forEach((item) => {
+    const clave = claveDia(item.momento);
+    const ultimo = dias[dias.length - 1];
+    if (ultimo && ultimo.clave === clave) ultimo.items.push(item);
+    else dias.push({ clave, etiqueta: etiquetaDia(item.momento), items: [item] });
+  });
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title="Actividad de la empresa"
       subtitle={denominacion ? `${denominacion} · CUIT ${cuit}` : `CUIT ${cuit}`}
-      maxWidth="640px"
+      icono={<FiActivity />}
+      maxWidth="820px"
       variant="blue"
+      footer={
+        <>
+          {!isLoading && actividad.length > 0 && (
+            <span className={styles.contador}>
+              Mostrando {visiblesLista.length} de {actividadFiltrada.length}
+              {actividadFiltrada.length !== actividad.length ? ` (${actividad.length} en total)` : ""}
+            </span>
+          )}
+          {visibles < actividadFiltrada.length ? (
+            <Button variant="adminSuave" onClick={() => setVisibles((v) => v + ELEMENTOS_POR_TANDA)}>
+              Cargar más
+            </Button>
+          ) : (
+            <Button variant="adminNeutro" onClick={handleClose}>
+              Cerrar
+            </Button>
+          )}
+        </>
+      }
     >
-      {/* Barra de filtros compacta: buscador + una sola fila con los 4
-          selects y el botón de limpiar, en vez de la grilla 2x2 con el
-          botón de limpiar huérfano en su propia línea de la versión
-          anterior. Pensada para el ancho real del modal, no calcada de
-          Dashboard.jsx/Solicitudes.jsx (esas tienen todo el ancho de la
-          pantalla disponible). */}
       <div className={styles.filterBar}>
-        <div className={styles.searchBox}>
-          <FiSearch className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Buscar en el log..."
-            value={busqueda}
-            onChange={(e) => handleBusqueda(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-
         <div className={styles.filterControlsRow}>
+          <div className={styles.searchBox}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Buscar en el log"
+              value={busqueda}
+              onChange={(e) => handleBusqueda(e.target.value)}
+              className={styles.searchInput}
+              aria-label="Buscar en el log"
+            />
+          </div>
           <div className={styles.filterFieldsRow}>
             <SelectFechaSimple
               label="Desde"
@@ -345,17 +384,6 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
               className={styles.filterField}
             />
             <SelectSimple
-              label="Tipo"
-              value={verbo}
-              onChange={handleVerbo}
-              options={opcionesVerbo}
-              isSearchable={false}
-              hideErrorSpace
-              compact
-              variant="admin"
-              className={styles.filterField}
-            />
-            <SelectSimple
               label="Orden"
               value={orden}
               onChange={handleOrden}
@@ -367,40 +395,42 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
               className={styles.filterField}
             />
           </div>
-
-          <button
-            type="button"
-            className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
-            onClick={limpiarFiltros}
-            disabled={!hayFiltrosActivos}
-            tabIndex={hayFiltrosActivos ? 0 : -1}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros"
-          >
-            <FiX />
-          </button>
         </div>
 
         {!isLoading && actividad.length > 0 && (
-          <div className={styles.resultsBar}>
-            <span className={styles.contador}>
-              {actividadFiltrada.length}
-              {actividadFiltrada.length !== actividad.length ? ` de ${actividad.length}` : ""} registro
-              {actividadFiltrada.length !== 1 ? "s" : ""}
-            </span>
+          <div className={styles.chips} role="group" aria-label="Filtrar por tipo">
+            {chipsTipo.map((chip) => {
+              const meta = Object.values(VERBOS).find((v) => v.tono === chip.value);
+              return (
+                <button
+                  key={chip.value}
+                  type="button"
+                  className={`${styles.chip} ${verbo === chip.value ? styles.chipActivo : ""}`}
+                  aria-pressed={verbo === chip.value}
+                  onClick={() => handleVerbo(chip.value)}
+                >
+                  {meta && <meta.Icon size={11} aria-hidden="true" />}
+                  {chip.label} <span className={styles.chipCantidad}>{chip.cantidad}</span>
+                </button>
+              );
+            })}
+            {hayFiltrosActivos && (
+              <button type="button" className={styles.clearFiltersBtn} onClick={limpiarFiltros}>
+                <FiX aria-hidden="true" />
+                Limpiar filtros
+              </button>
+            )}
           </div>
         )}
       </div>
 
       {isLoading ? (
         <div className={styles.skeletonList}>
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={styles.skeletonRow}>
-              <Skeleton width="1.7rem" height="1.7rem" radius="50%" />
-              <div style={{ flex: 1 }}>
-                <Skeleton width="60%" height="0.8rem" />
-                <Skeleton width="35%" height="0.65rem" style={{ marginTop: "0.4rem" }} />
-              </div>
+              <Skeleton width="2.5rem" height="0.7rem" />
+              <Skeleton width="5.5rem" height="1.1rem" radius="pill" />
+              <Skeleton width="40%" height="0.8rem" />
             </div>
           ))}
         </div>
@@ -422,24 +452,21 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
           </button>
         </div>
       ) : (
-        <>
-          <ul className={styles.lista}>
-            {actividadFiltrada.slice(0, visibles).map((item) => (
-              <ActividadItem key={item.logactividadid} item={item} />
-            ))}
-          </ul>
-          {visibles < actividadFiltrada.length && (
-            <button
-              type="button"
-              className={styles.cargarMas}
-              onClick={() => setVisibles((v) => v + ELEMENTOS_POR_TANDA)}
-            >
-              <FiActivity size={13} />
-              Ver más actividad ({actividadFiltrada.length - visibles} restante
-              {actividadFiltrada.length - visibles !== 1 ? "s" : ""})
-            </button>
-          )}
-        </>
+        <div className={styles.dias}>
+          {dias.map((dia) => (
+            <section key={dia.clave} className={styles.dia}>
+              <h4 className={styles.diaTitulo}>
+                <span>{dia.etiqueta}</span>
+                <span className={styles.diaLinea} aria-hidden="true" />
+              </h4>
+              <ul className={styles.lista}>
+                {dia.items.map((item) => (
+                  <ActividadItem key={item.logactividadid} item={item} />
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </Modal>
   );

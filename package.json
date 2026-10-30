@@ -1,13 +1,16 @@
 {
   "name": "bind-garantias",
   "private": true,
-  "version": "1.15.1",
+  "version": "1.15.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "publicar": "node scripts/publicar.mjs publicar",
+    "publicar:estado": "node scripts/publicar.mjs estado",
+    "publicar:sincronizar": "node scripts/publicar.mjs sincronizar"
   },
   "dependencies": {
     "@fontsource/metropolis": "^5.2.5",

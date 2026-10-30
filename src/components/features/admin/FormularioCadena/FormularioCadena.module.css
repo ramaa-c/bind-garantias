@@ -1,0 +1,315 @@
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.seccionTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: #7d8590;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.seccionTitulo svg {
+  font-size: 0.85rem;
+}
+
+.seccionLinea {
+  flex: 1;
+  height: 1px;
+  background: #21262d;
+}
+
+.grilla {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.campo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.ayudaEnCampo {
+  position: absolute;
+  left: 0.15rem;
+  bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.ayuda {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.pasos {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #7d8590;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.paso + .paso::before {
+  content: "";
+  width: 1.75rem;
+  height: 1px;
+  margin-right: 0.15rem;
+  background: #30363d;
+}
+
+.pasoNumero {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: #1c2128;
+  color: #8b949e;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.pasoActual {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.pasoActual .pasoNumero {
+  background: var(--color-azul-bind);
+  color: #ffffff;
+}
+
+.pasoHecho .pasoNumero {
+  background: rgba(63, 185, 80, 0.18);
+  color: #56d364;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.75rem;
+  border: 1px dashed #30363d;
+}
+
+.logoVista {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: rgba(76, 101, 230, 0.15);
+  color: var(--color-azul-bind-300);
+  font-size: 1.05rem;
+}
+
+.logoVista img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 0.2rem;
+}
+
+.logoTextos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.logoTextos strong {
+  color: var(--white);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.logoTextos strong span {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  border-radius: 0.625rem;
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #7d8590;
+}
+
+.buscador:focus-within {
+  border-color: var(--color-azul-bind);
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.18);
+}
+
+.buscador input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--white);
+  font-size: 0.875rem;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #21262d;
+  background: #111620;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.opcion:hover {
+  border-color: rgba(76, 101, 230, 0.4);
+  background: rgba(76, 101, 230, 0.06);
+}
+
+.opcionAvatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  background: rgba(76, 101, 230, 0.16);
+  color: var(--color-azul-bind-300);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.opcionTextos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.opcionTextos strong {
+  color: var(--white);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opcionId {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.45rem;
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+.opcionChevron {
+  flex-shrink: 0;
+  color: #7d8590;
+}
+
+.vacio {
+  margin: 0;
+  padding: 2rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed #30363d;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.pieAyuda {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+@media (min-width: 36rem) {
+  .grilla2 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grilla3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 35.99rem) {
+  .pieAyuda {
+    display: none;
+  }
+
+  .paso + .paso::before {
+    width: 0.75rem;
+  }
+}
+
+.pieAyudaError {
+  color: #ff7b72;
+}
+
+@media (max-width: 35.99rem) {
+  .pieAyuda.pieAyudaError {
+    display: block;
+    flex: 1 1 100%;
+  }
+}

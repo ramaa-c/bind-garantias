@@ -1,11 +1,16 @@
 import React from "react";
-import { FiCheck, FiX, FiAlertCircle } from "react-icons/fi";
+import {
+  FiCheck,
+  FiX,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiShield,
+} from "react-icons/fi";
 import { Modal } from "../Modal/Modal";
-import Spinner from "../Spinner/Spinner";
 import { Button } from "../Button/Button";
 import styles from "./ProcesamientoModal.module.css";
 
-const BADGE_LABELS = {
+const ESTADO_LABELS = {
   completado: "Completado",
   cargando: "En proceso",
   pendiente: "Pendiente",
@@ -13,110 +18,148 @@ const BADGE_LABELS = {
   alerta: "Revisión",
 };
 
+// Estado general que se muestra en la cabecera, derivado de los pasos:
+// - en curso mientras algún paso esté cargando,
+// - error solo si es un error de sistema (caída de un servicio, red...),
+// - alerta si algún paso terminó en error/alerta de negocio (se puede seguir),
+// - ok si todo se completó.
+const estadoGeneral = (pasos, isSystemError) => {
+  if (pasos.some((p) => p.estado === "cargando")) return "cargando";
+  if (isSystemError) return "error";
+  if (pasos.some((p) => p.estado === "error" || p.estado === "alerta"))
+    return "alerta";
+  if (pasos.length > 0 && pasos.every((p) => p.estado === "completado"))
+    return "ok";
+  return "cargando";
+};
+
+const SUBTITULOS = {
+  cargando: "Esto toma unos segundos.",
+  ok: "Proceso completado.",
+  alerta: "Podés continuar con la carga.",
+  error: "Fue un problema de nuestro lado, no de tus datos.",
+};
+
 export const ProcesamientoModal = ({
   isOpen,
   titulo,
+  subtitulo,
   pasos = [],
   hasError = false,
   isSystemError = false,
   onClose,
   onRetry,
 }) => {
+  const general = estadoGeneral(pasos, isSystemError);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="36rem" preventClose hideCloseButton>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="34rem"
+      preventClose
+      hideCloseButton
+      footer={
+        hasError ? (
+          <div className={styles.footerAcciones}>
+            {isSystemError && onRetry ? (
+              <>
+                <Button variant="outline" onClick={onClose} className={styles.footerBtn}>
+                  Continuar igual
+                </Button>
+                <Button variant="primary" onClick={onRetry} className={styles.footerBtn}>
+                  Reintentar
+                </Button>
+              </>
+            ) : (
+              <Button variant="primary" onClick={onClose} className={styles.footerBtn}>
+                Continuar
+              </Button>
+            )}
+          </div>
+        ) : (
+          <p className={styles.footerNota}>
+            <FiShield aria-hidden="true" />
+            No cierres esta ventana. Tus datos viajan encriptados.
+          </p>
+        )
+      }
+    >
+      <div aria-live="polite">
         {titulo && (
           <div className={styles.header}>
-            <h3 className={styles.titulo}>{titulo}</h3>
+            <span
+              className={`${styles.headerIcono} ${styles[`general_${general}`]}`}
+              aria-hidden="true"
+            >
+              {general === "cargando" && <span className={styles.spinner} />}
+              {general === "ok" && <FiCheck />}
+              {general === "alerta" && <FiAlertCircle />}
+              {general === "error" && <FiAlertTriangle />}
+            </span>
+            <div className={styles.headerTexto}>
+              <h3 className={styles.titulo}>{titulo}</h3>
+              <p className={styles.subtitulo}>
+                {subtitulo || SUBTITULOS[general]}
+              </p>
+            </div>
           </div>
         )}
 
-        <ul className={styles.listaPasos}>
+        <ol className={styles.listaPasos}>
           {pasos.map((paso, index) => {
             const isCompleted = paso.estado === "completado";
             const isError = paso.estado === "error";
             const isAlerta = paso.estado === "alerta";
             const isLoading = paso.estado === "cargando";
             const isPending = paso.estado === "pendiente";
+            const mensajes =
+              paso.errores && paso.errores.length > 0
+                ? paso.errores
+                : paso.error
+                  ? [paso.error]
+                  : [];
 
             return (
               <li
                 key={paso.id}
-                className={styles.pasoContainer}
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className={`${styles.paso} ${styles[`paso_${paso.estado}`] || ""}`}
+                style={{ animationDelay: `${index * 0.08}s` }}
               >
-                <div className={styles.track}>
-                  <div
-                    className={`${styles.circuloIcono} ${styles[`icono_${paso.estado}`]}`}
-                    aria-label={BADGE_LABELS[paso.estado]}
-                  >
-                    {isCompleted && <FiCheck size={18} strokeWidth={2.5} />}
-                    {isLoading && <Spinner size={18} center={false} />}
-                    {isError && <FiX size={18} strokeWidth={2.5} />}
-                    {isAlerta && <FiAlertCircle size={18} strokeWidth={2.5} />}
-                    {isPending && <span className={styles.dotPendiente} />}
-                  </div>
+                <span className={styles.dot}>
+                  {isCompleted && <FiCheck strokeWidth={3} />}
+                  {isLoading && <span className={styles.spinnerChico} />}
+                  {isError && <FiX strokeWidth={3} />}
+                  {isAlerta && <FiAlertCircle strokeWidth={2.5} />}
+                  {isPending && <span className={styles.dotPendiente} />}
+                  <span className={styles.srOnly}>{ESTADO_LABELS[paso.estado]}</span>
+                </span>
 
-                  {index < pasos.length - 1 && (
-                    <div
-                      className={`${styles.lineaConectora} ${isCompleted ? styles.lineaCompletada : ""} ${isError ? styles.lineaError : ""} ${isAlerta ? styles.lineaAlerta : ""}`}
-                    />
+                <div className={styles.contenido}>
+                  <span className={styles.etiqueta}>{paso.etiqueta}</span>
+                  {paso.descripcion && !isError && !isAlerta && !isPending && (
+                    <p className={styles.descripcion}>{paso.descripcion}</p>
                   )}
-                </div>
-
-                <div className={styles.contenidoPaso}>
-                  <div className={styles.cabeceraPaso}>
-                    <span
-                      className={`${styles.etiquetaTitulo} ${styles[`label_${paso.estado}`]}`}
+                  {(isError || isAlerta) && mensajes.length > 0 && (
+                    <ul
+                      className={`${styles.mensajes} ${isError ? styles.mensajesError : styles.mensajesAlerta}`}
                     >
-                      {paso.etiqueta}
-                    </span>
-                    <span
-                      className={`${styles.badge} ${styles[`badge_${paso.estado}`]}`}
-                    >
-                      {BADGE_LABELS[paso.estado]}
-                    </span>
-                  </div>
-                  {paso.descripcion && !isError && !isAlerta && (
-                    <p className={styles.descripcionPaso}>{paso.descripcion}</p>
-                  )}
-                  {isError && paso.errores && paso.errores.length > 0 && (
-                    <ul className={styles.listaErroresPaso}>
-                      {paso.errores.map((err) => (
-                        <li key={err}>{err}</li>
+                      {mensajes.map((m) => (
+                        <li key={m}>{m}</li>
                       ))}
                     </ul>
                   )}
-                  {isError && paso.error && (!paso.errores || paso.errores.length === 0) && (
-                    <p className={styles.errorPaso}>{paso.error}</p>
-                  )}
-                  {isAlerta && paso.errores && paso.errores.length > 0 && (
-                    <ul className={styles.listaAlertasPaso}>
-                      {paso.errores.map((err) => (
-                        <li key={err}>{err}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {isAlerta && paso.error && (!paso.errores || paso.errores.length === 0) && (
-                    <p className={styles.alertaPaso}>{paso.error}</p>
+                  {isLoading && (
+                    <span className={styles.barra} aria-hidden="true">
+                      <span className={styles.barraRelleno} />
+                    </span>
                   )}
                 </div>
               </li>
             );
           })}
-        </ul>
-
-        {hasError && (
-          <div className={styles.footerAcciones}>
-            <Button variant={isSystemError ? "secondary" : "primary"} onClick={onClose}>
-              Continuar
-            </Button>
-            {isSystemError && onRetry && (
-              <Button variant="outline" onClick={onRetry}>
-                Reintentar
-              </Button>
-            )}
-          </div>
-        )}
+        </ol>
+      </div>
     </Modal>
   );
 };

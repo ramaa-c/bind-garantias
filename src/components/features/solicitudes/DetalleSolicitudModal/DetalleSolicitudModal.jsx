@@ -12,7 +12,10 @@ import {
   FiCalendar,
   FiUsers,
   FiAlertCircle,
+  FiActivity,
+  FiServer,
 } from "react-icons/fi";
+import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
 
 const estadoConfig = {
   Cancelada: { color: styles.badgeGrey, label: "Cancelada" },
@@ -83,7 +86,10 @@ export const DetalleSolicitudModal = ({
         console.warn("No se pudo obtener relaciones locales", e);
       }
 
-      const arrSgr = Array.isArray(relacionesSGR) ? relacionesSGR : [];
+      const arrSgr = (Array.isArray(relacionesSGR) ? relacionesSGR : []).map((r) => ({
+        ...r,
+        __origenSgrPlus: true,
+      }));
       const arrLocal = Array.isArray(relacionesLocal) ? relacionesLocal : [];
 
       const mapaRel = new Map();
@@ -161,7 +167,7 @@ export const DetalleSolicitudModal = ({
         let tercero = cacheRef.current[terceroId];
         if (!tercero) {
           try {
-            tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+            tercero = rel.__origenSgrPlus ? null : await tercerosService.obtenerTerceroPorId(terceroId);
             if (!tercero || !tercero.denominacion || !tercero.cuit) {
               const terceroSGR = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
               if (terceroSGR && (terceroSGR.denominacion || terceroSGR.cuit)) {
@@ -226,12 +232,12 @@ export const DetalleSolicitudModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="600px">
       <div className={styles.container}>
         {/* ── HERO ─────────────────────────────────────────────────────── */}
-        <div className={styles.hero}>
+        <div className={`${styles.hero} ${esRechazada ? styles.heroRechazada : ""}`}>
           <div className={styles.heroTop}>
             <div className={styles.metaRow}>
               <span className={styles.tagSolicitud}>Solicitud</span>
               <span className={styles.tagId}>
-                {solicitud.id ? `OB-${solicitud.id}` : "N/A"}
+                {solicitud.id ? `N° ${solicitud.id}` : "N/A"}
               </span>
             </div>
             <span className={`${styles.estadoBadge} ${estado.color}`}>
@@ -295,6 +301,30 @@ export const DetalleSolicitudModal = ({
               </ul>
             </div>
           )}
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionTitle}>
+              <FiActivity size={12} />
+              Estado de tu solicitud
+            </span>
+          </div>
+          <div className={styles.estadoBloque}>
+            <EstadoSolicitudPasos estado={estadoValue} fecha={solicitud.fecha} orientacion="vertical" />
+            <div className={styles.estadoSgr}>
+              <span className={styles.estadoSgrIcono} aria-hidden="true">
+                <FiServer size={14} />
+              </span>
+              <div>
+                <p className={styles.estadoSgrTitulo}>Seguimiento en SGR+</p>
+                <p className={styles.estadoSgrTexto}>
+                  Muy pronto vas a ver acá cada etapa de tu solicitud dentro de BIND Garantías: emisión del
+                  certificado, firma del contrato y activación de la línea.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── ACCIONISTAS / FIADORES ────────────────────────────────────── */}

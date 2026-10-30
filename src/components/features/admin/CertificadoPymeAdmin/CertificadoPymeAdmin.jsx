@@ -84,7 +84,6 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   const [certificadoEditando, setCertificadoEditando] = useState(null);
   const [form, setForm] = useState(FORM_INICIAL);
   const [guardando, setGuardando] = useState(false);
-  const [errorNumero, setErrorNumero] = useState("");
   const [confirmEliminarOpen, setConfirmEliminarOpen] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -137,7 +136,6 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   const abrirAlta = () => {
     setCertificadoEditando(null);
     setForm(FORM_INICIAL);
-    setErrorNumero("");
     setModalAbierto(true);
   };
 
@@ -152,21 +150,13 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       sector: sectorGuardado(certificadoActual),
       tamanio: String(certificadoActual.tamanioempresaid ?? certificadoActual.TamanioEmpresaId ?? 0),
     });
-    setErrorNumero("");
     setModalAbierto(true);
   };
 
   const handleGuardar = async (e) => {
     e.preventDefault();
     const numero = String(form.numero ?? "").trim();
-    if (!numero) {
-      setErrorNumero("El número de certificado es obligatorio.");
-      return;
-    }
-    if (!form.sector) {
-      toast.error("Elegí el sector de actividad del certificado.");
-      return;
-    }
+    if (!numero || !form.sector) return;
     setGuardando(true);
     try {
       const payload = {
@@ -280,7 +270,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Tamaño</span>
-                <span className={styles.factValue}>{etiquetaDe(OPCIONES_TAMANIO, tamanioActual) || "â€”"}</span>
+                <span className={styles.factValue}>{etiquetaDe(OPCIONES_TAMANIO, tamanioActual) || "—"}</span>
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Observaciones</span>
@@ -338,10 +328,58 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         onClose={() => setModalAbierto(false)}
         title={certificadoEditando ? "Editar Certificado PyME" : "Cargar Certificado PyME"}
         subtitle="Carga manual, sin depender de CASFOG/LUFE."
+        icono={<FiAward />}
         variant="blue"
-        maxWidth="480px"
+        maxWidth="540px"
+        preventClose={guardando}
+        footer={
+          <>
+            <span className={styles.pieAyuda}>Los campos con * son obligatorios</span>
+            <Button type="button" variant="adminNeutro" onClick={() => setModalAbierto(false)} disabled={guardando}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="form-certificado-pyme"
+              variant="blue"
+              isLoading={guardando}
+              disabled={!String(form.numero ?? "").trim() || !form.sector}
+              title={!String(form.numero ?? "").trim() || !form.sector ? "Completá los campos obligatorios" : undefined}
+            >
+              {certificadoEditando ? "Guardar" : "Cargar certificado"}
+            </Button>
+          </>
+        }
       >
-        <form onSubmit={handleGuardar} className={styles.form}>
+        <form id="form-certificado-pyme" onSubmit={handleGuardar} className={styles.form}>
+          <InputSimple
+            label="Número de certificado *"
+            value={form.numero}
+            onChange={(val) => setForm((f) => ({ ...f, numero: val }))}
+            variant="admin"
+            hideErrorSpace
+            aria-required="true"
+          />
+          <div className={styles.formRow}>
+            <SelectSimple
+              label="Sector *"
+              value={form.sector}
+              onChange={(val) => setForm((f) => ({ ...f, sector: val }))}
+              options={OPCIONES_SECTOR}
+              isSearchable={false}
+              hideErrorSpace
+              variant="admin"
+            />
+            <SelectSimple
+              label="Tamaño"
+              value={form.tamanio}
+              onChange={(val) => setForm((f) => ({ ...f, tamanio: val }))}
+              options={OPCIONES_TAMANIO}
+              isSearchable={false}
+              hideErrorSpace
+              variant="admin"
+            />
+          </div>
           <div className={styles.formRow}>
             <SelectFechaSimple
               label="Vigente desde"
@@ -360,53 +398,12 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
             />
           </div>
           <InputSimple
-            label="Número de certificado *"
-            value={form.numero}
-            onChange={(val) => {
-              setForm((f) => ({ ...f, numero: val }));
-              if (errorNumero) setErrorNumero("");
-            }}
-            variant="admin"
-            error={errorNumero}
-            hideErrorSpace={!errorNumero}
-            aria-required="true"
-            aria-invalid={!!errorNumero}
-          />
-          <div className={styles.formRow}>
-            <SelectSimple
-              label="Sector"
-              value={form.sector}
-              onChange={(val) => setForm((f) => ({ ...f, sector: val }))}
-              options={OPCIONES_SECTOR}
-              isSearchable={false}
-              hideErrorSpace
-              variant="admin"
-            />
-            <SelectSimple
-              label="Tamaño"
-              value={form.tamanio}
-              onChange={(val) => setForm((f) => ({ ...f, tamanio: val }))}
-              options={OPCIONES_TAMANIO}
-              isSearchable={false}
-              hideErrorSpace
-              variant="admin"
-            />
-          </div>
-          <InputSimple
             label="Observaciones"
             value={form.observaciones}
             onChange={(val) => setForm((f) => ({ ...f, observaciones: val }))}
             variant="admin"
             hideErrorSpace
           />
-          <div className={styles.formActions}>
-            <Button type="button" variant="outlineBlue" size="sm" onClick={() => setModalAbierto(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="blue" size="sm" isLoading={guardando}>
-              Guardar
-            </Button>
-          </div>
         </form>
       </Modal>
 
@@ -416,6 +413,16 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         onConfirm={handleEliminar}
         titulo="Eliminar Certificado PyME"
         mensaje="¿Confirmás eliminar el Certificado PyME de este socio? A partir de ahí, no va a poder migrar a SGR+ hasta que se cargue uno nuevo."
+        icono={<FiTrash2 />}
+        detalle={
+          numeroActual
+            ? {
+                badge: "PY",
+                titulo: `Certificado N° ${numeroActual}`,
+                subtitulo: `Vigencia ${formatearFecha(fchDesdeActual)} — ${formatearFecha(fchHastaActual)}`,
+              }
+            : undefined
+        }
         confirmText="Eliminar"
         cancelText="Cancelar"
         variant="blue"

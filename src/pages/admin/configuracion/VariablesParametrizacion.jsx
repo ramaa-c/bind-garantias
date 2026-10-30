@@ -4,6 +4,7 @@ import { Button, InfoTooltip, Skeleton } from "../../../components/ui";
 import { VariableParametrizacionModal } from "../../../components/features/admin/VariableParametrizacionModal/VariableParametrizacionModal";
 import { useVariablesParametrizacion } from "../../../hooks/useVariablesParametrizacion";
 import styles from "./VariablesParametrizacion.module.css";
+import l from "../../../components/features/admin/ListadoAdmin/ListadoAdmin.module.css";
 
 const RowSkeleton = () => (
   <tr>
@@ -47,50 +48,51 @@ export default function VariablesParametrizacion() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.titleBox}>
-          <h1>Variables Parametrizables</h1>
-          <p>
-            Administrá los valores de configuración de la plataforma.
-          </p>
-        </div>
-        <div className={styles.actionsTop}>
+      <div className={l.encabezado}>
+        <h1>Variables parametrizables</h1>
+        {!isLoading && (
+          <span className={l.resumen}>
+            {listaFiltrada.length} variable{listaFiltrada.length !== 1 ? "s" : ""}
+          </span>
+        )}
+        <div className={`${styles.actionsTop} ${l.accionPrincipal}`}>
           <InfoTooltip
             variant="admin"
             label="¿Cómo funciona esto?"
             texto="Dar de alta una variable nueva acá no alcanza para que tenga efecto: el código todavía tiene que leerla explícitamente en algún lugar de la plataforma."
           />
-          <Button type="button" variant="blue" size="lg" onClick={handleAgregar}>
-            <FiPlus /> Agregar variable
+          <Button type="button" variant="blue" size="md" onClick={handleAgregar}>
+            <FiPlus /> Nueva variable
           </Button>
         </div>
       </div>
 
-      <div className={styles.filtersCard}>
-        <div className={styles.searchWrap}>
-          <FiSearch className={styles.iconSearch} />
+      <div className={l.filtros}>
+        <div className={l.buscador}>
+          <FiSearch aria-hidden="true" />
           <input
             type="text"
-            placeholder="Buscar por nombre de variable..."
+            placeholder="Buscar por nombre de variable"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Buscar por nombre de variable"
           />
         </div>
-        {!isLoading && (
-          <span className={styles.listCount}>
-            {listaFiltrada.length} variable{listaFiltrada.length !== 1 ? "s" : ""}
-          </span>
+        {searchTerm && (
+          <button type="button" className={l.limpiar} onClick={() => setSearchTerm("")}>
+            Limpiar
+          </button>
         )}
       </div>
 
-      <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
+      <div className={l.tablaCaja}>
+        <div className={l.tablaScroll}>
+          <table className={`${l.tabla} ${styles.table}`}>
             <thead>
               <tr>
                 <th>Variable</th>
                 <th style={{ width: "9rem" }}>Valor</th>
-                <th style={{ textAlign: "center", width: "4.5rem" }}></th>
+                <th style={{ width: "8rem" }}></th>
               </tr>
             </thead>
             <tbody>
@@ -98,9 +100,9 @@ export default function VariablesParametrizacion() {
                 Array.from({ length: 4 }).map((_, i) => <RowSkeleton key={i} />)
               ) : listaFiltrada.length === 0 ? (
                 <tr>
-                  <td colSpan={3} style={{ padding: 0 }}>
-                    <div className={styles.emptyState}>
-                      <FiInbox className={styles.emptyStateIcon} />
+                  <td colSpan={3} style={{ padding: 0, height: "auto" }}>
+                    <div className={l.vacio}>
+                      <FiInbox aria-hidden="true" />
                       <span>Todavía no hay variables cargadas.</span>
                     </div>
                   </td>
@@ -112,14 +114,14 @@ export default function VariablesParametrizacion() {
                     <td>
                       <span className={styles.valorTag}>{item.valor}</span>
                     </td>
-                    <td style={{ textAlign: "center" }}>
+                    <td style={{ textAlign: "right" }}>
                       <button
                         type="button"
-                        className={styles.editBtn}
+                        className={l.accionFila}
                         onClick={() => handleEditar(item)}
                         title="Editar valor"
                       >
-                        <FiEdit2 size={14} />
+                        <FiEdit2 size={13} aria-hidden="true" /> Editar
                       </button>
                     </td>
                   </tr>

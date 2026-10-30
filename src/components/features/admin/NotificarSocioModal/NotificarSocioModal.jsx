@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { FiBell, FiBold } from "react-icons/fi";
+import { FiBell, FiBold, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import { Modal } from "../../../ui/Modal/Modal";
@@ -185,83 +185,14 @@ export function NotificarSocioModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Notificar al socio"
-      maxWidth="520px"
+      subtitle="Le llega por mail. Usalo para avisar algo que hay que corregir o completar (ej. un documento mal cargado o vencido)."
+      icono={<FiBell />}
+      maxWidth="540px"
       variant="blue"
       preventClose={enviando}
-    >
-      <div className={styles.content}>
-        <div className={styles.destinatario}>
-          <FiBell size={16} className={styles.destinatarioIcon} />
-          <p className={styles.lead}>
-            Elegí a quién le llega el mensaje (podés marcar más de uno).
-            Usalo para avisar algo que hay que corregir o completar (ej. un
-            documento mal cargado o vencido).
-          </p>
-        </div>
-
-        {destinatariosDisponibles.length === 0 ? (
-          <p className={styles.sinDestinatarios}>
-            Esta empresa no tiene ningún email disponible para notificar.
-          </p>
-        ) : (
-          <div className={styles.destinatariosLista}>
-            {destinatariosDisponibles.map((d) => (
-              <div key={d.email} className={styles.destinatarioRow}>
-                <div className={styles.destinatarioInfo}>
-                  <span className={styles.destinatarioEmail}>{d.email}</span>
-                  <span className={styles.destinatarioEtiqueta}>{d.etiqueta}</span>
-                </div>
-                <Switch
-                  checked={emailsSeleccionados.includes(d.email)}
-                  onChange={() => toggleDestinatario(d.email)}
-                  variant="admin"
-                  disabled={enviando}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className={styles.toolbar}>
-          <button
-            type="button"
-            className={`${styles.negritaBtn} ${negritaActiva ? styles.negritaActiva : ""}`}
-            onClick={handleNegrita}
-            disabled={enviando}
-            aria-pressed={negritaActiva}
-            title="Activar/desactivar negrita: lo que tipees de acá en más queda en negrita hasta que lo vuelvas a apretar"
-          >
-            <FiBold size={14} />
-            Negrita
-          </button>
-        </div>
-
-        <div className={styles.editorWrapper}>
-          {estaVacio && !enfocado && (
-            <span className={styles.placeholder}>
-              Escribí acá el mensaje que va a recibir por mail...
-            </span>
-          )}
-          <div
-            ref={editorRef}
-            className={styles.editor}
-            contentEditable={!enviando}
-            role="textbox"
-            aria-multiline="true"
-            aria-label="Mensaje para el socio"
-            onInput={sincronizarVacio}
-            onPaste={handlePegar}
-            onDrop={handleSoltar}
-            onKeyUp={sincronizarEstadoNegrita}
-            onMouseUp={sincronizarEstadoNegrita}
-            onFocus={handleFocusEditor}
-            onBlur={handleBlurEditor}
-            suppressContentEditableWarning
-          />
-        </div>
-
-        <div className={styles.actions}>
-          <Button variant="outlineBlue" onClick={onClose} disabled={enviando}>
+      footer={
+        <>
+          <Button variant="adminNeutro" onClick={onClose} disabled={enviando}>
             Cancelar
           </Button>
           <Button
@@ -270,10 +201,92 @@ export function NotificarSocioModal({
             isLoading={enviando}
             disabled={estaVacio || emailsSeleccionados.length === 0}
           >
+            <FiSend aria-hidden="true" />
             {emailsSeleccionados.length > 1
               ? `Enviar a ${emailsSeleccionados.length} destinatarios`
               : "Enviar notificación"}
           </Button>
+        </>
+      }
+    >
+      <div className={styles.content}>
+        <div className={styles.seccion}>
+          <div className={styles.seccionTitulo}>
+            <span>Destinatarios</span>
+            <span className={styles.linea} aria-hidden="true" />
+            {destinatariosDisponibles.length > 0 && (
+              <span className={styles.contador}>
+                {emailsSeleccionados.length} de {destinatariosDisponibles.length}
+              </span>
+            )}
+          </div>
+          {destinatariosDisponibles.length === 0 ? (
+            <p className={styles.sinDestinatarios}>
+              Esta empresa no tiene ningún email disponible para notificar.
+            </p>
+          ) : (
+            <div className={styles.destinatariosLista}>
+              {destinatariosDisponibles.map((d) => (
+                <div key={d.email} className={styles.destinatarioRow}>
+                  <div className={styles.destinatarioInfo}>
+                    <span className={styles.destinatarioEmail}>{d.email}</span>
+                    <span className={styles.destinatarioEtiqueta}>{d.etiqueta}</span>
+                  </div>
+                  <Switch
+                    checked={emailsSeleccionados.includes(d.email)}
+                    onChange={() => toggleDestinatario(d.email)}
+                    variant="admin"
+                    disabled={enviando}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.seccion}>
+          <div className={styles.seccionTitulo}>
+            <span>Mensaje</span>
+            <span className={styles.linea} aria-hidden="true" />
+          </div>
+          <div className={styles.editorCaja}>
+            <div className={styles.toolbar}>
+              <button
+                type="button"
+                className={`${styles.negritaBtn} ${negritaActiva ? styles.negritaActiva : ""}`}
+                onClick={handleNegrita}
+                disabled={enviando}
+                aria-pressed={negritaActiva}
+                title="Activar/desactivar negrita: lo que tipees de acá en más queda en negrita hasta que lo vuelvas a apretar"
+              >
+                <FiBold size={14} />
+                Negrita
+              </button>
+            </div>
+            <div className={styles.editorWrapper}>
+              {estaVacio && !enfocado && (
+                <span className={styles.placeholder}>
+                  Escribí acá el mensaje que va a recibir por mail...
+                </span>
+              )}
+              <div
+                ref={editorRef}
+                className={styles.editor}
+                contentEditable={!enviando}
+                role="textbox"
+                aria-multiline="true"
+                aria-label="Mensaje para el socio"
+                onInput={sincronizarVacio}
+                onPaste={handlePegar}
+                onDrop={handleSoltar}
+                onKeyUp={sincronizarEstadoNegrita}
+                onMouseUp={sincronizarEstadoNegrita}
+                onFocus={handleFocusEditor}
+                onBlur={handleBlurEditor}
+                suppressContentEditableWarning
+              />
+            </div>
+          </div>
         </div>
       </div>
     </Modal>

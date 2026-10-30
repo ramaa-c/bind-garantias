@@ -6,12 +6,21 @@
   overflow: hidden;
 }
 
-.mainColumn {
+.columnaPrincipal {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
   height: 100dvh;
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -33,6 +42,46 @@
   }
   .mainColumn::-webkit-scrollbar {
     display: none;
+  }
+}
+
+.indicadorScroll {
+  position: absolute;
+  left: 0;
+  right: 0.5rem;
+  bottom: 0;
+  z-index: 30;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
+}
+
+.indicadorScrollVisible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.indicadorDegrade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3.5rem;
+  background: linear-gradient(
+    to top,
+    rgba(var(--glass-rgb), 0.92) 0%,
+    rgba(var(--glass-rgb), 0.55) 45%,
+    rgba(var(--glass-rgb), 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicadorScroll {
+    transition: none;
   }
 }
 
@@ -69,5 +118,10 @@
      pantalla justo al cambiar de paso. */
   .mainColumn {
     scrollbar-gutter: stable;
+  }
+}
+@media (max-width: 47.99rem) {
+  .columnaPrincipal:has([data-cta-fijo]) .indicadorScroll {
+    display: none;
   }
 }

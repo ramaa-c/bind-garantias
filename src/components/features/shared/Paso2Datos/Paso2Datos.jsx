@@ -12,7 +12,7 @@ import { Button } from "../../../ui";
 import { UbicacionModal, ContactoModal } from "../../../features";
 import styles from "./Paso2Datos.module.css";
 
-export default function Paso2Datos({ onContinuar, isSubmitting }) {
+export default function Paso2Datos({ onContinuar, isSubmitting, pedirTelefono = true }) {
   const { setValue, trigger, control } = useFormContext();
 
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
@@ -30,10 +30,10 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
 
   const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
   const contactoOk = celular.trim().length >= 8;
-  const puedeContinuar = ubicacionOk && contactoOk;
+  const puedeContinuar = ubicacionOk;
 
-  const totalTareas = 2;
-  const tareasCompletas = (ubicacionOk ? 1 : 0) + (contactoOk ? 1 : 0);
+  const totalTareas = pedirTelefono ? 2 : 1;
+  const tareasCompletas = (ubicacionOk ? 1 : 0) + (pedirTelefono && contactoOk ? 1 : 0);
   const progresoPct = (tareasCompletas / totalTareas) * 100;
 
   const inicialEmpresa = razonSocial?.trim()?.charAt(0)?.toUpperCase() || "?";
@@ -62,7 +62,7 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         "direccion",
         "provincia",
         "localidad",
-        "celular",
+        ...(pedirTelefono ? ["celular"] : []),
       ]);
       if (puedeContinuar && esValidoGlobal) {
         await onContinuar();
@@ -74,29 +74,17 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
 
   return (
     <div className={styles.container}>
-      {/* PROGRESO ────────────────────────────────────────────────────────────── */}
-      <div className={styles.progressRow}>
-        <span className={styles.progressLabel}>
-          {tareasCompletas} de {totalTareas} completado
-          {tareasCompletas === 1 ? "" : "s"}
-        </span>
-        <div className={styles.progressTrack}>
-          <div
-            className={`${styles.progressFill} ${progresoPct === 100 ? styles.progressFillDone : ""}`}
-            style={{ transform: `scaleX(${progresoPct / 100})` }}
-          />
-        </div>
-      </div>
-
       {/* EMPRESA ──────────────────────────────────────────────────────────────── */}
       <div className={styles.empresaCard}>
         <div className={styles.empresaAvatar}>{inicialEmpresa}</div>
         <div className={styles.empresaInfo}>
-          <span className={styles.empresaBadge}>
-            <FiCheckCircle size={11} /> Socio validado
-          </span>
           <h2 className={styles.empresaName}>{razonSocial}</h2>
-          <p className={styles.empresaCuit}>CUIT {cuit || "20-12345678-9"}</p>
+          <p className={styles.empresaCuit}>
+            CUIT {cuit || "20-12345678-9"}
+            <span className={styles.empresaBadge}>
+              <FiCheckCircle size={12} aria-hidden="true" /> Validada
+            </span>
+          </p>
         </div>
         <span
           className={styles.lockedBadge}
@@ -105,6 +93,32 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         >
           <FiLock size={13} />
         </span>
+      </div>
+
+      {/* PROGRESO ────────────────────────────────────────────────────────────── */}
+      <div className={styles.progressRow}>
+        <div className={styles.progressHead}>
+          <span className={styles.progressLabel}>Falta completar</span>
+          <span
+            className={`${styles.progressCount} ${progresoPct === 100 ? styles.progressCountDone : ""}`}
+          >
+            {tareasCompletas} de {totalTareas}
+          </span>
+        </div>
+        <div className={styles.progressSegments} aria-hidden="true">
+          {Array.from({ length: totalTareas }, (_, i) => (
+            <span
+              key={i}
+              className={`${styles.progressSegment} ${
+                i < tareasCompletas
+                  ? progresoPct === 100
+                    ? styles.segmentDone
+                    : styles.segmentActive
+                  : ""
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* TAREAS ──────────────────────────────────────────────────────────────── */}
@@ -119,7 +133,7 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
               setUbicacionModalOpen(true);
             }
           }}
-          className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : ""}`}
+          className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : styles.rowPending}`}
           onClick={() => !isSubmitting && setUbicacionModalOpen(true)}
           style={{
             cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -157,55 +171,64 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         </div>
 
         {/* CONTACTO */}
-        <div
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (!isSubmitting && (e.key === "Enter" || e.key === " ")) {
-              e.preventDefault();
-              setContactoModalOpen(true);
-            }
-          }}
-          className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : ""}`}
-          onClick={() => !isSubmitting && setContactoModalOpen(true)}
-          style={{
-            cursor: isSubmitting ? "not-allowed" : "pointer",
-            opacity: isSubmitting ? 0.7 : 1,
-          }}
-        >
-          <span
-            className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : styles.iconWarn}`}
+        {pedirTelefono && (
+          <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (!isSubmitting && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                setContactoModalOpen(true);
+              }
+            }}
+            className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : styles.rowPending}`}
+            onClick={() => !isSubmitting && setContactoModalOpen(true)}
+            style={{
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              opacity: isSubmitting ? 0.7 : 1,
+            }}
           >
-            {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
-          </span>
-
-          <div className={styles.taskInfo}>
-            <strong className={styles.taskTitle}>
-              Verificación de Contacto
-            </strong>
-            <span className={styles.taskSub}>
-              {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
+            <span
+              className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : styles.iconWarn}`}
+            >
+              {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
             </span>
-          </div>
-
-          <span
-            className={`${styles.taskAction} ${contactoOk ? styles.taskActionEdit : ""}`}
-          >
-            {contactoOk ? (
-              <>
-                <FiEdit2 size={12} /> Modificar
-              </>
-            ) : (
-              <>
-                Verificar <FiChevronRight size={13} />
-              </>
+  
+            <div className={styles.taskInfo}>
+              <strong className={styles.taskTitle}>
+                Verificación de Contacto
+              </strong>
+              <span className={styles.taskSub}>
+                {contactoOk ? `Cel: ${celular}` : "Opcional: podés verificarlo más tarde"}
+              </span>
+            </div>
+  
+            <span
+              className={`${styles.taskAction} ${contactoOk ? styles.taskActionEdit : ""}`}
+            >
+              {contactoOk ? (
+                <>
+                  <FiEdit2 size={12} /> Modificar
+                </>
+              ) : (
+                <>
+                  Verificar <FiChevronRight size={13} />
+                </>
             )}
           </span>
         </div>
+        )}
       </div>
 
       {/* FOOTER ──────────────────────────────────────────────────────────────── */}
       <div className={styles.footer}>
+        <span className={styles.footerText}>
+          {!puedeContinuar
+            ? "Completá la ubicación para continuar."
+            : pedirTelefono && !contactoOk
+              ? "Podés verificar el celular ahora o más tarde desde Mi perfil."
+              : "Todo listo. Vamos a crear tu legajo."}
+        </span>
         <Button
           variant="primary"
           iconRight={!isSubmitting ? <FiChevronRight /> : null}
