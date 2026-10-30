@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { esAdminGeneralToken } from "../../../api/tokenApi";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import { vinculosCadenaActivos } from "../../../utils/usuarioUtils";
@@ -65,7 +66,7 @@ export const AdminGuard = ({ children }) => {
 
   const { isRestricted, isPending } = useAdminRestrictions();
 
-  const isBasicAdmin = user?.role === "admin";
+  const isBasicAdmin = esAdminGeneralToken();
   const tieneSesion = !!user?.email;
 
   // Sin sesión, `useObtenerPorNombreOEmail` queda deshabilitado (email vacío)

@@ -39,6 +39,11 @@ const parsearCuerpo = (data) => {
 const esMensajeGenericoAxios = (mensaje) =>
   /^Request failed with status code \d+$/i.test(String(mensaje || "").trim());
 
+const datosDeEjecucion = (cuerpo) => ({
+  momento: cuerpo?.momento ?? cuerpo?.Momento ?? null,
+  pantallaGrupoCdaId: cuerpo?.pantallagrupocdaid ?? cuerpo?.PantallaGrupoCdaID ?? null,
+});
+
 export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -79,6 +84,7 @@ export const useCdaEngine = () => {
             );
             setLoading(false);
             return {
+              ...datosDeEjecucion(data),
               success: false,
               errors: [
                 {
@@ -105,7 +111,7 @@ export const useCdaEngine = () => {
       );
 
       setLoading(false);
-      return { success: true, errors: [] };
+      return { ...datosDeEjecucion(data), success: true, errors: [] };
     } catch (err) {
       console.error("[CDA ENGINE] Error durante la validación del CDA:", err);
 
@@ -131,6 +137,7 @@ export const useCdaEngine = () => {
 
         setLoading(false);
         return {
+          ...datosDeEjecucion(responseData),
           success: false,
           errors: [
             {
@@ -178,6 +185,7 @@ export const useCdaEngine = () => {
         if (mappedErrors.length === 0) {
           // 406 sin detalle de qué falló: tratar como bloqueante genérico.
           return {
+            ...datosDeEjecucion(cuerpoObjeto),
             success: false,
             errors: [
               {
@@ -191,7 +199,7 @@ export const useCdaEngine = () => {
         }
 
         const hasBlockingErrors = mappedErrors.some((e) => e.isInvalidante);
-        return { success: !hasBlockingErrors, errors: mappedErrors };
+        return { ...datosDeEjecucion(cuerpoObjeto), success: !hasBlockingErrors, errors: mappedErrors };
       }
 
       // 400 "CDAs Inexistentes": no hay ningún CDA vinculado a esta
@@ -220,7 +228,9 @@ export const useCdaEngine = () => {
             {
               cdaid: 0,
               isInvalidante: true,
-              message: "No se pudieron evaluar los criterios de aceptación. Intentá nuevamente o contactá a soporte.",
+              message:
+                (esMensajeUtil(mensajeBackend) && mensajeBackend) ||
+                "No se pudieron evaluar los criterios de aceptación. Intentá nuevamente o contactá a soporte.",
               isSystemError: true,
               isAccesoRechazado: true,
             },
@@ -249,6 +259,7 @@ export const useCdaEngine = () => {
             isInvalidante: true,
             message: msg,
             isSystemError: true,
+            isPedidoRechazado: status === 400,
           },
         ],
       };

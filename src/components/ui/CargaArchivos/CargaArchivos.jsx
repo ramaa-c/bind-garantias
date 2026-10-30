@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import styles from './CargaArchivos.module.css';
 import {
   FiUploadCloud,
@@ -49,14 +49,10 @@ const extensionDe = (nombre) => {
   return partes.length > 1 ? partes.pop().toLowerCase() : "";
 };
 
-const tipoDeArchivo = ({ name, fuente, contenido }) => {
+const tipoDeArchivo = ({ name, fuente }) => {
   const mime = String(fuente?.type || "");
   if (mime.startsWith("image/")) return "imagen";
   if (mime === "application/pdf") return "pdf";
-  if (typeof contenido === "string") {
-    if (contenido.startsWith("/9j/") || contenido.startsWith("iVBORw0KGgo")) return "imagen";
-    if (contenido.startsWith("JVBERi")) return "pdf";
-  }
   const ext = extensionDe(name);
   if (EXT_IMAGEN.includes(ext)) return "imagen";
   if (ext === "pdf") return "pdf";
@@ -73,13 +69,12 @@ const formatearTamanio = (size) => {
   return `${(kb / 1024).toFixed(1)} MB`;
 };
 
-// Miniatura real para imágenes: de un File/Blob recién elegido (se lee como
+// Miniatura real para imágenes de un File/Blob recién elegido (se lee como
 // data URL - con object URLs el doble montaje de StrictMode revocaba la URL
-// antes de que la <img> la usara) o del base64 que ya trae el backend.
-// PDFs y backend sin contenido quedan con el dibujo genérico.
+// antes de que la <img> la usara). PDFs y archivos del backend, que no traen
+// contenido en el listado, quedan con el dibujo genérico.
 const useMiniatura = (file, tipo) => {
   const fuente = file?.fuente;
-  const contenido = file?.contenido;
   const esBlob = typeof Blob !== "undefined" && fuente instanceof Blob;
   const leerBlob = esBlob && tipo === "imagen";
   const [leida, setLeida] = useState({ fuente: null, src: null });
@@ -95,14 +90,7 @@ const useMiniatura = (file, tipo) => {
     };
   }, [fuente, leerBlob]);
 
-  const srcContenido = useMemo(() => {
-    if (esBlob || tipo !== "imagen" || typeof contenido !== "string") return null;
-    const mime = contenido.startsWith("iVBORw0KGgo") ? "image/png" : "image/jpeg";
-    return `data:${mime};base64,${contenido}`;
-  }, [esBlob, tipo, contenido]);
-
-  if (leerBlob) return leida.fuente === fuente ? leida.src : null;
-  return srcContenido;
+  return leerBlob && leida.fuente === fuente ? leida.src : null;
 };
 
 // Hoja con la franja del formato abajo (roja para PDF): se usa cuando no

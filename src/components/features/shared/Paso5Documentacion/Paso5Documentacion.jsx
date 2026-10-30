@@ -31,7 +31,7 @@ import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { formatBase64Size, validarArchivo } from "../../../../utils/fileUtils";
+import { validarArchivo } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
@@ -167,7 +167,7 @@ export default function Paso5Documentacion({
                   type: "application/octet-stream",
                 },
               );
-              pseudoFile.formattedSize = arch.contenido ? formatBase64Size(arch.contenido) : "Disponible";
+              pseudoFile.formattedSize = "Disponible";
               pseudoFile._uploaded = true;
               pseudoFile._backendId = arch.socioarchivoid;
               pseudoFile.vialufe = arch.vialufe || arch.Vialufe || "0";

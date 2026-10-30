@@ -6,15 +6,18 @@ import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./NotFound.module.css";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useChannel } from "../../../context/useChannel";
+import { esAdminGeneralToken } from "../../../api/tokenApi";
+import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 
 const NotFound = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const { basePath } = useChannel();
+  const { isRestricted } = useAdminRestrictions();
 
   const handleGoHome = () => {
     if (user) {
-      if (user.role === "admin") {
+      if (esAdminGeneralToken() || isRestricted) {
         navigate("/admin", { replace: true });
       } else {
         navigate(`${basePath}/legajo`, { replace: true });

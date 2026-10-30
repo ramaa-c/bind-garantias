@@ -4,8 +4,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useChannel } from "../../../context/useChannel";
 
 // Evita que un usuario ya logueado vea login/registro/recuperar-clave -
-// análogo cliente del useEffect que ya hace LoginAdmin.jsx para admin
-// (`user?.role === "admin" → navigate("/admin")`). Acá se armó como guard
+// análogo cliente del useEffect que ya hace LoginAdmin.jsx para admin. Acá se armó como guard
 // reusable en vez de repetir el mismo chequeo en cada página porque del lado
 // cliente son varias pantallas (no una sola como en admin).
 //

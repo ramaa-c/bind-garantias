@@ -462,7 +462,7 @@ const Login = () => {
             }
             sessionStorage.removeItem("pendingOtpEmail");
             sessionStorage.removeItem("otpExpiresAt");
-            setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
+            setUser({ email: formData.email }, { esNuevoLogin: true });
             navigate(acceso.destino, { replace: true });
           },
           onError: (error) => {
@@ -509,7 +509,7 @@ const Login = () => {
               setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
               return;
             }
-            setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
+            setUser({ email: formData.email }, { esNuevoLogin: true });
             navigate(acceso.destino, { replace: true });
           },
           onError: (error) => {

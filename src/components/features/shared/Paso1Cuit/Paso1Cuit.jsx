@@ -10,6 +10,7 @@ import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
+import { mensajeDeApi } from "../../../../utils/mensajesError";
 import { guardarSocioPendiente } from "../../../../utils/altaEmpresaPendiente";
 import { useAuthStore } from "../../../../store/useAuthStore";
 
@@ -209,9 +210,12 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
       }
 
       if (!resultadoDatos || !resultadoDatos.encontrado) {
+        const mensajeSinDatos = "No pudimos verificar los datos de este CUIT. Revisá que sea correcto e intentá nuevamente.";
         setError("cuit", {
           type: "manual",
-          message: "No pudimos verificar los datos de este CUIT. Revisá que sea correcto e intentá nuevamente.",
+          message: resultadoDatos?.errorIntegracion
+            ? mensajeDeApi(resultadoDatos.errorIntegracion, mensajeSinDatos)
+            : mensajeSinDatos,
         });
         return;
       }
@@ -540,7 +544,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         ciudadid: valores.ciudadid ? Number(valores.ciudadid) : null,
         telefono: "",
         fax: "",
-        email: isVendor ? "" : user?.email,
         tipopersonaid: valores.tipopersonaid,
         tipocarteraid: 2,
         sectorcontableid: 700,
@@ -555,7 +558,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         motivobajaid: null,
         socioestadoid: 9,
         codpos: valores.codpos || "",
-        tamanioempresaid: 0,
         fechacierreejercicio: valores.mescierre
           ? `${new Date().getFullYear()}-${String(valores.mescierre).padStart(2, "0")}-${String(new Date(new Date().getFullYear(), valores.mescierre, 0).getDate()).padStart(2, "0")}T00:00:00`
           : getCSharpIsoDate(),
@@ -572,7 +574,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         // la resuelve solo a partir de CiudadID. No se manda.
         fechainicioactividades:
           valores.fechainicioactividades || getCSharpIsoDate(),
-        tipoactividadglobalid: 0,
         tipocanalcomercializacionid:
           cadenaObj?.tipocanalcomercializacionid ||
           cadenaObj?.TipoCanalComercializacionID ||

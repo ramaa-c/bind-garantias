@@ -1,15 +1,19 @@
 import { useMemo } from "react";
 import {
+  useInfiniteQuery,
   useQuery,
   useQueries,
   useMutation,
   useQueryClient,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { sociosService } from "../services/sociosService";
+import { ACTIVIDAD_POR_PAGINA, sociosService } from "../services/sociosService";
 import { esSocioVacio } from "../utils/socioUtils";
-import { calcularEstadoDesdeHistorial } from "../utils/executeCda";
+import { calcularEstadoDesdeHistorial, filtrarHistorialPorPantalla } from "../utils/executeCda";
+import { cdaService } from "../services/cdaService";
+import { PANTALLA_INGRESO_CUIT } from "../utils/pantallasCda";
 import { idsCdasActivos, useObtenerGrupoCdaConCdas } from "./useCadenaValor";
+import { useAdminRestrictions } from "./useAdminRestrictions";
 import { useEstadoValidarSocio } from "./useSgrPlusCore";
 
 export const useObtenerSocios = (params = {}) => {
@@ -177,13 +181,21 @@ export const useEmpresasCompletas = (socioUsuarios) => {
 // cuando hace falta desambiguar — en el caso común (ya hay historial) no
 // agrega ningún pedido extra.
 export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
-  const { data: historial, isPending } = useObtenerExecuteCda(socioId);
+  const { data: historial, isPending: isPendingHistorial } = useObtenerExecuteCda(socioId);
+  const { data: gruposIngreso, isPending: isPendingPantalla } = useQuery({
+    queryKey: ["cda", "gruposPorPantalla", PANTALLA_INGRESO_CUIT],
+    queryFn: () => cdaService.obtenerGrupoCda(PANTALLA_INGRESO_CUIT),
+    enabled: !!socioId,
+    staleTime: Infinity,
+  });
+  const isPending = isPendingHistorial || isPendingPantalla;
+  const pantallaIngresoId = (Array.isArray(gruposIngreso) ? gruposIngreso[0] : gruposIngreso)?.pantallagrupocdaid;
 
   const estadoHistorial = useMemo(() => {
     if (!socioId || isPending) return undefined;
     const lista = Array.isArray(historial) ? historial : historial ? [historial] : [];
-    return calcularEstadoDesdeHistorial(lista);
-  }, [socioId, isPending, historial]);
+    return calcularEstadoDesdeHistorial(filtrarHistorialPorPantalla(lista, pantallaIngresoId));
+  }, [socioId, isPending, historial, pantallaIngresoId]);
 
   const necesitaChequearVinculacion = estadoHistorial === null && !!cadenaValorId;
   const { data: grupoCdaData, isPending: isPendingGrupo } = useObtenerGrupoCdaConCdas(
@@ -238,12 +250,28 @@ export const useBloqueoLegajo = (socioId, cadenaValorId, cuit) => {
 // log de las 8 empresas visibles en cada página.
 export const useActividadSocio = (cuit, habilitado = true) => {
   const cuitLimpio = String(cuit || "").replace(/\D/g, "");
-  return useQuery({
+  const consulta = useInfiniteQuery({
     queryKey: ["socios", "actividad", cuitLimpio],
-    queryFn: () => sociosService.obtenerActividadSocio(cuitLimpio),
+    queryFn: ({ pageParam }) => sociosService.obtenerActividadSocio(cuitLimpio, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (ultimaPagina, paginas) =>
+      ultimaPagina.length < ACTIVIDAD_POR_PAGINA ? undefined : paginas.length + 1,
     enabled: !!cuitLimpio && habilitado,
     staleTime: 1000 * 60 * 2, // 2 minutos
   });
+  const { data, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } = consulta;
+
+  const registros = useMemo(() => data?.pages.flat() ?? [], [data]);
+
+  return {
+    data: registros,
+    isLoading: consulta.isLoading,
+    isError: consulta.isError && !data,
+    hayMasRegistros: hasNextPage,
+    cargandoMas: isFetchingNextPage,
+    falloCargarMas: isFetchNextPageError,
+    cargarMas: fetchNextPage,
+  };
 };
 
 // Sin staleTime esto se re-pedía en cada navegación entre rutas del
@@ -268,10 +296,12 @@ export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
 // falta pedir api/usuario/{id}, que la API solo responde al propio usuario o
 // a un Admin (al resto le da "recurso ajeno").
 export const useUsuariosVinculadosASocio = (socioId) => {
+  const { isRestricted, isPending: cargandoRestricciones } = useAdminRestrictions();
+  const puedeConsultar = !!socioId && !cargandoRestricciones && !isRestricted;
   const { data: vinculos, isPending } = useQuery({
     queryKey: ["socioUsuario", "listaPorSocio", socioId],
     queryFn: () => sociosService.obtenerSocioUsuarioPorSocioId(socioId),
-    enabled: !!socioId,
+    enabled: puedeConsultar,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -288,5 +318,8 @@ export const useUsuariosVinculadosASocio = (socioId) => {
     })
     .filter(Boolean);
 
-  return { usuariosVinculados, isLoading: !!socioId && isPending };
+  return {
+    usuariosVinculados,
+    isLoading: !!socioId && !isRestricted && isPending,
+  };
 };

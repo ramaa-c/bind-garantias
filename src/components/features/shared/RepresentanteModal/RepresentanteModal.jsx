@@ -13,7 +13,7 @@ import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/Procesamiento
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
-import { mensajeNegocio } from "../../../../utils/mensajesError";
+import { mensajeDeApi, mensajeNegocio } from "../../../../utils/mensajesError";
 import { decidirReejecucionCdaTercero } from "../../../../hooks/useTerceros";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
@@ -67,6 +67,7 @@ export function RepresentanteModal({
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
+  const [cargaManual, setCargaManual] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
@@ -122,6 +123,7 @@ export function RepresentanteModal({
     setPrevProps({ isOpen, representante, representanteInicial });
     if (isOpen) {
       setAfipValidado(!!(representante || representanteInicial));
+      setCargaManual(false);
       setShowConfirm(false);
       stubRelacionRef.current = null;
       cdaNoAprobadoRef.current = false;
@@ -290,6 +292,7 @@ export function RepresentanteModal({
     }
 
     setValidando(true);
+    setCargaManual(false);
     clearErrors("cuit");
 
     // Refleja los 3 tramos reales de esta función, en el mismo orden que
@@ -327,6 +330,7 @@ export function RepresentanteModal({
     // terceroId+socio antes de decidir crear o actualizar, así que no hace
     // falta guardar el ID acá: la va a encontrar sola.
     if (necesitaVinculo) {
+      stubTerceroIdRef.current = null;
       try {
         // Denominacion y descripcionreducida van VACÍAS a propósito para el
         // caso de que haya que crearlo: la precarga de más abajo hace
@@ -531,11 +535,13 @@ export function RepresentanteModal({
         // Se persiste YA lo que trajo AFIP/NOSIS: si el usuario cierra sin
         // guardar y vuelve más tarde, no se pierde (antes quedaba solo en
         // el formulario en memoria, y el tercero en la base seguía con
-        // denominacion="" del stub). `terceroEncontrado` acá ya es el stub
-        // recién creado (se buscó por el mismo CUIT más arriba). Lo que
-        // falta (rol definitivo, o ediciones manuales) se guarda en
-        // onConfirmSave.
-        const idParaPersistir = terceroEncontrado?.tercerorelacionadoid || terceroEncontrado?.TerceroRelacionadoID || terceroEncontrado?.id;
+        // denominacion="" del stub). Lo que falta (rol definitivo, o
+        // ediciones manuales) se guarda en onConfirmSave.
+        const idParaPersistir =
+          stubTerceroIdRef.current ||
+          terceroEncontrado?.tercerorelacionadoid ||
+          terceroEncontrado?.TerceroRelacionadoID ||
+          terceroEncontrado?.id;
         if (idParaPersistir && !representante && !representanteInicial) {
           try {
             // Mismo cuidado que en onConfirmSave: preservar lo que el
@@ -574,6 +580,12 @@ export function RepresentanteModal({
         }
 
         toast.success(representante || representanteInicial ? "Datos actualizados correctamente." : `Datos del ${etiquetaRol.toLowerCase()} recuperados.`);
+        padronOk = true;
+      } else if (!padronOk && datosPadron?.errorIntegracion) {
+        toast.warning("No se pudo validar el CUIT. Completá los datos a mano.", {
+          description: mensajeDeApi(datosPadron.errorIntegracion),
+        });
+        setCargaManual(true);
         padronOk = true;
       } else if (!padronOk) {
         // Padrón no encontrado por ningún lado: acá sí se bloquea, no hay
@@ -876,7 +888,8 @@ export function RepresentanteModal({
       // éxito, pero los cambios nunca se ven al reabrir.
       const idConocido =
         representante?.id ||
-        (representanteInicial?.preloadedFromDb ? representanteInicial?.id : null);
+        (representanteInicial?.preloadedFromDb ? representanteInicial?.id : null) ||
+        stubTerceroIdRef.current;
 
       let terceroId = idConocido || null;
       let terceroExistente = null;
@@ -1175,6 +1188,8 @@ export function RepresentanteModal({
                           <Spinner size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />
                           Completando datos...
                         </>
+                      ) : cargaManual ? (
+                        "Sin validar"
                       ) : (
                         "Validado"
                       )}
@@ -1205,7 +1220,7 @@ export function RepresentanteModal({
               {/* El nombre viene de la fuente al validar el CUIT: el cliente
                   no lo edita a mano, salvo que no haya llegado ninguno (sigue
                   siendo obligatorio). Admin conserva la edición. */}
-              {(isAdmin || !String(nombreValue || "").trim()) && (
+              {(isAdmin || cargaManual || !String(nombreValue || "").trim()) && (
               <div className={styles.modalRow}>
                 <Controller
                   name="nombre"

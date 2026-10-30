@@ -10,6 +10,9 @@ export const obtenerMensajeAmigable = (err, defaultMsg) => {
     return "No se pudo conectar con el servidor. Verificá tu conexión a internet o reintentá más tarde.";
   }
   const status = err.response?.status;
+  if (esIntegracionNoDisponible(err)) {
+    return mensajeDeApi(err, "El servicio externo no está disponible en este momento. Intentá nuevamente más tarde.");
+  }
   if (status >= 500) {
     return "Hubo un inconveniente en el sistema al procesar los datos. Por favor, reintentá más tarde.";
   }
@@ -32,11 +35,22 @@ export const obtenerMensajeAmigable = (err, defaultMsg) => {
 const FRASES_HTTP_GENERICAS =
   /^(bad request|unauthorized|forbidden|not found|method not allowed|not acceptable|request timeout|conflict|unprocessable (entity|content)|too many requests|internal server error|bad gateway|service unavailable|gateway timeout)\.?$/i;
 
+const DETALLE_INTERNO = /FireDAC|\bSQL\b|ODBC|FOREIGN KEY|Invalid (object|column) name|\bdbo\./i;
+
 export const esMensajeUtil = (mensaje) =>
   typeof mensaje === "string" &&
   Boolean(mensaje.trim()) &&
   mensaje.length < 300 &&
-  !FRASES_HTTP_GENERICAS.test(mensaje.trim());
+  !FRASES_HTTP_GENERICAS.test(mensaje.trim()) &&
+  !DETALLE_INTERNO.test(mensaje);
+
+const RUTAS_INTEGRACION_EXTERNA = /api\/(afip|nosis|lufe)\//i;
+
+export const esRutaIntegracionExterna = (url = "") => RUTAS_INTEGRACION_EXTERNA.test(url);
+
+// 502/503 de AFIP/ARCA, Nosis o LUFE: el servicio externo no respondió o respondió con un error.
+export const esIntegracionNoDisponible = (err) =>
+  [502, 503].includes(err?.response?.status) && esRutaIntegracionExterna(err?.config?.url);
 
 // Mensaje que devuelve la API en el cuerpo del error ({ statusCode, message }); si no hay, el texto por defecto.
 export const mensajeDeApi = (err, porDefecto = "") => {
@@ -45,6 +59,8 @@ export const mensajeDeApi = (err, porDefecto = "") => {
   return esMensajeUtil(mensaje) ? mensaje : porDefecto;
 };
 
-// Igual que mensajeDeApi, pero solo para los errores de negocio (400, 403, 409, 429): el resto (5xx, red) muestra el texto por defecto.
+// Igual que mensajeDeApi, pero solo para los errores de negocio (400, 403, 409, 429) y las integraciones no disponibles: el resto (5xx, red) muestra el texto por defecto.
 export const mensajeNegocio = (err, porDefecto = "") =>
-  [400, 403, 409, 429].includes(err?.response?.status) ? mensajeDeApi(err, porDefecto) : porDefecto;
+  [400, 403, 409, 429].includes(err?.response?.status) || esIntegracionNoDisponible(err)
+    ? mensajeDeApi(err, porDefecto)
+    : porDefecto;

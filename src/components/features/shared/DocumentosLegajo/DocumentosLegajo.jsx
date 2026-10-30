@@ -49,7 +49,6 @@ import { useDescargaConFeedback } from "../../../../hooks/useDescargaConFeedback
 
 import {
   procesarArchivo,
-  formatBase64Size,
   descargarArchivosEnZip,
   descargarLegajoCompletoZip,
   validarArchivo,
@@ -234,9 +233,7 @@ export function DocumentosLegajo({
   const [archivoAEliminar, setArchivoAEliminar] = useState(null);
   const [uploadingKey, setUploadingKey] = useState(null);
   // Feedback del botón de descarga (spinner y después tilde) - ver
-  // useDescargaConFeedback: la descarga es instantánea, sin la espera
-  // artificial de ese hook no se ve nada ni se frena el doble click
-  // (SGRPLUSPLA-199).
+  // useDescargaConFeedback (SGRPLUSPLA-199).
   const { descargar, faseDe } = useDescargaConFeedback();
 
   // Sincroniza react-hook-form (para la validación visual de obligatorios)
@@ -266,9 +263,7 @@ export function DocumentosLegajo({
           key,
           {
             name: latest.nombrearchivo,
-            size: latest.contenido
-              ? formatBase64Size(latest.contenido)
-              : "Disponible",
+            size: "Disponible",
             _uploaded: true,
             _backendId: latest.socioarchivoid,
             _tipodocumentoarchivoid: latest.tipodocumentoarchivoid,
@@ -561,7 +556,7 @@ export function DocumentosLegajo({
           key,
           {
             name: restantes[0].nombrearchivo,
-            size: restantes[0].contenido ? formatBase64Size(restantes[0].contenido) : "Disponible",
+            size: "Disponible",
             _uploaded: true,
             _backendId: restantes[0].socioarchivoid,
             _tipodocumentoarchivoid: restantes[0].tipodocumentoarchivoid,
@@ -596,7 +591,7 @@ export function DocumentosLegajo({
     const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
     const zipName = `Documentos_${cleanRazonSocial}_${cleanDocTitle}.zip`;
     descargar("zip-categoria", () =>
-      descargarArchivosEnZip(categoryFiles, zipName),
+      descargarArchivosEnZip(categoryFiles, socioArchivoService.obtenerContenido, zipName),
     );
   };
 
@@ -611,11 +606,8 @@ export function DocumentosLegajo({
 
     const fileProp = activeFile ? {
       name: activeFile.nombrearchivo,
-      size: activeFile.contenido ? formatBase64Size(activeFile.contenido) : "Disponible",
+      size: "Disponible",
       vialufe: activeFile.vialufe || activeFile.Vialufe || "0",
-      // Si el archivo es una imagen (ej. alguno histórico o vía LUFE), el
-      // base64 ya está acá y da la miniatura real; si es PDF, la hoja.
-      contenido: activeFile.contenido,
     } : null;
 
     const hasError =
@@ -769,13 +761,13 @@ export function DocumentosLegajo({
                   }}
                   onView={() => {
                     if (activeFile) {
-                      procesarArchivo(activeFile, archivosBackend, "view");
+                      procesarArchivo(activeFile, socioArchivoService.obtenerContenido, "view");
                     }
                   }}
                   onDownload={() => {
                     if (activeFile) {
                       descargar(doc.key, () =>
-                        procesarArchivo(activeFile, archivosBackend, "download"),
+                        procesarArchivo(activeFile, socioArchivoService.obtenerContenido, "download"),
                       );
                     }
                   }}
@@ -1059,6 +1051,7 @@ export function DocumentosLegajo({
           descargar("zip-legajo", () =>
             descargarLegajoCompletoZip(
               archivosBackend,
+              socioArchivoService.obtenerContenido,
               ESTRUCTURA_LEGAJO,
               socioArchivoService.TIPO_DOCUMENTO_MAP,
               `Legajo_Completo_${cleanRazonSocial}.zip`,

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { queryClient } from "./queryClient";
 import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
 import {
+  obtenerCadenaIngreso,
   obtenerTokenApi,
   borrarTokenApi,
   esperarFinRenovacion,
@@ -11,7 +12,11 @@ import {
 } from "./tokenApi";
 import { CABECERAS_BASE_API } from "./cabecerasApi";
 import { useAuthStore } from "../store/useAuthStore";
-import { esMensajeUtil } from "../utils/mensajesError";
+import {
+  esIntegracionNoDisponible,
+  esMensajeUtil,
+  esRutaIntegracionExterna,
+} from "../utils/mensajesError";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -145,7 +150,10 @@ const esLimiteDeConsultasPorCuit = (error) =>
 
 const rutaDeLogin = () => {
   const path = window.location.pathname;
-  if (path.startsWith("/admin")) return "/login";
+  if (path.startsWith("/admin")) {
+    const cadenaIngreso = obtenerCadenaIngreso();
+    return cadenaIngreso ? `/${cadenaIngreso}/login` : "/login";
+  }
   const primerSegmento = path.split("/")[1];
   return /^\d+$/.test(primerSegmento) ? `/${primerSegmento}/login` : "/login";
 };
@@ -159,11 +167,12 @@ export const cerrarSesionLocal = ({
 } = {}) => {
   if (cerrandoSesion) return;
   cerrandoSesion = true;
+  const destino = rutaDeLogin();
   borrarTokenApi();
   useAuthStore.getState().clearAuth();
   queryClient.clear();
   toast[tipo](titulo, { description: descripcion });
-  setTimeout(() => window.location.assign(rutaDeLogin()), 900);
+  setTimeout(() => window.location.assign(destino), 900);
 };
 
 const transformKeysToLowercase = (obj) => {
@@ -235,7 +244,10 @@ api.interceptors.response.use(
     // aplicado igual, y reintentarlo duplica altas en la API.
     const esLectura = (config.method || "get").toLowerCase() === "get";
     const isSafeToRetry =
-      esLectura && (isNetworkError || isServerError) && !isPoolExhaustionError(error);
+      esLectura &&
+      (isNetworkError || isServerError) &&
+      !isPoolExhaustionError(error) &&
+      !esRutaIntegracionExterna(config.url);
 
     if (isSafeToRetry && !config.noRetry && config.__retryCount < MAX_RETRIES) {
       config.__retryCount += 1;
@@ -255,13 +267,13 @@ api.interceptors.response.use(
       }
     }
 
-    // Rechazos de negocio de la API (400, 403, 409, 429): el cuerpo es
-    // { statusCode, message } con el motivo. Se deja ese motivo como
-    // error.message para que cualquier pantalla que muestre err.message
-    // (o utils/mensajesError) lo vea, en vez de "Request failed with status
-    // code 409".
+    // Rechazos de negocio de la API (400, 403, 409, 429) e integraciones no
+    // disponibles (502, 503): el cuerpo es { statusCode, message } con el
+    // motivo. Se deja ese motivo como error.message para que cualquier
+    // pantalla que muestre err.message (o utils/mensajesError) lo vea, en vez
+    // de "Request failed with status code 409".
     const statusRechazo = error.response?.status;
-    if ([400, 403, 409, 429].includes(statusRechazo)) {
+    if ([400, 403, 409, 429].includes(statusRechazo) || esIntegracionNoDisponible(error)) {
       const cuerpo = error.response?.data;
       const motivo = typeof cuerpo === "string" ? cuerpo : cuerpo?.message;
       if (esMensajeUtil(motivo)) {

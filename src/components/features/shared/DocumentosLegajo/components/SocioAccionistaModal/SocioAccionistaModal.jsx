@@ -13,11 +13,11 @@ import { ProcesamientoModal } from "../../../../../ui/ProcesamientoModal/Procesa
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
-import { mensajeNegocio } from "../../../../../../utils/mensajesError";
+import { mensajeDeApi, mensajeNegocio } from "../../../../../../utils/mensajesError";
 import { decidirReejecucionCdaTercero } from "../../../../../../hooks/useTerceros";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
-import { FORMATOS_ARCHIVO, TAMANIO_MAXIMO_ARCHIVO_MB, formatBase64Size, procesarArchivo, validarTamanioArchivo, validarTipoArchivo } from "../../../../../../utils/fileUtils";
+import { FORMATOS_ARCHIVO, TAMANIO_MAXIMO_ARCHIVO_MB, procesarArchivo, validarTamanioArchivo, validarTipoArchivo } from "../../../../../../utils/fileUtils";
 import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { buscarRelacionVigente } from "../../../../../../utils/relacionesTercerosUtils";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
@@ -140,7 +140,6 @@ const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, fase
                 // Los del backend llegan sin contenido acá y quedan con la
                 // tarjeta genérica.
                 fuente: file instanceof Blob ? file : null,
-                contenido: file.contenido,
               }
             : null
         }
@@ -179,6 +178,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
+  const [cargaManual, setCargaManual] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   // Feedback del botón de descarga del DNI (SGRPLUSPLA-199) - ver
@@ -353,6 +353,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       stubIdsRef.current = { terceroId: null, relacionId: null };
       stubRelacionRef.current = null;
       cdaNoAprobadoRef.current = false;
+      setCargaManual(false);
       if (socio) {
         setAfipValidado(true);
       } else {
@@ -427,7 +428,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         if (frente) {
           setDniFrenteFile({
             name: frente.nombrearchivo,
-            size: frente.contenido ? formatBase64Size(frente.contenido) : "Disponible",
+            size: "Disponible",
             _uploaded: true,
             _backendId: frente.socioarchivoid,
             _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"],
@@ -452,7 +453,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         if (dorso) {
           setDniDorsoFile({
             name: dorso.nombrearchivo,
-            size: dorso.contenido ? formatBase64Size(dorso.contenido) : "Disponible",
+            size: "Disponible",
             _uploaded: true,
             _backendId: dorso.socioarchivoid,
             _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"],
@@ -483,6 +484,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       return;
     }
     setValidando(true);
+    setCargaManual(false);
 
     clearErrors("cuit");
 
@@ -760,6 +762,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         }
 
         toast.success(socio ? "Datos actualizados correctamente." : "Datos del accionista recuperados.");
+        padronOk = true;
+      } else if (!padronOk && datosPadron?.errorIntegracion) {
+        toast.warning("No se pudo validar el CUIT. Completá los datos a mano.", {
+          description: mensajeDeApi(datosPadron.errorIntegracion),
+        });
+        setCargaManual(true);
         padronOk = true;
       } else if (!padronOk) {
         // Padrón no encontrado por ningún lado (ni NOSIS/AFIP/LUFE, ni un
@@ -1364,7 +1372,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                           cliente no lo edita a mano, salvo que no haya
                           llegado ninguno. Admin conserva la edición para
                           corregir casos puntuales. */}
-                      {isAdmin || !String(nombreValue || "").trim() ? (
+                      {isAdmin || cargaManual || !String(nombreValue || "").trim() ? (
                         <input
                           type="text"
                           value={nombreValue || ""}
@@ -1382,6 +1390,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                             <Spinner size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />
                             Completando datos...
                           </>
+                        ) : cargaManual ? (
+                          "Sin validar"
                         ) : (
                           "Validado"
                         )}
@@ -1629,10 +1639,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   hasError={errorDniFrente}
                   onChange={(f) => { setDniFrenteFile(f); setFilesChanged(true); setErrorDniFrente(false); }}
                   onEdit={() => document.getElementById(`file-input-frente`).click()}
-                  onView={() => procesarArchivo(dniFrenteFile, archivosBackend, 'view', 'DNI')}
+                  onView={() => procesarArchivo(dniFrenteFile, socioArchivoService.obtenerContenido, 'view', 'DNI')}
                   onDownload={() =>
                     descargar('frente', () =>
-                      procesarArchivo(dniFrenteFile, archivosBackend, 'download', 'DNI'),
+                      procesarArchivo(dniFrenteFile, socioArchivoService.obtenerContenido, 'download', 'DNI'),
                     )
                   }
                   faseDescarga={faseDe('frente')}
@@ -1645,10 +1655,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   hasError={errorDniDorso}
                   onChange={(f) => { setDniDorsoFile(f); setFilesChanged(true); setErrorDniDorso(false); }}
                   onEdit={() => document.getElementById(`file-input-dorso`).click()}
-                  onView={() => procesarArchivo(dniDorsoFile, archivosBackend, 'view', 'DNI')}
+                  onView={() => procesarArchivo(dniDorsoFile, socioArchivoService.obtenerContenido, 'view', 'DNI')}
                   onDownload={() =>
                     descargar('dorso', () =>
-                      procesarArchivo(dniDorsoFile, archivosBackend, 'download', 'DNI'),
+                      procesarArchivo(dniDorsoFile, socioArchivoService.obtenerContenido, 'download', 'DNI'),
                     )
                   }
                   faseDescarga={faseDe('dorso')}

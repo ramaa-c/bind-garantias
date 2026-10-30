@@ -17,6 +17,7 @@ export const PANTALLAS_CDA = [
 // (AltaOperacion.jsx). Valor confirmado contra el catálogo real de
 // PantallaGrupoCda del backend el 2026-08-18 (PantallaGrupoCdaID: 4).
 export const PANTALLA_LINEAS = "PANTALLA_LINEAS";
+export const PANTALLA_INGRESO_CUIT = "PANTALLA_INGRESO_CUIT";
 
 // Las 3 pantallas reales donde se agrupan CDAs, para el filtro del listado
 // global y los checkboxes de vinculación masiva (CdasGlobales.jsx /

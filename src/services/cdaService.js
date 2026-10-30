@@ -49,16 +49,24 @@ export const cdaService = {
 
   // Get-or-create: los registros de pantalla son globales (no por cadena) y
   // deberían existir de antes, pero este fallback evita romper en un
-  // ambiente donde todavía no se crearon.
+  // ambiente donde todavía no se crearon. El POST responde 201 con un texto
+  // sin el id, así que se vuelve a consultar para tomar el real.
   obtenerOCrearPantallaGrupoCda: async (pantallaLiteral) => {
-    const existing = await cdaService.obtenerPantallaGrupoCda(pantallaLiteral);
-    const existingList = Array.isArray(existing) ? existing : existing?.items || existing?.data || (existing ? [existing] : []);
-    const row = existingList[0];
-    const id = row?.pantallagrupocdaid;
-    if (id !== undefined && id !== null) return id;
+    const leerId = async () => {
+      const existing = await cdaService.obtenerPantallaGrupoCda(pantallaLiteral);
+      const existingList = Array.isArray(existing) ? existing : existing?.items || existing?.data || (existing ? [existing] : []);
+      return existingList[0]?.pantallagrupocdaid ?? null;
+    };
 
-    const created = await cdaService.crearPantallaGrupoCda({ pantalla: pantallaLiteral });
-    return created?.pantallagrupocdaid;
+    const id = await leerId();
+    if (id !== null) return id;
+
+    await cdaService.crearPantallaGrupoCda({ pantalla: pantallaLiteral });
+    const idCreado = await leerId();
+    if (idCreado === null) {
+      throw new Error(`No se pudo obtener el ID de la pantalla ${pantallaLiteral}.`);
+    }
+    return idCreado;
   },
 
   // ⚠️ El backend dejó de aceptar Cuit por completo (confirmado en vivo:
@@ -117,6 +125,15 @@ export const cdaService = {
     }
     const response = await api.get("api/cda/execute", {
       params,
+    });
+    return response.data;
+  },
+
+  // POST api/cda/execute:linea (vía el rewrite de execute-linea, ver probarCda)
+  // - Asocia a la línea recién creada la evaluación hecha antes de crearla.
+  asociarEjecucionLinea: async (datos) => {
+    const response = await api.post("api/cda/execute-linea", cdaAdapter.adaptarEjecucionLinea(datos), {
+      silencioso: true,
     });
     return response.data;
   },

@@ -145,13 +145,26 @@ export const asegurarExtension = (filename, contenidoBase64) => {
   return name + extCorrecta;
 };
 
+const INTERVALO_VENTANA_ABIERTA_MS = 5000;
+
+const liberarAlCerrarVentana = (ventana, url) => {
+  if (!ventana) return;
+  const intervalo = setInterval(() => {
+    if (!ventana.closed) return;
+    clearInterval(intervalo);
+    URL.revokeObjectURL(url);
+  }, INTERVALO_VENTANA_ABIERTA_MS);
+};
+
 export const procesarArchivo = async (
   fileObj,
-  archivosBackend = [],
+  obtenerContenido,
   mode = "view",
   fileLabel = "archivo",
 ) => {
-  if (!fileObj) return;
+  if (!fileObj) return false;
+  let ventana = null;
+  let toastId = null;
   try {
     if (fileObj instanceof File && !fileObj._uploaded && !fileObj._backendId) {
       const url = URL.createObjectURL(fileObj);
@@ -166,31 +179,28 @@ export const procesarArchivo = async (
       } else {
         window.open(url, "_blank");
       }
-      return;
+      return true;
     }
 
-    let fileData = fileObj;
-    if (!fileData.contenido && fileObj._backendId) {
-      const fullFile = archivosBackend.find(
-        (a) => a.socioarchivoid === fileObj._backendId,
-      );
-      if (fullFile && fullFile.contenido) {
-        fileData = fullFile;
-      }
-    }
+    if (mode !== "download") ventana = window.open("", "_blank");
 
-    if (!fileData.contenido) {
-      toast.error(
-        `El ${fileLabel} no posee contenido válido para descargar o visualizar.`,
-      );
-      return;
-    }
-
-    const toastId = toast.loading(
+    toastId = toast.loading(
       mode === "download"
         ? `Preparando descarga de ${fileLabel}...`
         : `Preparando visualización de ${fileLabel}...`,
     );
+
+    const archivoId = fileObj._backendId ?? fileObj.socioarchivoid;
+    const fileData = archivoId ? await obtenerContenido(archivoId) : fileObj;
+
+    if (!fileData?.contenido) {
+      ventana?.close();
+      toast.error(
+        `El ${fileLabel} no posee contenido válido para descargar o visualizar.`,
+        { id: toastId },
+      );
+      return false;
+    }
 
     let mimeType = getMimeType(fileData.nombrearchivo);
     if (mimeType === "application/octet-stream" && fileData.contenido) {
@@ -218,12 +228,20 @@ export const procesarArchivo = async (
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 100);
+    } else if (ventana) {
+      ventana.location.href = url;
+      liberarAlCerrarVentana(ventana, url);
     } else {
-      window.open(url, "_blank");
+      liberarAlCerrarVentana(window.open(url, "_blank"), url);
     }
+    return true;
   } catch (error) {
     console.error("Error al procesar archivo:", error);
-    toast.error(`Ocurrió un error al intentar procesar el ${fileLabel}.`);
+    ventana?.close();
+    toast.error(`Ocurrió un error al intentar procesar el ${fileLabel}.`, {
+      id: toastId ?? undefined,
+    });
+    return false;
   }
 };
 
@@ -287,18 +305,16 @@ export const validarArchivo = (file, formato = FORMATOS_ARCHIVO.documento) =>
 export const esContenidoArchivoPermitido = (base64Str) =>
   MIMES_CONTENIDO_PERMITIDOS.has(detectMimeTypeFromBase64(base64Str));
 
-export const formatBase64Size = (base64Str) => {
-  if (!base64Str) return "Disponible";
-  const len = base64Str.length;
-  const sizeInBytes = Math.floor((len * 3) / 4);
-  if (sizeInBytes < 1024) return `${sizeInBytes} B`;
-  const sizeInKB = sizeInBytes / 1024;
-  if (sizeInKB < 1024) return `${sizeInKB.toFixed(1)} KB`;
-  const sizeInMB = sizeInKB / 1024;
-  return `${sizeInMB.toFixed(1)} MB`;
+// Generación de archivos ZIP utilizando JSZip
+const leerContenidoParaZip = async (file, obtenerContenido) => {
+  const contenido = (await obtenerContenido(file.socioarchivoid))?.contenido;
+  if (!contenido) {
+    throw new Error(`El archivo "${file.nombrearchivo}" no tiene contenido.`);
+  }
+  return contenido;
 };
 
-// Generación de archivos ZIP utilizando JSZip
+
 const resolveUniqueName = (name, existingNames) => {
   if (!existingNames.has(name)) {
     existingNames.add(name);
@@ -319,11 +335,12 @@ const resolveUniqueName = (name, existingNames) => {
 
 export const descargarArchivosEnZip = async (
   archivos,
+  obtenerContenido,
   zipFileName = "documentos.zip",
 ) => {
   if (!archivos || archivos.length === 0) {
     toast.error("No hay archivos para descargar.");
-    return;
+    return false;
   }
 
   const toastId = toast.loading("Generando archivo ZIP...");
@@ -332,14 +349,15 @@ export const descargarArchivosEnZip = async (
     const zip = new JSZip();
     const existingNames = new Set();
 
-    archivos.forEach((file) => {
-      if (file.contenido) {
-        const cleanName = asegurarExtension(file.nombrearchivo, file.contenido);
-        const uniqueName = resolveUniqueName(cleanName, existingNames);
-        zip.file(uniqueName, file.contenido, { base64: true });
-      }
-    });
+    for (const [indice, file] of archivos.entries()) {
+      toast.loading(`Descargando archivos (${indice + 1}/${archivos.length})...`, { id: toastId });
+      const contenido = await leerContenidoParaZip(file, obtenerContenido);
+      const cleanName = asegurarExtension(file.nombrearchivo, contenido);
+      const uniqueName = resolveUniqueName(cleanName, existingNames);
+      zip.file(uniqueName, contenido, { base64: true });
+    }
 
+    toast.loading("Generando archivo ZIP...", { id: toastId });
     const blob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(blob);
 
@@ -352,23 +370,26 @@ export const descargarArchivosEnZip = async (
     setTimeout(() => URL.revokeObjectURL(url), 100);
 
     toast.success("ZIP descargado correctamente", { id: toastId });
+    return true;
   } catch (error) {
     console.error("Error al generar ZIP:", error);
     toast.error("Error al generar el archivo ZIP. Por favor reintente.", {
       id: toastId,
     });
+    return false;
   }
 };
 
 export const descargarLegajoCompletoZip = async (
   archivos,
+  obtenerContenido,
   estructura,
   tipoDocumentoMap,
   zipFileName = "legajo_completo.zip",
 ) => {
   if (!archivos || archivos.length === 0) {
     toast.error("No hay archivos cargados para descargar.");
-    return;
+    return false;
   }
 
   const toastId = toast.loading("Generando legajo completo ZIP...");
@@ -377,8 +398,9 @@ export const descargarLegajoCompletoZip = async (
     const zip = new JSZip();
     const folderNamesMap = {};
 
-    archivos.forEach((file) => {
-      if (!file.contenido) return;
+    for (const [indice, file] of archivos.entries()) {
+      toast.loading(`Descargando documentos (${indice + 1}/${archivos.length})...`, { id: toastId });
+      const contenido = await leerContenidoParaZip(file, obtenerContenido);
 
       // Find the document title matching this archive's type
       const docConfig = estructura.find(
@@ -392,17 +414,18 @@ export const descargarLegajoCompletoZip = async (
         folderNamesMap[cleanFolderName] = new Set();
       }
 
-      const cleanName = asegurarExtension(file.nombrearchivo, file.contenido);
+      const cleanName = asegurarExtension(file.nombrearchivo, contenido);
       const uniqueName = resolveUniqueName(
         cleanName,
         folderNamesMap[cleanFolderName],
       );
 
-      zip.file(`${cleanFolderName}/${uniqueName}`, file.contenido, {
+      zip.file(`${cleanFolderName}/${uniqueName}`, contenido, {
         base64: true,
       });
-    });
+    }
 
+    toast.loading("Generando legajo completo ZIP...", { id: toastId });
     const blob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(blob);
 
@@ -415,11 +438,13 @@ export const descargarLegajoCompletoZip = async (
     setTimeout(() => URL.revokeObjectURL(url), 100);
 
     toast.success("Legajo completo descargado correctamente", { id: toastId });
+    return true;
   } catch (error) {
     console.error("Error al generar legajo completo ZIP:", error);
     toast.error(
       "Error al generar el legajo completo ZIP. Por favor reintente.",
       { id: toastId },
     );
+    return false;
   }
 };

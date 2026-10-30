@@ -1,6 +1,6 @@
 import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
-import { guardarTokenApi, cerrarSesionApi } from "../api/tokenApi";
+import { guardarCadenaIngreso, guardarTokenApi, cerrarSesionApi } from "../api/tokenApi";
 
 const cadenaDelPath = () => {
   const primerSegmento = window.location.pathname.split("/")[1];
@@ -22,6 +22,7 @@ const obtenerTokenDeUsuario = async ({ email, password }) => {
   if (!token) throw new Error("La API no devolvió un token de acceso");
   cerrarSesionApi();
   guardarTokenApi(token);
+  guardarCadenaIngreso(cadenaDelPath());
   return data;
 };
 

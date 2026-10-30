@@ -1,5 +1,6 @@
 import { modeloDocumentoAdapter } from "../adapters/modeloDocumentoAdapter";
 import api from "../api/axios";
+import { esMensajeUtil } from "../utils/mensajesError";
 
 const TIMEOUT_GENERAR_PDF_MS = 60000;
 
@@ -30,7 +31,7 @@ export const modeloDocumentoService = {
       const blob = error.response?.data;
       if (blob instanceof Blob) {
         const mensaje = (await blob.text()).trim();
-        const sinDetalle = !mensaje || mensaje.endsWith(":");
+        const sinDetalle = !esMensajeUtil(mensaje) || mensaje.endsWith(":");
         throw new Error(sinDetalle ? MENSAJE_SIN_DETALLE : mensaje);
       }
       throw error;

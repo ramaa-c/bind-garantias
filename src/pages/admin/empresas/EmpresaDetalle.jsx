@@ -2862,6 +2862,7 @@ export default function EmpresaDetalle() {
     descargar("zip-legajo", () =>
       descargarLegajoCompletoZip(
         archivosBackend,
+        socioArchivoService.obtenerContenido,
         ESTRUCTURA_LEGAJO,
         socioArchivoService.TIPO_DOCUMENTO_MAP,
         zipName,

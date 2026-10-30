@@ -10,7 +10,8 @@ import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
 import { useLogin, useLoginByCode, useSolicitarCodigoLogin } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { usuarioService } from "../../../services/usuarioService";
-import { cerrarSesionApi } from "../../../api/tokenApi";
+import { cerrarSesionApi, esAdminGeneralToken } from "../../../api/tokenApi";
+import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import {
   MENSAJE_CUENTA_NO_ACTIVA,
   MENSAJE_CUENTA_BLOQUEADA_ADMIN,
@@ -273,6 +274,7 @@ const LoginAdmin = () => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const { isRestricted } = useAdminRestrictions();
 
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: solicitarCodigo, isPending: solicitandoCodigo } =
@@ -283,13 +285,12 @@ const LoginAdmin = () => {
     isLoginPending || solicitandoCodigo || validandoCodigo || isCheckingAdmin;
 
   // AdminGuard revalida contra el backend apenas se entra a /admin (esadministrador
-  // / cadenas asociadas), así que este redirect es solo un atajo de UX: si el rol
-  // persistido no fuera realmente admin, el guard lo rebota a "/" igual.
+  // / cadenas asociadas), así que este redirect es solo un atajo de UX.
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (user && (esAdminGeneralToken() || isRestricted)) {
       navigate("/admin", { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, isRestricted, navigate]);
 
   const currentSchema =
     fase === "ingreso_credenciales"
@@ -404,7 +405,7 @@ const LoginAdmin = () => {
 
             sessionStorage.removeItem("pendingOtpEmail");
             sessionStorage.removeItem("otpExpiresAt");
-            setUser({ email: formData.email, role: "admin" }, { esNuevoLogin: true });
+            setUser({ email: formData.email }, { esNuevoLogin: true });
             navigate("/admin", { replace: true });
           },
           onError: async (error) => {
@@ -458,8 +459,7 @@ const LoginAdmin = () => {
               return;
             }
 
-            // Se asume que el back devuelve los permisos necesarios.
-            setUser({ email: formData.email, role: "admin" }, { esNuevoLogin: true });
+            setUser({ email: formData.email }, { esNuevoLogin: true });
             navigate("/admin", { replace: true });
           },
           onError: async (error) => {
