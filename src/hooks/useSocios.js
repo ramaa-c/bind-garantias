@@ -180,16 +180,23 @@ export const useEmpresasCompletas = (socioUsuarios) => {
 // usa el admin, ver cdasActivosIdsGrupo en EmpresaDetalle.jsx), pero SOLO
 // cuando hace falta desambiguar — en el caso común (ya hay historial) no
 // agrega ningún pedido extra.
-export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
-  const { data: historial, isPending: isPendingHistorial } = useObtenerExecuteCda(socioId);
-  const { data: gruposIngreso, isPending: isPendingPantalla } = useQuery({
+export const usePantallaIngresoCdaId = (habilitado = true) => {
+  const { data: grupos, isPending } = useQuery({
     queryKey: ["cda", "gruposPorPantalla", PANTALLA_INGRESO_CUIT],
     queryFn: () => cdaService.obtenerGrupoCda(PANTALLA_INGRESO_CUIT),
-    enabled: !!socioId,
+    enabled: habilitado,
     staleTime: Infinity,
   });
+  return {
+    pantallaIngresoId: (Array.isArray(grupos) ? grupos[0] : grupos)?.pantallagrupocdaid,
+    isPending,
+  };
+};
+
+export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
+  const { data: historial, isPending: isPendingHistorial } = useObtenerExecuteCda(socioId);
+  const { pantallaIngresoId, isPending: isPendingPantalla } = usePantallaIngresoCdaId(!!socioId);
   const isPending = isPendingHistorial || isPendingPantalla;
-  const pantallaIngresoId = (Array.isArray(gruposIngreso) ? gruposIngreso[0] : gruposIngreso)?.pantallagrupocdaid;
 
   const estadoHistorial = useMemo(() => {
     if (!socioId || isPending) return undefined;

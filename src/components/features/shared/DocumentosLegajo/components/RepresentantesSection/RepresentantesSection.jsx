@@ -55,6 +55,7 @@ export function RepresentantesSection({
       rep,
       faltantes: calcularFaltantes(rep),
       cdaRechazado: estadoCdaMap?.get(Number(rep.id)) === "rechazado",
+      cdaPendiente: estadoCdaMap?.get(Number(rep.id)) === "pendiente",
     })),
   );
 
@@ -92,13 +93,14 @@ export function RepresentantesSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ rep, faltantes, cdaRechazado }) => (
+              {entradas.map(({ rep, faltantes, cdaRechazado, cdaPendiente }) => (
                 <TerceroCard
                   key={rep.id}
                   nombre={rep.nombre}
                   detalle={`CUIT ${rep.cuit}`}
                   faltantes={faltantes}
                   cdaRechazado={cdaRechazado}
+                  cdaPendiente={cdaPendiente}
                   isAdmin={isAdmin}
                   expanded={expandedRep === rep.id}
                   onToggle={() =>

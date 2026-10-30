@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
+import { cadenaValorService } from "../services/cadenaValorService";
 import { cdaService } from "../services/cdaService";
+import { esCdaActivo } from "../utils/cdaUtils";
 import { esMensajeUtil } from "../utils/mensajesError";
 
 // El CDA "Valida al socio que no sea socio protector de otra SGR" (ID 10) es
@@ -39,6 +41,15 @@ const parsearCuerpo = (data) => {
 const esMensajeGenericoAxios = (mensaje) =>
   /^Request failed with status code \d+$/i.test(String(mensaje || "").trim());
 
+const contarCdasActivos = async (pantalla, cadenaValorId) => {
+  const grupos = await cdaService.obtenerGrupoCda(pantalla, cadenaValorId);
+  const grupoCdaId = Array.isArray(grupos) ? grupos[0]?.grupocdaid : null;
+  if (!grupoCdaId) return 0;
+  const vinculados = await cadenaValorService.obtenerCdasPorGrupo(grupoCdaId);
+  const lista = Array.isArray(vinculados) ? vinculados : [];
+  return new Set(lista.filter(esCdaActivo).map((c) => Number(c.cdaid))).size;
+};
+
 const datosDeEjecucion = (cuerpo) => ({
   momento: cuerpo?.momento ?? cuerpo?.Momento ?? null,
   pantallaGrupoCdaId: cuerpo?.pantallagrupocdaid ?? cuerpo?.PantallaGrupoCdaID ?? null,
@@ -75,8 +86,7 @@ export const useCdaEngine = () => {
       if (cadenaValorId) {
         try {
           const listTest = data?.listtest ?? data?.ListTest ?? [];
-          const vinculados = await cdaService.obtenerGrupoCda(pantalla, cadenaValorId);
-          const cantidadEsperada = Array.isArray(vinculados) ? vinculados.length : 0;
+          const cantidadEsperada = await contarCdasActivos(pantalla, cadenaValorId);
 
           if (cantidadEsperada > 0 && listTest.length < cantidadEsperada) {
             console.log(
