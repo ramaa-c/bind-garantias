@@ -39,6 +39,7 @@ import {
   useSocioPorId,
   useActualizarSocio,
   useObtenerExecuteCda,
+  usePantallaIngresoCdaId,
   useUsuariosVinculadosASocio,
 } from "../../../hooks/useSocios";
 import { cdaService } from "../../../services/cdaService";
@@ -98,6 +99,7 @@ import {
   ultimasEjecucionesDeCadena,
   calcularEstadoConCdasVigentes,
   calcularEstadoDesdeHistorial,
+  filtrarHistorialPorPantalla,
 } from "../../../utils/executeCda";
 import {
   Button,
@@ -1625,10 +1627,15 @@ function CdasEmpresaPanel({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
   const [abiertaAlta, setAbiertaAlta] = useState(true);
 
   const {
-    data: ejecucionesData,
+    data: historialSocio,
     isLoading,
     isError,
   } = useObtenerExecuteCda(socio.socioid);
+  const { pantallaIngresoId } = usePantallaIngresoCdaId();
+  const ejecucionesData = useMemo(() => {
+    const lista = Array.isArray(historialSocio) ? historialSocio : historialSocio ? [historialSocio] : [];
+    return filtrarHistorialPorPantalla(lista, pantallaIngresoId);
+  }, [historialSocio, pantallaIngresoId]);
 
   const hayCadenaDetectada = !!cadenaValorIdDetectada;
 
@@ -2862,6 +2869,7 @@ export default function EmpresaDetalle() {
     descargar("zip-legajo", () =>
       descargarLegajoCompletoZip(
         archivosBackend,
+        socioArchivoService.obtenerContenido,
         ESTRUCTURA_LEGAJO,
         socioArchivoService.TIPO_DOCUMENTO_MAP,
         zipName,

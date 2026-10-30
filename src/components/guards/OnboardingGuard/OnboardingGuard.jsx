@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { esAdminGeneralToken } from "../../../api/tokenApi";
 import {
   useObtenerSocioUsuarioPorUsuarioId,
   useEmpresasCompletas,
@@ -247,9 +248,7 @@ export const OnboardingGuard = ({ children }) => {
     return <Navigate to={`${basePath}/login`} replace />;
   }
 
-  const isBasicAdmin = user?.role === "admin";
-
-  if (isBasicAdmin) {
+  if (esAdminGeneralToken()) {
     return <Navigate to="/admin" replace />;
   }
 

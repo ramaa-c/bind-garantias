@@ -184,7 +184,7 @@ const FILTROS_DEFECTO = {
   busqueda: "",
   fechaDesde: "",
   fechaHasta: "",
-  orden: "desc",
+  orden: "asc",
 };
 
 export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => {
@@ -195,11 +195,11 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
   const [orden, setOrden] = useState(FILTROS_DEFECTO.orden);
   const [visibles, setVisibles] = useState(ELEMENTOS_POR_TANDA);
 
-  const { data, isLoading, isError } = useActividadSocio(cuit, isOpen);
+  const { data, isLoading, isError, hayMasRegistros, cargandoMas, falloCargarMas, cargarMas } =
+    useActividadSocio(cuit, isOpen);
 
   const actividad = useMemo(() => {
-    const lista = Array.isArray(data) ? data : [];
-    return [...lista].sort((a, b) =>
+    return [...data].sort((a, b) =>
       orden === "desc"
         ? new Date(b.momento) - new Date(a.momento)
         : new Date(a.momento) - new Date(b.momento),
@@ -309,7 +309,13 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
     onClose();
   };
 
+  const handleCargarMas = () => {
+    if (visibles >= actividadFiltrada.length) cargarMas();
+    setVisibles((v) => v + ELEMENTOS_POR_TANDA);
+  };
+
   const visiblesLista = actividadFiltrada.slice(0, visibles);
+  const hayFiltroDeFecha = !!fechaDesde || !!fechaHasta;
   const dias = [];
   visiblesLista.forEach((item) => {
     const clave = claveDia(item.momento);
@@ -333,10 +339,12 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
             <span className={styles.contador}>
               Mostrando {visiblesLista.length} de {actividadFiltrada.length}
               {actividadFiltrada.length !== actividad.length ? ` (${actividad.length} en total)` : ""}
+              {hayMasRegistros ? " · Hay registros más recientes sin cargar" : ""}
+              {falloCargarMas ? " · No se pudieron traer más registros" : ""}
             </span>
           )}
-          {visibles < actividadFiltrada.length ? (
-            <Button variant="adminSuave" onClick={() => setVisibles((v) => v + ELEMENTOS_POR_TANDA)}>
+          {visibles < actividadFiltrada.length || hayMasRegistros ? (
+            <Button variant="adminSuave" onClick={handleCargarMas} isLoading={cargandoMas} disabled={cargandoMas}>
               Cargar más
             </Button>
           ) : (
@@ -446,7 +454,11 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
       ) : actividadFiltrada.length === 0 ? (
         <div className={styles.emptyState}>
           <FiInbox className={styles.emptyStateIcon} />
-          <span>No hay actividad que coincida con los filtros aplicados.</span>
+          <span>
+            No hay actividad que coincida con los filtros aplicados
+            {hayMasRegistros ? " entre los registros cargados" : ""}.
+            {hayMasRegistros && hayFiltroDeFecha ? " Cargá más para buscar en fechas más recientes." : ""}
+          </span>
           <button type="button" className={styles.limpiarFiltrosInline} onClick={limpiarFiltros}>
             Limpiar filtros
           </button>

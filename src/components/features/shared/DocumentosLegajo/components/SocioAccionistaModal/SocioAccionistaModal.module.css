@@ -182,6 +182,7 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .pctLabel {
@@ -281,7 +282,7 @@
     flex-shrink: 0;
   }
   .pctCampo {
-    width: 8.5rem;
+    width: 10.5rem;
   }
 }
 

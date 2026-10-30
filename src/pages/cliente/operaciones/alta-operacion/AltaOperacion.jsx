@@ -23,6 +23,7 @@ import { solicitudesService } from "../../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { lineaService } from "../../../../services/lineaService";
 import { cadenaValorService } from "../../../../services/cadenaValorService";
+import { cdaService } from "../../../../services/cdaService";
 import { posicionConsolidadaService } from "../../../../services/posicionConsolidadaService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/useChannel";
@@ -544,15 +545,18 @@ export const AltaOperacion = () => {
       // evalúa por SocioID + TipoLimiteID (el TipoLimiteID no es una línea
       // del socio y como LineaID la API lo rechazaba con 404, con lo que el
       // CDA nunca se aplicaba). Una integración caída o "pendiente" NO
-      // rechaza; un 403/404 corta el envío, porque no se evaluó nada.
+      // rechaza; un 400/403/404 corta el envío, porque no se evaluó nada.
       const resultCdaLinea = await ejecutarValidaciones(
         PANTALLA_LINEAS,
         { socioId: finalSocioId, tipoLimiteId: tipoLimiteIdReal },
         Number(cadenaSlug),
       );
-      if (resultCdaLinea.errors.some((e) => e.isAccesoRechazado)) {
+      const errorSinEvaluacion = resultCdaLinea.errors.find(
+        (e) => e.isAccesoRechazado || e.isPedidoRechazado,
+      );
+      if (errorSinEvaluacion) {
         toast.error("No se pudo enviar la solicitud", {
-          description: resultCdaLinea.errors[0].message,
+          description: errorSinEvaluacion.message,
         });
         setEnviandoSolicitud(false);
         return;
@@ -740,6 +744,23 @@ export const AltaOperacion = () => {
       }
       const tipoLimiteSocioIdCreado =
         resLimite?.tipolimitesocioid || resLimite?.id || 0;
+
+      if (tipoLimiteSocioIdCreado && resultCdaLinea.momento && resultCdaLinea.pantallaGrupoCdaId) {
+        try {
+          await cdaService.asociarEjecucionLinea({
+            socioid: finalSocioId,
+            tipolimitesocioid: tipoLimiteSocioIdCreado,
+            cadenavalorid: Number(cadenaSlug),
+            pantallagrupocdaid: resultCdaLinea.pantallaGrupoCdaId,
+            momento: resultCdaLinea.momento,
+          });
+        } catch (asociacionError) {
+          console.error(
+            "[ALTA OPERACION] No se pudo asociar la evaluación del CDA a la línea:",
+            asociacionError,
+          );
+        }
+      }
 
       const rechazadaPorApi =
         !debeRechazarseAutomaticamente &&

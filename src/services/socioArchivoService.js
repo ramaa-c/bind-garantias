@@ -121,6 +121,13 @@ export const socioArchivoService = {
     }
   },
 
+  obtenerContenido: async (socioArchivoId) => {
+    const response = await api.get(`api/SocioArchivo/${socioArchivoId}/contenido`, {
+      timeout: TIMEOUT_ARCHIVO_MS,
+    });
+    return response.data;
+  },
+
   subirArchivo: async (
     socioId,
     file,
@@ -174,9 +181,7 @@ export const socioArchivoService = {
       const socioId = archivoExistente.socioid || archivoExistente.SocioID;
       socioArchivoService.clearCache(socioId);
     }
-    const contenidoBase64 = file
-      ? await leerArchivoValidado(file)
-      : (archivoExistente.contenido || "");
+    const contenidoBase64 = file ? await leerArchivoValidado(file) : "";
 
     const payload = {
       ...archivoExistente,
@@ -248,7 +253,7 @@ export const socioArchivoService = {
   // "Elimina" un archivo pisando su fchArchivo con la fecha centinela (ver
   // arriba) vía PUT — no existe un DELETE real para este endpoint. Recibe
   // el registro completo (no solo el ID) porque el PUT necesita reenviar
-  // todos los campos, Contenido incluido, igual que actualizarArchivo.
+  // todos los campos salvo Contenido, igual que actualizarArchivo.
   marcarArchivoEliminado: (archivoExistente) => {
     const tipoId = archivoExistente?.tipodocumentoarchivoid ?? archivoExistente?.TipoDocumentoArchivoID;
     const docKey =

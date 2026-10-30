@@ -44,6 +44,18 @@ export const cdaAdapter = {
     return payload;
   },
 
+  adaptarEjecucionLinea: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      SocioID: d.socioid,
+      TipoLimiteSocioID: d.tipolimitesocioid,
+      CadenaValorID: d.cadenavalorid,
+      PantallaGrupoCdaID: d.pantallagrupocdaid,
+      Momento: d.momento,
+    };
+  },
+
   // POST/PUT api/cda/PantallaGrupoCda - Registro de la pantalla en sí
   // (literal). Ya no lleva ExpresionAgrupacion (se movió a GrupoCda).
   adaptarPantallaGrupoCda: (data) => {

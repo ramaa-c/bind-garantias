@@ -7,8 +7,9 @@ import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useSessionTimeout } from "../../../hooks/useSessionTimeout";
 import { ConfirmacionModal } from "../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { SessionExpiryNotice } from "./SessionExpiryNotice";
-import { borrarTokenApi, obtenerDatosTokenApi, CLAVE_STORAGE_TOKEN } from "../../../api/tokenApi";
+import { borrarTokenApi, obtenerCadenaIngreso, obtenerDatosTokenApi, CLAVE_STORAGE_TOKEN } from "../../../api/tokenApi";
 import {
+  conCandadoDeSesion,
   renovarTokenApi,
   RENOVACION_OK,
   RENOVACION_EN_CURSO,
@@ -42,6 +43,8 @@ const AVISO_SESION_MAXIMA_MS = 5 * 60 * 1000;
 const resolverLoginPath = (pathname, modoPorHost, isRestricted, cadenas) => {
   if (modoPorHost) return "/login";
   if (pathname === "/login" || pathname.startsWith("/admin")) {
+    const cadenaIngreso = obtenerCadenaIngreso();
+    if (cadenaIngreso) return `/${cadenaIngreso}/login`;
     if (isRestricted && cadenas?.length > 0) {
       const cadenaId = cadenas[0]?.cadenavalorid ?? cadenas[0]?.CadenaValorID;
       if (cadenaId) return `/${cadenaId}/login`;
@@ -91,11 +94,13 @@ export const SessionTimeoutManager = () => {
   const { modoPorHost } = useChannel();
   const { isRestricted, cadenas } = useAdminRestrictions();
 
-  const handleTimeout = () => {
-    clearAuth();
-    toast.info("Tu sesión se cerró por inactividad.");
-    navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
-  };
+  const handleTimeout = () =>
+    conCandadoDeSesion(() => {
+      if (!useAuthStore.getState().isAuthenticated) return;
+      clearAuth();
+      toast.info("Tu sesión se cerró por inactividad.");
+      navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
+    });
 
   const handleVencimientoToken = (mensaje = "Tu sesión venció. Volvé a ingresar para continuar.") => {
     borrarTokenApi();

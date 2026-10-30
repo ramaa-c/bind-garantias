@@ -31,6 +31,7 @@ export function TerceroCard({
   detalle,
   faltantes = [],
   cdaRechazado = false,
+  cdaPendiente = false,
   isAdmin = false,
   validado = true,
   participacion,
@@ -56,7 +57,7 @@ export function TerceroCard({
       : s.estadoRevision
     : !validado
       ? ""
-      : tieneFaltantes
+      : tieneFaltantes || cdaPendiente
         ? s.estadoPendiente
         : s.estadoCompleto;
 
@@ -81,7 +82,12 @@ export function TerceroCard({
               Falta: {textoFaltantes(faltantes)}
             </span>
           )}
-          {validado && !tieneFaltantes && !cdaRechazado && (
+          {validado && !tieneFaltantes && !cdaRechazado && cdaPendiente && (
+            <span className={`${s.chip} ${s.chipFalta}`}>
+              {isAdmin ? "CDA pendiente" : "Validación pendiente"}
+            </span>
+          )}
+          {validado && !tieneFaltantes && !cdaRechazado && !cdaPendiente && (
             <span className={`${s.chip} ${s.chipOk}`}>
               <FiCheck size={11} strokeWidth={3} aria-hidden="true" /> Completo
             </span>

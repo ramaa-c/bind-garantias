@@ -87,8 +87,8 @@ export const usuarioAdapter = {
     return {
       Email: d.email || "",
       UsuarioWebID: d.usuariowebid,
-      fchAlta: d.fchalta || "",
-      fchVencimiento: d.fchvencimiento || "",
+      fchAlta: d.fchalta || null,
+      fchVencimiento: d.fchvencimiento || null,
       HashSeguridad: d.hashseguridad || "",
       Estado: d.estado || "",
       DebeCambiarClave: d.debecambiarclave || "",

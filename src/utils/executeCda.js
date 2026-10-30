@@ -88,6 +88,9 @@ const coincideConContexto = (item, pantallaGrupoCdaId, cadenaValorId) => {
   return true;
 };
 
+export const filtrarHistorialPorPantalla = (lista, pantallaGrupoCdaId) =>
+  lista.filter((item) => coincideConContexto(item, pantallaGrupoCdaId));
+
 // La cadena real de un socio ya no hace falta adivinarla: se toma la de la
 // ejecución más reciente que traiga un CadenaValorID real (>0 — ver
 // esIdValido). Si todo el historial es previo al cambio de backend, o cayó

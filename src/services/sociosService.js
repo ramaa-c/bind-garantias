@@ -2,6 +2,12 @@ import api from "../api/axios";
 import { sociosAdapter } from "../adapters/sociosAdapter";
 import { socioArchivoService } from "./socioArchivoService";
 import { conCacheCuit, esLimiteDeConsultas } from "../utils/cacheConsultasCuit";
+import { esIntegracionNoDisponible } from "../utils/mensajesError";
+
+export const ACTIVIDAD_POR_PAGINA = 20;
+const TIMEOUT_ACTIVIDAD_MS = 120000;
+const CONTENIDO_EN_DETALLE = /"contenido"\s*:\s*"[^"]*"/gi;
+const CONTENIDO_OMITIDO = '"Contenido":"(archivo omitido)"';
 
 const cuitCache = new Map();
 const cuitWebCache = new Map();
@@ -223,11 +229,24 @@ export const sociosService = {
   // GET api/Socio/Actividad/{cuit} - Log de actividad del socio: una fila
   // por cada consulta/alta/modificación hecha sobre ese CUIT en la
   // plataforma (usado por el panel admin para auditoría). Nunca da 404: si
-  // el CUIT no tiene actividad registrada devuelve un array vacío.
-  obtenerActividadSocio: async (cuit) => {
+  // el CUIT no tiene actividad registrada devuelve un array vacío. Viene
+  // paginado en orden cronológico ascendente. DetalleActividad puede traer
+  // un archivo entero en base64 (hasta 20 MB por fila, confirmado en vivo el
+  // 2026-10-30): por eso la página es chica, no se reintenta y ese contenido
+  // se descarta antes de guardarlo.
+  obtenerActividadSocio: async (cuit, pagina = 1) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
-    const response = await api.get(`api/Socio/Actividad/${cuitLimpio}`);
-    return response.data;
+    const response = await api.get(`api/Socio/Actividad/${cuitLimpio}`, {
+      params: { page: pagina, page_size: ACTIVIDAD_POR_PAGINA },
+      timeout: TIMEOUT_ACTIVIDAD_MS,
+      noRetry: true,
+    });
+    const filas = Array.isArray(response.data) ? response.data : [];
+    return filas.map((fila) =>
+      typeof fila.detalleactividad === "string"
+        ? { ...fila, detalleactividad: fila.detalleactividad.replace(CONTENIDO_EN_DETALLE, CONTENIDO_OMITIDO) }
+        : fila,
+    );
   },
 
   // Crea nuevo socio
@@ -345,7 +364,6 @@ export const sociosService = {
               socioid: doc.socioid || doc.Socioid || doc.SocioID || doc.socioId || 0,
               fcharchivo: doc.fcharchivo || doc.Fcharchivo || doc.FchArchivo || "",
               descripcion: doc.descripcion || doc.Descripcion || "",
-              contenido: doc.contenido || doc.Contenido || "",
               nombrearchivo: doc.nombrearchivo || doc.Nombrearchivo || doc.NombreArchivo || "",
               tipodocumentoarchivoid: tipoId,
               azureid: doc.azureid || doc.Azureid || doc.AzureID || 0,
@@ -395,7 +413,7 @@ export const sociosService = {
         const response = await pedir();
         return response.data;
       } catch (error) {
-        if (esLimiteDeConsultas(error)) throw error;
+        if (esLimiteDeConsultas(error) || esIntegracionNoDisponible(error)) throw error;
         console.warn(
           "[sociosService] Primer intento contra LUFE falló, reintentando una vez (posible arranque en frío)...",
           error,

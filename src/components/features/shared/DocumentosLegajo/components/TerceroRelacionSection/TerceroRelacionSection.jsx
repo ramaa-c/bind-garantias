@@ -61,6 +61,7 @@ export function TerceroRelacionSection({
       item,
       faltantes: calcularFaltantes(item),
       cdaRechazado: estadoCdaMap?.get(Number(item.id)) === "rechazado",
+      cdaPendiente: estadoCdaMap?.get(Number(item.id)) === "pendiente",
     })),
   );
 
@@ -100,13 +101,14 @@ export function TerceroRelacionSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ item, faltantes, cdaRechazado }) => (
+              {entradas.map(({ item, faltantes, cdaRechazado, cdaPendiente }) => (
                 <TerceroCard
                   key={item.id}
                   nombre={item.nombre}
                   detalle={`CUIT ${item.cuit}`}
                   faltantes={faltantes}
                   cdaRechazado={cdaRechazado}
+                  cdaPendiente={cdaPendiente}
                   isAdmin={isAdmin}
                   expanded={expandedItem === item.id}
                   onToggle={() =>

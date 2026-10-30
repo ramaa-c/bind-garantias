@@ -138,6 +138,7 @@ export function AccionistasSection({
       socio,
       faltantes: calcularFaltantes(socio, archivosBackend),
       cdaRechazado: estadoCdaMap?.get(Number(socio.id)) === "rechazado",
+      cdaPendiente: estadoCdaMap?.get(Number(socio.id)) === "pendiente",
       color: colorParticipacion(i),
     })),
   );
@@ -176,13 +177,14 @@ export function AccionistasSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ socio, faltantes, cdaRechazado, color }) => (
+              {entradas.map(({ socio, faltantes, cdaRechazado, cdaPendiente, color }) => (
                 <TerceroCard
                   key={socio.id}
                   nombre={socio.nombre}
                   detalle={`CUIT ${socio.cuit}`}
                   faltantes={faltantes}
                   cdaRechazado={cdaRechazado}
+                  cdaPendiente={cdaPendiente}
                   isAdmin={isAdmin}
                   participacion={socio.participacion}
                   colorParticipacion={color}

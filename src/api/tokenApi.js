@@ -5,6 +5,7 @@ export const CLAVE_CANDADO_RENOVACION = "tokenApiRenovando";
 const VIGENCIA_CANDADO_RENOVACION_MS = 15 * 1000;
 const CLAVE_STORAGE = CLAVE_STORAGE_TOKEN;
 const CLAVE_GUARDADO_EN = "tokenApiGuardadoEn";
+const CLAVE_CADENA_INGRESO = "tokenApiCadenaIngreso";
 const INTERVALO_ESPERA_RENOVACION_MS = 250;
 
 export const hayRenovacionEnCurso = () => {
@@ -50,6 +51,25 @@ export const guardarTokenApi = (token) => {
     localStorage.setItem(CLAVE_GUARDADO_EN, String(Date.now()));
   } catch {
     return;
+  }
+};
+
+// Se guarda aparte del token y sobrevive a su borrado: es lo que dice a qué
+// login volver cuando la sesión ya venció.
+export const guardarCadenaIngreso = (cadenaId) => {
+  try {
+    if (cadenaId) localStorage.setItem(CLAVE_CADENA_INGRESO, String(cadenaId));
+    else localStorage.removeItem(CLAVE_CADENA_INGRESO);
+  } catch {
+    return;
+  }
+};
+
+export const obtenerCadenaIngreso = () => {
+  try {
+    return localStorage.getItem(CLAVE_CADENA_INGRESO);
+  } catch {
+    return null;
   }
 };
 

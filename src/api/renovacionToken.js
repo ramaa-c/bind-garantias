@@ -46,6 +46,15 @@ const renovar = async (tokenAnterior) => {
   }
 };
 
+// Mismo lock que la renovación: si varias pestañas vencen a la vez, se cierran
+// de a una y solo la primera encuentra el token para llamar a logout.
+export const conCandadoDeSesion = (accion) => {
+  if (typeof navigator !== "undefined" && navigator.locks?.request) {
+    return navigator.locks.request(NOMBRE_LOCK, accion);
+  }
+  return accion();
+};
+
 // Una sola pestaña renueva a la vez: dos refresh simultáneos con el mismo
 // token hacen que la API intente dar de baja dos veces el anterior. El lock
 // del navegador es atómico entre pestañas; el candado de localStorage queda

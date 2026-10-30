@@ -3,6 +3,7 @@ import { sociosService } from "../services/sociosService";
 import { afipService } from "../services/afipService";
 import { matchProvinciaAfip } from "./provinciaUtils";
 import { decodeHtmlEntities, parseAddress } from "./direccionParser";
+import { esIntegracionNoDisponible } from "./mensajesError";
 
 const CARACTERES_PERDIDOS = /[?�]/;
 
@@ -44,7 +45,12 @@ export const obtenerDatosEmpresaPorCuit = async (
 ) => {
   let nosisData = null;
   let afipData = null;
+  let errorIntegracion = null;
   const cuitLimpio = String(cuit).replace(/\D/g, "");
+
+  const anotarFallaIntegracion = (error) => {
+    if (esIntegracionNoDisponible(error)) errorIntegracion = error;
+  };
 
   const consultarLufe = async () => {
     try {
@@ -54,6 +60,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       }
     } catch (lufeError) {
       console.warn("Error consultando LUFE:", lufeError);
+      anotarFallaIntegracion(lufeError);
     }
     return null;
   };
@@ -63,6 +70,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       return await afipService.obtenerConstanciaInscripcion(cuit);
     } catch (e) {
       console.warn("Error consultando AFIP:", e);
+      anotarFallaIntegracion(e);
       return null;
     }
   };
@@ -74,6 +82,7 @@ export const obtenerDatosEmpresaPorCuit = async (
     nosisData = await nosisService.obtenerDatosNormalizados(cuit);
   } catch (e) {
     console.warn("Error consultando Nosis, se intentará AFIP...", e);
+    anotarFallaIntegracion(e);
   }
 
   if (nosisData) {
@@ -108,6 +117,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       nosisData: null,
       afipData: null,
       valores: null,
+      errorIntegracion,
     };
   }
 

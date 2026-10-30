@@ -1,5 +1,6 @@
 import api from "../api/axios";
 import { conCacheCuit, esLimiteDeConsultas } from "../utils/cacheConsultasCuit";
+import { esIntegracionNoDisponible } from "../utils/mensajesError";
 
 // El cliente de Nosis del lado del backend arranca "en frío": la primera
 // consulta después de un rato sin uso puede devolver un cuerpo vacío/
@@ -50,9 +51,9 @@ export const nosisService = {
   },
 
   // Un solo reintento (con una espera corta) alcanza para no perder Nosis
-  // por un arranque en frío puntual: nunca tira (equivalente al `null` que
-  // ya devolvía antes), los callers ya lo tratan como "no hay datos" y
-  // caen a AFIP/LUFE.
+  // por un arranque en frío puntual: solo tira ante el límite de consultas o
+  // un 502/503 (que no se reintenta), si no devuelve `null`. Los callers lo
+  // tratan como "no hay datos" y caen a AFIP/LUFE.
   obtenerDatosNormalizados: (cuit) =>
     conCacheCuit("nosis", cuit, async () => {
       try {
@@ -61,7 +62,7 @@ export const nosisService = {
         const primerIntento = extraerDiccionario(respuesta);
         if (primerIntento) return primerIntento;
       } catch (error) {
-        if (esLimiteDeConsultas(error)) throw error;
+        if (esLimiteDeConsultas(error) || esIntegracionNoDisponible(error)) throw error;
         console.warn(
           "[nosisService] Primer intento contra Nosis falló, reintentando una vez (posible arranque en frío del backend)...",
           error,
@@ -73,7 +74,7 @@ export const nosisService = {
       try {
         return extraerDiccionario(await nosisService.obtenerVariables(cuit));
       } catch (error) {
-        if (esLimiteDeConsultas(error)) throw error;
+        if (esLimiteDeConsultas(error) || esIntegracionNoDisponible(error)) throw error;
         console.warn(
           "[nosisService] Nosis volvió a fallar en el reintento, se cae a AFIP/LUFE.",
           error,

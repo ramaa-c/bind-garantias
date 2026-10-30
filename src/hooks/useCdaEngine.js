@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
+import { cadenaValorService } from "../services/cadenaValorService";
 import { cdaService } from "../services/cdaService";
+import { esCdaActivo } from "../utils/cdaUtils";
 import { esMensajeUtil } from "../utils/mensajesError";
 
 // El CDA "Valida al socio que no sea socio protector de otra SGR" (ID 10) es
@@ -39,6 +41,20 @@ const parsearCuerpo = (data) => {
 const esMensajeGenericoAxios = (mensaje) =>
   /^Request failed with status code \d+$/i.test(String(mensaje || "").trim());
 
+const contarCdasActivos = async (pantalla, cadenaValorId) => {
+  const grupos = await cdaService.obtenerGrupoCda(pantalla, cadenaValorId);
+  const grupoCdaId = Array.isArray(grupos) ? grupos[0]?.grupocdaid : null;
+  if (!grupoCdaId) return 0;
+  const vinculados = await cadenaValorService.obtenerCdasPorGrupo(grupoCdaId);
+  const lista = Array.isArray(vinculados) ? vinculados : [];
+  return new Set(lista.filter(esCdaActivo).map((c) => Number(c.cdaid))).size;
+};
+
+const datosDeEjecucion = (cuerpo) => ({
+  momento: cuerpo?.momento ?? cuerpo?.Momento ?? null,
+  pantallaGrupoCdaId: cuerpo?.pantallagrupocdaid ?? cuerpo?.PantallaGrupoCdaID ?? null,
+});
+
 export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -70,8 +86,7 @@ export const useCdaEngine = () => {
       if (cadenaValorId) {
         try {
           const listTest = data?.listtest ?? data?.ListTest ?? [];
-          const vinculados = await cdaService.obtenerGrupoCda(pantalla, cadenaValorId);
-          const cantidadEsperada = Array.isArray(vinculados) ? vinculados.length : 0;
+          const cantidadEsperada = await contarCdasActivos(pantalla, cadenaValorId);
 
           if (cantidadEsperada > 0 && listTest.length < cantidadEsperada) {
             console.log(
@@ -79,6 +94,7 @@ export const useCdaEngine = () => {
             );
             setLoading(false);
             return {
+              ...datosDeEjecucion(data),
               success: false,
               errors: [
                 {
@@ -105,7 +121,7 @@ export const useCdaEngine = () => {
       );
 
       setLoading(false);
-      return { success: true, errors: [] };
+      return { ...datosDeEjecucion(data), success: true, errors: [] };
     } catch (err) {
       console.error("[CDA ENGINE] Error durante la validación del CDA:", err);
 
@@ -131,6 +147,7 @@ export const useCdaEngine = () => {
 
         setLoading(false);
         return {
+          ...datosDeEjecucion(responseData),
           success: false,
           errors: [
             {
@@ -178,6 +195,7 @@ export const useCdaEngine = () => {
         if (mappedErrors.length === 0) {
           // 406 sin detalle de qué falló: tratar como bloqueante genérico.
           return {
+            ...datosDeEjecucion(cuerpoObjeto),
             success: false,
             errors: [
               {
@@ -191,7 +209,7 @@ export const useCdaEngine = () => {
         }
 
         const hasBlockingErrors = mappedErrors.some((e) => e.isInvalidante);
-        return { success: !hasBlockingErrors, errors: mappedErrors };
+        return { ...datosDeEjecucion(cuerpoObjeto), success: !hasBlockingErrors, errors: mappedErrors };
       }
 
       // 400 "CDAs Inexistentes": no hay ningún CDA vinculado a esta
@@ -220,7 +238,9 @@ export const useCdaEngine = () => {
             {
               cdaid: 0,
               isInvalidante: true,
-              message: "No se pudieron evaluar los criterios de aceptación. Intentá nuevamente o contactá a soporte.",
+              message:
+                (esMensajeUtil(mensajeBackend) && mensajeBackend) ||
+                "No se pudieron evaluar los criterios de aceptación. Intentá nuevamente o contactá a soporte.",
               isSystemError: true,
               isAccesoRechazado: true,
             },
@@ -249,6 +269,7 @@ export const useCdaEngine = () => {
             isInvalidante: true,
             message: msg,
             isSystemError: true,
+            isPedidoRechazado: status === 400,
           },
         ],
       };

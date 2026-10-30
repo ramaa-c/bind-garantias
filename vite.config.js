@@ -42,6 +42,10 @@ export default defineConfig({
             "/execute:test$1",
           );
           rewritten = rewritten.replace(
+            /\/execute-linea(\?|$)/,
+            "/execute:linea$1",
+          );
+          rewritten = rewritten.replace(
             /\/obtener-byGrupo(\?|$)/,
             "/obtener:byGrupo$1",
           );
