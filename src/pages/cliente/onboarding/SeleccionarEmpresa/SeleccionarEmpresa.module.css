@@ -1,5 +1,6 @@
 /* Panel del vendor (todas sus empresas). Mobile first; desde 64rem sigue
-   los mismos rangos que Solicitudes (Rango 2 = alto natural). */
+   los mismos rangos que Solicitudes: Rango 1 = alto fijo y la lista
+   scrollea por dentro, Rango 2 = alto natural. */
 .pageContainer {
   position: relative;
   z-index: 1;
@@ -825,5 +826,18 @@
   (min-width: 64rem) and (max-height: 716px) {
   .pageContainer {
     padding: 1.25rem 1.5rem 1.5rem;
+  }
+}
+
+@media (min-width: 1441px) and (min-height: 717px) {
+  .pageContainer {
+    height: calc(100dvh - 4.5rem);
+    min-height: 0;
+  }
+
+  .pageContainer > .areaLista {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 }

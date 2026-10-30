@@ -455,7 +455,7 @@ export const SeleccionarEmpresa = () => {
           {cargandoLista ? (
             <FilasCargando />
           ) : lista.length === 0 ? (
-            <div className={styles.vacio}>
+            <div className={`${styles.vacio} ${styles.areaLista}`}>
               <p className={styles.vacioTexto}>
                 {vista === "empresas"
                   ? texto || empresaFiltro !== "todas"
@@ -467,7 +467,7 @@ export const SeleccionarEmpresa = () => {
               </p>
             </div>
           ) : vista === "empresas" ? (
-            <div className={styles.lista}>
+            <div className={`${styles.lista} ${styles.areaLista}`}>
               {visibles.map((e) => {
                 const resumen = resumenPorEmpresa.get(String(e.socioId));
                 return (
@@ -484,7 +484,7 @@ export const SeleccionarEmpresa = () => {
               })}
             </div>
           ) : (
-            <div className={styles.secciones}>
+            <div className={`${styles.secciones} ${styles.areaLista}`}>
               {enCursoVisibles.length > 0 && (
                 <section className={styles.seccion} aria-label="En evaluación">
                   <h2 className={styles.seccionTitulo}>
