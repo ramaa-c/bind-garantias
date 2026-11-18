@@ -55,9 +55,9 @@ export const usuarioService = {
   cambiarPassword: async (usuarioId, datosCambioClave) =>
     (await api.put(`api/usuario/${usuarioId}/password-change`, usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
 
-  // PUT api/usuario/password-setup (solo Admin con sesión; el email sale de la sesión)
+  // PUT api/usuario/password:setup (solo Admin con sesión; el email sale de la sesión)
   solicitarPrimeraClave: async (fronturl) =>
-    (await api.put("api/usuario/password-setup", { fronturl }, { noRetry: true })).data,
+    (await api.put("api/usuario/password-setup", usuarioAdapter.adaptarPrimeraClave({ fronturl }), { noRetry: true })).data,
 
   // GET api/usuario/estado/{encrypt}:byencrypt
   // 302 activa / 409 pendiente (Estado 2) / 423 bloqueada (Estado 0) / 403 bloqueada por admin (Estado 9) / 404 no existe / 406 vencido

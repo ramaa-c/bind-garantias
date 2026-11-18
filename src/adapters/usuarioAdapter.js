@@ -106,4 +106,11 @@ export const usuarioAdapter = {
       UsuarioWebAdminID: d.usuariowebadminid,
     };
   },
+  adaptarPrimeraClave: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      FrontURL: d.fronturl,
+    };
+  },
 };
