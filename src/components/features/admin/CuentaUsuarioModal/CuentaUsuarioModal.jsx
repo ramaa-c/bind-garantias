@@ -22,6 +22,8 @@ import { useChannel } from "../../../../context/useChannel";
 import {
   esClaveActualIncorrecta,
   esDemasiadosIntentos,
+  esUrlNoAdmitida,
+  avisarUrlNoAdmitida,
 } from "../../../../utils/usuarioUtils";
 import { cerrarSesionLocal } from "../../../../api/axios";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
@@ -201,10 +203,8 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
           toast.error("No tenés permiso para esta acción");
           return;
         }
-        if (status === 400) {
-          toast.error("No pudimos enviar el correo", {
-            description: "Avisá a soporte (configuración del sitio).",
-          });
+        if (esUrlNoAdmitida(error)) {
+          avisarUrlNoAdmitida();
           return;
         }
         toast.error("No pudimos enviar el correo", {

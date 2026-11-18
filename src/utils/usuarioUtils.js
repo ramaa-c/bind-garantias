@@ -121,6 +121,16 @@ export const avisarDemasiadosIntentos = () =>
     description: "Esperá unos minutos y volvé a probar.",
   });
 
+// 400 de password:reset / password:setup: la API no admite la FrontURL
+// (origen fuera de OrigenesPermitidos del .ini). No depende de si el correo
+// existe, así que se informa en lugar de simular el envío.
+export const esUrlNoAdmitida = (error) => error?.response?.status === 400;
+
+export const avisarUrlNoAdmitida = () =>
+  toast.error("No pudimos enviar el correo", {
+    description: "Avisá a soporte (configuración del sitio).",
+  });
+
 export const esCodigoLoginExpirado = (error) => {
   const data = error?.response?.data;
   const mensaje = data?.message ?? data?.Message ?? "";

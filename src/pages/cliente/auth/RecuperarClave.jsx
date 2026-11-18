@@ -15,6 +15,8 @@ import {
   FECHA_VENCIMIENTO_USUARIO,
   esDemasiadosIntentos,
   avisarDemasiadosIntentos,
+  esUrlNoAdmitida,
+  avisarUrlNoAdmitida,
 } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
@@ -85,6 +87,10 @@ const RecuperarClave = () => {
       }
       if (esDemasiadosIntentos(error)) {
         avisarDemasiadosIntentos();
+        return;
+      }
+      if (esUrlNoAdmitida(error)) {
+        avisarUrlNoAdmitida();
         return;
       }
       irAConfirmacion();

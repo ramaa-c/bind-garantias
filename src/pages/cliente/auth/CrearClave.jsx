@@ -35,6 +35,8 @@ import {
   avisarDemasiadosIntentos,
   esRespuestaBloqueoAdmin,
   avisarBloqueoAdmin,
+  esUrlNoAdmitida,
+  avisarUrlNoAdmitida,
 } from "../../../utils/usuarioUtils";
 import { mensajeNegocio } from "../../../utils/mensajesError";
 import styles from "./CrearClave.module.css";
@@ -202,6 +204,10 @@ const CrearClave = () => {
         }
         if (esDemasiadosIntentos(error)) {
           avisarDemasiadosIntentos();
+          return;
+        }
+        if (esUrlNoAdmitida(error)) {
+          avisarUrlNoAdmitida();
           return;
         }
         irAConfirmacion();
