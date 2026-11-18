@@ -156,6 +156,53 @@
   }
 }
 
+.primeraClaveBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  padding: 0.9rem;
+  border-radius: 0.75rem;
+  background: #161b22;
+  border: 1px solid #262c36;
+}
+
+.primeraClaveIcono {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  background: rgba(76, 101, 230, 0.16);
+  color: #a5b4ff;
+  font-size: 1.05rem;
+}
+
+.primeraClaveIcono[data-tono="exito"] {
+  background: rgba(63, 185, 80, 0.14);
+  color: #56d364;
+}
+
+.primeraClaveTitulo {
+  margin: 0;
+  color: var(--white);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.primeraClaveTexto {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.primeraClaveTexto strong {
+  color: var(--white);
+  font-weight: 600;
+}
+
 .avisoNoDisponible {
   display: flex;
   flex-direction: column;

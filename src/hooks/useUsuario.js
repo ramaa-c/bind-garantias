@@ -44,6 +44,18 @@ export const useCambiarPassword = () => {
   });
 };
 
+export const useSolicitarPrimeraClave = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (fronturl) => usuarioService.solicitarPrimeraClave(fronturl),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["usuarios", "porNombreOEmail"],
+      });
+    },
+  });
+};
+
 export const useObtenerEstadoPorEncrypt = (encryptToken) => {
   return useQuery({
     queryKey: ["usuarios", "estadoEncrypt", encryptToken],

@@ -3,7 +3,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { FiUser, FiLock, FiAlertCircle, FiShield } from "react-icons/fi";
+import { FiUser, FiLock, FiAlertCircle, FiShield, FiMail, FiCheckCircle } from "react-icons/fi";
 import {
   Modal,
   Button,
@@ -16,7 +16,9 @@ import {
   useObtenerPorNombreOEmail,
   useActualizarUsuario,
   useCambiarPassword,
+  useSolicitarPrimeraClave,
 } from "../../../../hooks/useUsuario";
+import { useChannel } from "../../../../context/useChannel";
 import {
   esClaveActualIncorrecta,
   esDemasiadosIntentos,
@@ -55,6 +57,10 @@ const passwordSchema = z
     path: ["newPassword"],
   });
 
+const SEGUNDOS_REENVIO = 60;
+const formatearCuentaRegresiva = (segundos) =>
+  `${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}`;
+
 const extraerRegistroUsuario = (db) => {
   if (!db) return null;
   if (Array.isArray(db)) return db[0] || null;
@@ -67,17 +73,38 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const [seccionMovil, setSeccionMovil] = useState("usuario");
+  const [primeraClaveEnviada, setPrimeraClaveEnviada] = useState(false);
+  const [segundosReenvio, setSegundosReenvio] = useState(0);
+  const { baseAcceso } = useChannel();
 
-  const { data: usuarioDb, isPending: isLoadingUsuario } =
-    useObtenerPorNombreOEmail(isOpen ? user?.email || "" : "");
+  const {
+    data: usuarioDb,
+    isPending: isLoadingUsuario,
+    refetch: refetchUsuario,
+  } = useObtenerPorNombreOEmail(isOpen ? user?.email || "" : "");
 
   const registro = extraerRegistroUsuario(usuarioDb);
   const usuarioWebId =
     registro?.usuariowebid ?? registro?.UsuarioWebID ?? registro?.id ?? null;
   const denominacionActual = registro?.denominacion ?? registro?.Denominacion ?? "";
+  const tieneClave = registro?.tieneclave !== false;
 
   const actualizarUsuarioMutation = useActualizarUsuario();
   const cambiarPasswordMutation = useCambiarPassword();
+  const solicitarPrimeraClaveMutation = useSolicitarPrimeraClave();
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPrimeraClaveEnviada(false);
+      setSegundosReenvio(0);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (segundosReenvio <= 0) return;
+    const id = setTimeout(() => setSegundosReenvio((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [segundosReenvio]);
 
   const {
     control: usernameControl,
@@ -148,6 +175,45 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
     );
   };
 
+  const onSolicitarPrimeraClave = () => {
+    solicitarPrimeraClaveMutation.mutate(window.location.origin + baseAcceso, {
+      onSuccess: () => {
+        setPrimeraClaveEnviada(true);
+        setSegundosReenvio(SEGUNDOS_REENVIO);
+      },
+      onError: (error) => {
+        const status = error?.response?.status;
+        if (status === 401) return;
+        if (status === 409) {
+          refetchUsuario();
+          setPrimeraClaveEnviada(false);
+          toast.info("Tu cuenta ya tiene una contraseña");
+          return;
+        }
+        if (status === 429) {
+          toast.error("Demasiados pedidos", {
+            description:
+              "Ya te enviamos varios correos. Revisá tu bandeja (y la de spam) o intentá más tarde.",
+          });
+          return;
+        }
+        if (status === 403) {
+          toast.error("No tenés permiso para esta acción");
+          return;
+        }
+        if (status === 400) {
+          toast.error("No pudimos enviar el correo", {
+            description: "Avisá a soporte (configuración del sitio).",
+          });
+          return;
+        }
+        toast.error("No pudimos enviar el correo", {
+          description: "Intentá nuevamente en unos minutos.",
+        });
+      },
+    });
+  };
+
   const onSubmitPassword = (formData) => {
     if (!usuarioWebId) {
       toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
@@ -184,6 +250,14 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
           }
           if (status === 401) {
             cerrarSesionLocal();
+            return;
+          }
+          if (status === 409) {
+            toast.error("Tu cuenta todavía no tiene contraseña", {
+              description: "Cargala desde Mi cuenta.",
+            });
+            resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+            refetchUsuario();
             return;
           }
           if (status === 400) {
@@ -324,6 +398,76 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
               </div>
             </form>
 
+            {!tieneClave ? (
+              <div
+                className={`${styles.sectionGroup} ${seccionMovil !== "password" ? styles.ocultoMovil : ""}`}
+              >
+                <h4 className={styles.sectionTitle}>
+                  <FiLock /> Contraseña
+                </h4>
+
+                {primeraClaveEnviada ? (
+                  <div className={styles.primeraClaveBloque}>
+                    <div className={styles.primeraClaveIcono} data-tono="exito" aria-hidden="true">
+                      <FiCheckCircle />
+                    </div>
+                    <p className={styles.primeraClaveTitulo}>Revisá tu correo</p>
+                    <p className={styles.primeraClaveTexto}>
+                      Te enviamos un correo a <strong>{user?.email}</strong>. Abrí el
+                      enlace dentro de los próximos 30 minutos para crear tu
+                      contraseña.
+                    </p>
+                  </div>
+                ) : (
+                  <div className={styles.primeraClaveBloque}>
+                    <div className={styles.primeraClaveIcono} aria-hidden="true">
+                      <FiMail />
+                    </div>
+                    <p className={styles.primeraClaveTitulo}>
+                      Todavía no tenés una contraseña
+                    </p>
+                    <p className={styles.primeraClaveTexto}>
+                      Hoy ingresás con un código que te enviamos por correo. Si
+                      querés, podés crear una contraseña: te enviaremos un enlace
+                      a <strong>{user?.email}</strong> para cargarla. Podés seguir
+                      usando el ingreso con código en cualquier momento.
+                    </p>
+                  </div>
+                )}
+
+                <div className={styles.sectionActions}>
+                  {primeraClaveEnviada ? (
+                    <Button
+                      type="button"
+                      variant="adminNeutro"
+                      size="sm"
+                      onClick={onSolicitarPrimeraClave}
+                      isLoading={solicitarPrimeraClaveMutation.isPending}
+                      disabled={segundosReenvio > 0 || solicitarPrimeraClaveMutation.isPending}
+                    >
+                      {solicitarPrimeraClaveMutation.isPending
+                        ? "Enviando…"
+                        : segundosReenvio > 0
+                          ? `Reenviar correo (${formatearCuentaRegresiva(segundosReenvio)})`
+                          : "Reenviar correo"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="admin"
+                      size="sm"
+                      onClick={onSolicitarPrimeraClave}
+                      isLoading={solicitarPrimeraClaveMutation.isPending}
+                      disabled={solicitarPrimeraClaveMutation.isPending}
+                    >
+                      {solicitarPrimeraClaveMutation.isPending
+                        ? "Enviando…"
+                        : "Cargar mi primera clave"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : (
             <form
               className={`${styles.sectionGroup} ${seccionMovil !== "password" ? styles.ocultoMovil : ""}`}
               onSubmit={handlePasswordSubmit(onSubmitPassword)}
@@ -389,6 +533,7 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
                 </Button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}

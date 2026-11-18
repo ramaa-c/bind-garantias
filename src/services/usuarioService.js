@@ -55,10 +55,15 @@ export const usuarioService = {
   cambiarPassword: async (usuarioId, datosCambioClave) =>
     (await api.put(`api/usuario/${usuarioId}/password-change`, usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
 
+  // PUT api/usuario/password-setup (solo Admin con sesión; el email sale de la sesión)
+  solicitarPrimeraClave: async (fronturl) =>
+    (await api.put("api/usuario/password-setup", { fronturl }, { noRetry: true })).data,
+
   // GET api/usuario/estado/{encrypt}:byencrypt
   // 302 activa / 409 pendiente (Estado 2) / 423 bloqueada (Estado 0) / 403 bloqueada por admin (Estado 9) / 404 no existe / 406 vencido
+  // proposito (en 302/409/423): Activacion | Reset | CreacionClave
   obtenerEstadoPorEncrypt: async (encryptToken) => {
-    const { status } = await api.get(
+    const { status, data } = await api.get(
       `api/usuario/estado/${encodeURIComponent(encryptToken)}-byencrypt`,
       {
         sinToken: true,
@@ -68,12 +73,13 @@ export const usuarioService = {
           (codigo >= 200 && codigo < 300),
       },
     );
-    if (status === 409) return "pendiente";
-    if (status === 423) return "bloqueada";
-    if (status === 403) return "bloqueada_admin";
-    if (status === 404) return "inexistente";
-    if (status === 406) return "expirado";
-    return "activa";
+    const proposito = data?.proposito ?? null;
+    if (status === 409) return { estado: "pendiente", proposito };
+    if (status === 423) return { estado: "bloqueada", proposito };
+    if (status === 403) return { estado: "bloqueada_admin", proposito };
+    if (status === 404) return { estado: "inexistente", proposito };
+    if (status === 406) return { estado: "expirado", proposito };
+    return { estado: "activa", proposito };
   },
 
   // PUT api/usuario/password:new (identifica al usuario por el token del mail)

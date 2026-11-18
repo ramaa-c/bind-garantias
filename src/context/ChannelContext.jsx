@@ -32,6 +32,7 @@ export const ChannelProvider = ({ children }) => {
 
   const valor = useMemo(() => {
     const modoPorHost = tenant?.modo === MODO_POR_HOST;
+    const basePath = modoPorHost ? "" : `/${channelInfo.id}`;
     return {
       channelInfo,
       setChannelInfo,
@@ -44,7 +45,7 @@ export const ChannelProvider = ({ children }) => {
       // rutas de cliente cuelgan de la raíz); en legacy es "/{id}", igual
       // que el `/${channelInfo.id}` que estaba escrito a mano en cada
       // navigate() hasta ahora.
-      basePath: modoPorHost ? "" : `/${channelInfo.id}`,
+      basePath,
     };
   }, [channelInfo, tenant]);
 

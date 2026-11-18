@@ -456,6 +456,15 @@ const rutasLegacy = (
 
     <Route path="/0" element={<CrearClave />} />
     <Route path="/0/:token" element={<CrearClave />} />
+    <Route
+      path="/recuperar-clave"
+      element={
+        <GuestGuard>
+          <RecuperarClave />
+        </GuestGuard>
+      }
+    />
+    <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
 
     <Route path="/:cadenaSlug" element={<TenantLayout />}>
       {rutasCliente}
