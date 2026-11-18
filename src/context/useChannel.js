@@ -3,7 +3,7 @@ import { ChannelContext } from "./channelContextObject";
 
 const cadenaDelPath = () => {
   const primerSegmento = window.location.pathname.split("/")[1] || "";
-  return /^\d+$/.test(primerSegmento) ? primerSegmento : null;
+  return /^[1-9]\d*$/.test(primerSegmento) ? primerSegmento : null;
 };
 
 export const useChannel = () => {
