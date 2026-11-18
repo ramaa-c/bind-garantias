@@ -27,6 +27,7 @@ import {
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
+import { useAuthStore } from "../../../store/useAuthStore";
 import {
   denominacionDesdeEmail,
   FECHA_VENCIMIENTO_USUARIO,
@@ -59,13 +60,16 @@ const passwordSchema = z
 
 const CrearClave = () => {
   const { token } = useParams();
-  const { channelInfo, basePath } = useChannel();
+  const { channelInfo, baseAcceso } = useChannel();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const theme = useThemeStore((state) => state.theme);
   const navigate = useNavigate();
   const [emailManual, setEmailManual] = useState("");
   const [emailManualTouched, setEmailManualTouched] = useState(false);
   const [enlaceInvalidado, setEnlaceInvalidado] = useState(false);
   const [bloqueoAdminDetectado, setBloqueoAdminDetectado] = useState(false);
+  const [claveYaExistente, setClaveYaExistente] = useState(false);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const hashUrl = typeof window !== "undefined" ? window.location.hash : "";
@@ -76,10 +80,13 @@ const CrearClave = () => {
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
   const {
-    data: estadoCuenta,
+    data: estadoEncrypt,
     isLoading: verificandoEstado,
     isError: estadoError,
   } = useObtenerEstadoPorEncrypt(tokenIntegridad);
+
+  const estadoCuenta = estadoEncrypt?.estado;
+  const esCreacionClave = estadoEncrypt?.proposito === "CreacionClave";
 
   const { mutate: establecerClave, isPending: guardandoClave } =
     useEstablecerClave();
@@ -103,7 +110,7 @@ const CrearClave = () => {
   };
 
   const irALoginConCodigo = () =>
-    navigate(`${basePath}/login`, {
+    navigate(`${baseAcceso}/login`, {
       state: { faseInicial: "solicitar_codigo" },
     });
 
@@ -171,11 +178,11 @@ const CrearClave = () => {
       debecambiarclave: "",
       esadministrador: "",
       denominacion: denominacionDesdeEmail(emailManual),
-      fronturl: window.location.origin + basePath,
+      fronturl: window.location.origin + baseAcceso,
     };
 
     const irAConfirmacion = () =>
-      navigate(`${basePath}/confirmar-correo`, {
+      navigate(`${baseAcceso}/confirmar-correo`, {
         state: {
           emailIngresado: emailManual,
           canal: canalId,
@@ -241,15 +248,24 @@ const CrearClave = () => {
       { encrypt: tokenIntegridad, newPassword: formData.password },
       {
         onSuccess: () => {
-          toast.success("Contraseña establecida correctamente", {
-            description: cuentaPendiente
-              ? "Tu cuenta fue activada. Ya podés iniciar sesión."
-              : cuentaBloqueada
-                ? "Tu cuenta fue desbloqueada. Ya podés iniciar sesión."
-                : "Ya podés iniciar sesión con tu nueva contraseña.",
-            duration: 5000,
-          });
-          navigate(`${basePath}/login`, { replace: true });
+          if (esCreacionClave) {
+            toast.success("Contraseña creada", {
+              description:
+                "Ya podés ingresar con tu contraseña o con un código.",
+              duration: 5000,
+            });
+          } else {
+            toast.success("Contraseña establecida correctamente", {
+              description: cuentaPendiente
+                ? "Tu cuenta fue activada. Ya podés iniciar sesión."
+                : cuentaBloqueada
+                  ? "Tu cuenta fue desbloqueada. Ya podés iniciar sesión."
+                  : "Ya podés iniciar sesión con tu nueva contraseña.",
+              duration: 5000,
+            });
+          }
+          if (isAuthenticated) clearAuth();
+          navigate(`${baseAcceso}/login`, { replace: true });
         },
         onError: (error) => {
           const status = error?.response?.status;
@@ -259,6 +275,10 @@ const CrearClave = () => {
           }
           if (status === 406) {
             marcarEnlaceVencido();
+            return;
+          }
+          if (status === 409 && esCreacionClave) {
+            setClaveYaExistente(true);
             return;
           }
           const isServerError = !error?.response || status >= 500;
@@ -297,7 +317,10 @@ const CrearClave = () => {
       enlaceInvalidado);
 
   const enlaceUtilizable =
-    !tokenInvalidoDeOrigen && !enlaceVencido && !cuentaBloqueadaPorAdmin;
+    !tokenInvalidoDeOrigen &&
+    !enlaceVencido &&
+    !cuentaBloqueadaPorAdmin &&
+    !claveYaExistente;
   const cuentaPendiente = enlaceUtilizable && estadoCuenta === "pendiente";
   const cuentaBloqueada = enlaceUtilizable && estadoCuenta === "bloqueada";
   const cuentaActiva = enlaceUtilizable && estadoCuenta === "activa";
@@ -322,7 +345,15 @@ const CrearClave = () => {
           texto:
             "Tu cuenta se bloqueó por superar el máximo de intentos. Al crear una nueva contraseña se desbloquea.",
         }
-      : {
+      : esCreacionClave
+        ? {
+            tono: "neutral",
+            Icono: FiLock,
+            titulo: "Tu cuenta ya está activa",
+            texto:
+              "La contraseña es una forma más de ingresar. El ingreso con un código por correo sigue disponible.",
+          }
+        : {
           tono: "neutral",
           Icono: FiLock,
           titulo: "Actualizando tu acceso",
@@ -362,7 +393,7 @@ const CrearClave = () => {
           {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
           <section
             className={`${styles.loginFormSection} ${
-              (mostrarErrorFaltaUsuario || cuentaBloqueadaPorAdmin) &&
+              (mostrarErrorFaltaUsuario || cuentaBloqueadaPorAdmin || claveYaExistente) &&
               !tokenInvalidoDeOrigen
                 ? styles.loginFormSectionCentered
                 : ""
@@ -373,7 +404,7 @@ const CrearClave = () => {
                 <img
                   src={theme === "light" ? logoBindBlack : logoBind}
                   alt="Logo BIND"
-                  onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
+                  onClick={() => navigate(`${baseAcceso}/login`)}
                   className={styles.clickableLogo}
                 />
                 {channelInfo.id !== "default" && channelInfo.logo && (
@@ -406,7 +437,18 @@ const CrearClave = () => {
                 >
                   <FiCheckCircle className={styles.calloutIcon} />
                   <div className={styles.calloutContent}>
-                    {cuentaActiva ? (
+                    {cuentaActiva && esCreacionClave ? (
+                      <>
+                        <h2 className={styles.calloutTitle}>
+                          Creá tu contraseña
+                        </h2>
+                        <p>
+                          Definí la contraseña con la que vas a ingresar al
+                          panel de administración. También vas a poder seguir
+                          ingresando con un código por correo.
+                        </p>
+                      </>
+                    ) : cuentaActiva ? (
                       <>
                         <h2 className={styles.calloutTitle}>
                           Restablecé tu contraseña
@@ -497,10 +539,29 @@ const CrearClave = () => {
 
                     <Button
                       variant="primary"
-                      onClick={() => navigate(`${basePath}/login`, { replace: true })}
+                      onClick={() => navigate(`${baseAcceso}/login`, { replace: true })}
                       style={{ marginTop: "1.5rem", width: "100%" }}
                     >
                       VOLVER AL INICIO
+                    </Button>
+                  </div>
+                )}
+
+                {claveYaExistente && (
+                  <div className={styles.expiredTokenContainer}>
+                    <FiCheckCircle size={48} color="var(--color-azul-bind-300)" />
+                    <h3>Tu cuenta ya tiene una contraseña</h3>
+                    <p>
+                      Si no la recordás, usá «¿Olvidaste tu contraseña?» en la
+                      pantalla de ingreso.
+                    </p>
+
+                    <Button
+                      variant="primary"
+                      onClick={() => navigate(`${baseAcceso}/login`, { replace: true })}
+                      style={{ marginTop: "1.5rem", width: "100%" }}
+                    >
+                      IR AL INGRESO
                     </Button>
                   </div>
                 )}

@@ -23,7 +23,7 @@ const fmt = (t) => `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
 const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { channelInfo, basePath } = useChannel();
+  const { channelInfo, baseAcceso, esSitioAdmin } = useChannel();
   const theme = useThemeStore((state) => state.theme);
 
   const emailUsuario =
@@ -69,7 +69,7 @@ const ConfirmarCorreo = () => {
         debecambiarclave: "",
         esadministrador: "",
         denominacion: denominacionDesdeEmail(emailUsuario),
-        fronturl: window.location.origin + basePath,
+        fronturl: window.location.origin + baseAcceso,
       },
       {
         onSuccess: () => {
@@ -101,7 +101,12 @@ const ConfirmarCorreo = () => {
   };
 
   if (!emailUsuario) {
-    return <Navigate to={`${basePath}/registro`} replace />;
+    return (
+      <Navigate
+        to={esSitioAdmin ? "/recuperar-clave" : `${baseAcceso}/registro`}
+        replace
+      />
+    );
   }
 
   return (
@@ -113,13 +118,7 @@ const ConfirmarCorreo = () => {
             <img
               src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
-              onClick={() =>
-                navigate(
-                  channelInfo?.id && channelInfo.id !== "default"
-                    ? `${basePath}/login`
-                    : "/login",
-                )
-              }
+              onClick={() => navigate(`${baseAcceso}/login`)}
               className={styles.clickableLogo}
             />
             {channelInfo?.id !== "default" && channelInfo.logo && (
@@ -202,14 +201,14 @@ const ConfirmarCorreo = () => {
                 tabIndex={0}
                 onClick={() =>
                   navigate(
-                    `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                    `${baseAcceso}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                   )
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     navigate(
-                      `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                      `${baseAcceso}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                     );
                   }
                 }}
@@ -260,7 +259,9 @@ const ConfirmarCorreo = () => {
                 size={18}
                 style={{ color: "var(--color-amarillo-bind, #f5f400)" }}
               />{" "}
-              El enlace expira en 24 horas.
+              {origen === "recuperar"
+                ? "El enlace expira en 30 minutos."
+                : "El enlace expira en 24 horas."}
             </p>
           </div>
         </div>

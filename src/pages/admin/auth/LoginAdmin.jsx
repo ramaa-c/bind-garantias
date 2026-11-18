@@ -192,6 +192,7 @@ const CredentialsPhase = ({
   control,
   isPending,
   onLoginWithCode,
+  onRecoverPassword,
 }) => (
   <div className={styles.phaseContainer}>
     <InputSimple
@@ -213,6 +214,31 @@ const CredentialsPhase = ({
     <Button type="submit" variant="primary" isLoading={isPending}>
       {isPending ? "INGRESANDO..." : "INGRESAR"}
     </Button>
+    <div
+      className={styles.recoverPasswordWrapper}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "0.5rem",
+        fontSize: "0.875rem",
+        color: "var(--text-muted)",
+      }}
+    >
+      <span>
+        ¿Olvidaste tu contraseña?{" "}
+        <span
+          className={styles.inlineLink}
+          onClick={!isPending ? onRecoverPassword : undefined}
+          style={{
+            cursor: isPending ? "not-allowed" : "pointer",
+            opacity: isPending ? 0.6 : undefined,
+          }}
+        >
+          Recuperar clave
+        </span>
+      </span>
+    </div>
 
     <div className={styles.divider}>
       <span>o</span>
@@ -579,6 +605,7 @@ const LoginAdmin = () => {
                   clearErrors();
                   setFase("solicitar_codigo");
                 }}
+                onRecoverPassword={() => navigate("/recuperar-clave")}
               />
             )}
             {fase === "solicitar_codigo" && (

@@ -16,7 +16,7 @@ export const GuestGuard = ({ children }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const activeSocioId = useAuthStore((state) => state.activeSocioId);
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
-  const { basePath } = useChannel();
+  const { basePath, esSitioAdmin } = useChannel();
 
   // Volver a /login con una sesión que nunca se cerró (activeSocioId de la
   // última empresa usada todavía en el store) no debe reanudar en
@@ -28,10 +28,14 @@ export const GuestGuard = ({ children }) => {
   // decisión de a dónde mandar a cada rol - esa autoridad es de
   // OnboardingGuard.
   useEffect(() => {
-    if (isAuthenticated && activeSocioId) {
+    if (isAuthenticated && activeSocioId && !esSitioAdmin) {
       cambiarEmpresa();
     }
-  }, [isAuthenticated, activeSocioId, cambiarEmpresa]);
+  }, [isAuthenticated, activeSocioId, cambiarEmpresa, esSitioAdmin]);
+
+  if (isAuthenticated && esSitioAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   if (isAuthenticated && activeSocioId) {
     return null;

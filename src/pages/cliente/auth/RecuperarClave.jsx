@@ -29,7 +29,7 @@ const recuperarSchema = z.object({
 
 const RecuperarClave = () => {
   const navigate = useNavigate();
-  const { channelInfo, basePath } = useChannel();
+  const { channelInfo, baseAcceso, esSitioAdmin } = useChannel();
   const theme = useThemeStore((state) => state.theme);
 
   const {
@@ -43,11 +43,10 @@ const RecuperarClave = () => {
   const {
     mutateAsync: enviarCorreoAsync,
     isPending,
-    isError,
   } = useResetearPassword();
 
   const getCSharpIsoDate = () => {
-    const date = new Date();
+    const date = new Date();
     return date.toISOString().split(".")[0];
   };
 
@@ -64,11 +63,11 @@ const RecuperarClave = () => {
       debecambiarclave: "",
       esadministrador: "",
       denominacion: denominacionDesdeEmail(data.email),
-      fronturl: window.location.origin + basePath,
+      fronturl: window.location.origin + baseAcceso,
     };
 
     const irAConfirmacion = () =>
-      navigate(`${basePath}/confirmar-correo`, {
+      navigate(`${baseAcceso}/confirmar-correo`, {
         replace: true,
         state: { emailIngresado: data.email, canal: canalId, origen: "recuperar" },
       });
@@ -101,7 +100,7 @@ const RecuperarClave = () => {
             <img
               src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
+              onClick={() => navigate(`${baseAcceso}/login`)}
               className={styles.clickableLogo}
             />
             {channelInfo.id !== "default" && channelInfo.logo && (
@@ -137,7 +136,6 @@ const RecuperarClave = () => {
               type="text"
               autoComplete="email"
               disabled={isPending}
-              error={isError ? "Usuario no encontrado." : undefined}
             />
 
             <div className={styles.formActions}>
@@ -165,12 +163,25 @@ const RecuperarClave = () => {
       {/* --- COLUMNA DERECHA --- */}
       <section className={styles.sideBrand}>
         <div className={styles.brandContent}>
-          <h2 className={styles.brandTitle}>
-            Potenciando y transformando el <em>financiamiento PyME.</em>
-          </h2>
-          <p className={styles.brandSubtitle}>
-            Accedé a la mejor financiación para tu empresa.
-          </p>
+          {esSitioAdmin ? (
+            <>
+              <h2 className={styles.brandTitle}>
+                Panel de <em>Administración.</em>
+              </h2>
+              <p className={styles.brandSubtitle}>
+                Recuperá el acceso a tu cuenta de administrador.
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className={styles.brandTitle}>
+                Potenciando y transformando el <em>financiamiento PyME.</em>
+              </h2>
+              <p className={styles.brandSubtitle}>
+                Accedé a la mejor financiación para tu empresa.
+              </p>
+            </>
+          )}
         </div>
       </section>
     </div>
