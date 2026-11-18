@@ -141,6 +141,24 @@
   font-weight: 500;
 }
 
+.input:-webkit-autofill ~ .label {
+  top: 0.55rem;
+  transform: none;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.input:autofill ~ .label {
+  top: 0.55rem;
+  transform: none;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
 .statusDefault.hasValue .label {
   color: var(--text-muted, #555);
 }
@@ -302,6 +320,24 @@
 
 .compact.hasValue .input,
 .compact.statusFocus .input {
+  padding-top: 0.65rem;
+}
+
+.compact .input:-webkit-autofill ~ .label {
+  top: 0.28rem;
+  font-size: 0.56rem;
+}
+
+.compact .input:autofill ~ .label {
+  top: 0.28rem;
+  font-size: 0.56rem;
+}
+
+.compact .input:-webkit-autofill {
+  padding-top: 0.65rem;
+}
+
+.compact .input:autofill {
   padding-top: 0.65rem;
 }
 
