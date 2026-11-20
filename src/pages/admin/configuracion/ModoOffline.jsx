@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FiPower, FiClock, FiCpu, FiUser, FiRefreshCw, FiAlertTriangle, FiWifiOff } from "react-icons/fi";
 import { toast } from "sonner";
-import { Switch } from "../../../components/ui";
+import { Skeleton, Switch } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerStatusPlataforma, useActualizarStatusPlataforma } from "../../../hooks/useStatusPlataforma";
@@ -36,11 +36,13 @@ const formatearDuracion = (ms) => {
 
 export default function ModoOffline() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const user = useAuthStore((state) => state.user);
   const usuarioWebId = user?.usuarioWebId || 0;
 
-  const { data, isLoading, isFetching, isError, refetch } = useObtenerStatusPlataforma();
+  const { data: statusConsultado, isLoading: cargandoStatus, isFetching, isError, refetch } = useObtenerStatusPlataforma();
+  const data = verificando ? undefined : statusConsultado;
+  const isLoading = cargandoStatus || verificando;
   const { mutate, isPending } = useActualizarStatusPlataforma();
 
   const ultimoStatus = obtenerUltimoStatus(data);
@@ -133,33 +135,95 @@ export default function ModoOffline() {
 
   if (bloqueado) return null;
 
+  const encabezado = (
+  <div className={styles.header}>
+    <div>
+      <h1>Modo Offline</h1>
+      <p>
+        Poné la plataforma cliente fuera de servicio y controlá sus integraciones externas en
+        tiempo real. El panel de administración sigue funcionando normalmente.
+      </p>
+    </div>
+    <button
+      type="button"
+      className={styles.btnRefresh}
+      onClick={handleRefrescar}
+      disabled={isFetching}
+    >
+      <FiRefreshCw className={isFetching ? styles.spinning : ""} /> Actualizar
+    </button>
+  </div>
+  );
+
   if (isLoading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loadingState}>Cargando estado de la plataforma...</div>
+      <div className={styles.container} aria-busy="true">
+        {encabezado}
+        <div className={styles.statusHero}>
+          <div className={styles.statusHeroLeft}>
+            <Skeleton width="2.75rem" height="2.75rem" radius="0.75rem" />
+            <div className={styles.statusInfo}>
+              <Skeleton width="6rem" height="0.7rem" />
+              <Skeleton width="16rem" height="1.15rem" style={{ marginTop: "0.45rem" }} />
+            </div>
+          </div>
+          <div className={styles.statusHeroRight}>
+            <Skeleton width="9rem" height="0.8rem" />
+            <Skeleton width="3.25rem" height="1.75rem" radius="pill" />
+          </div>
+        </div>
+        <div className={styles.workspace}>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <Skeleton width="2.5rem" height="2.5rem" radius="0.7rem" />
+              <div className={styles.cardHeaderText}>
+                <Skeleton width="45%" height="0.95rem" />
+                <Skeleton width="80%" height="0.75rem" style={{ marginTop: "0.4rem" }} />
+              </div>
+            </div>
+            <div className={styles.integracionesList}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className={styles.integracionRow}>
+                  <div className={styles.integracionInfo}>
+                    <Skeleton width="0.5rem" height="0.5rem" radius="50%" />
+                    <div className={styles.integracionTexto}>
+                      <Skeleton width="5rem" height="0.85rem" />
+                      <Skeleton width="12rem" height="0.7rem" style={{ marginTop: "0.3rem" }} />
+                    </div>
+                  </div>
+                  <Skeleton width="2.5rem" height="1.4rem" radius="pill" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <Skeleton width="2.5rem" height="2.5rem" radius="0.7rem" />
+              <div className={styles.cardHeaderText}>
+                <Skeleton width="40%" height="0.95rem" />
+                <Skeleton width="75%" height="0.75rem" style={{ marginTop: "0.4rem" }} />
+              </div>
+            </div>
+            <div className={styles.historialList}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className={styles.historialItem}>
+                  <Skeleton width="0.5rem" height="0.5rem" radius="50%" />
+                  <div className={styles.historialInfo}>
+                    <Skeleton width="60%" height="0.8rem" />
+                    <Skeleton width="40%" height="0.7rem" style={{ marginTop: "0.3rem" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1>Modo Offline</h1>
-          <p>
-            Poné la plataforma cliente fuera de servicio y controlá sus integraciones externas en
-            tiempo real. El panel de administración sigue funcionando normalmente.
-          </p>
-        </div>
-        <button
-          type="button"
-          className={styles.btnRefresh}
-          onClick={handleRefrescar}
-          disabled={isFetching}
-        >
-          <FiRefreshCw className={isFetching ? styles.spinning : ""} /> Actualizar
-        </button>
-      </div>
+      {encabezado}
 
       {sinDatos ? (
         <div className={styles.unavailableState}>

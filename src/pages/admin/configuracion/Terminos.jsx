@@ -21,9 +21,11 @@ const TITULO_TERMINOS = "Términos y Condiciones Generales";
 
 export default function Terminos() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const usuarioWebId = useUsuarioWebIdActual();
-  const { data: terminosVigentes, isLoading: isLoadingTerminos } = useObtenerTerminosVigentes();
+  const { data: terminosConsultados, isLoading: cargandoTerminos } = useObtenerTerminosVigentes();
+  const terminosVigentes = verificando ? undefined : terminosConsultados;
+  const isLoadingTerminos = cargandoTerminos || verificando;
   const { mutateAsync: publicarTerminos, isPending: isPublicando } = usePublicarTerminos();
 
   const [modoVista, setModoVista] = useState("editar"); // editar | vista

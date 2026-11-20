@@ -465,6 +465,36 @@
   display: none;
 }
 
+.detalleCargando {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 0;
+}
+
+.panelCargando {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.columnaCargando {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+@media (min-width: 64rem) {
+  .panelCargando {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1441px) and (min-height: 717px) {
+  .detalleCargando {
+    flex: 1;
+  }
+}
+
 .vacio {
   display: flex;
   flex-direction: column;

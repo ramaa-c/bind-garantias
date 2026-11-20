@@ -104,7 +104,7 @@ const ACCIONES = [
 
 export default function CadenasValor() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const [searchTerm, setSearchTerm] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("todas");
   const [canalFiltro, setCanalFiltro] = useState(OPCION_TODOS.value);
@@ -122,10 +122,12 @@ export default function CadenasValor() {
 
   // Queries
   const {
-    data: activeCadenas,
-    isLoading: isLoadingActive,
+    data: cadenasConsultadas,
+    isLoading: cargandoCadenas,
     refetch: refetchActive,
   } = useObtenerTodasWebConEstado();
+  const activeCadenas = verificando ? undefined : cadenasConsultadas;
+  const isLoadingActive = cargandoCadenas || verificando;
 
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();

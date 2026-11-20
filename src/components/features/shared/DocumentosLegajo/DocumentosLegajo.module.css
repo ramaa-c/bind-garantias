@@ -546,6 +546,27 @@
 
 /* ── DROPZONE ────────────────────────────────────────────────────────────────── */
 
+.viewerCargando {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.dropzoneCargando {
+  flex: 1;
+  min-height: 11rem;
+}
+
+:global(.legajoAdmin) .viewerCargando {
+  flex: 0 0 auto;
+}
+
+:global(.legajoAdmin) .dropzoneCargando {
+  flex: 0 0 auto;
+  height: 11rem;
+}
+
 .dropzoneContainer {
   display: flex;
   flex-direction: column;

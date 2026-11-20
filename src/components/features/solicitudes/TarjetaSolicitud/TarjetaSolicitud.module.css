@@ -308,3 +308,11 @@
     display: inline-flex;
   }
 }
+
+.cardCargando,
+.cardCargando:hover {
+  --tone: rgba(var(--overlay-rgb), 0.12);
+  border-color: rgba(var(--overlay-rgb), 0.08);
+  cursor: default;
+  transform: none;
+}

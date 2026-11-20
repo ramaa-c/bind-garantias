@@ -177,6 +177,13 @@ const TABS = [
 // Filas fantasma con la forma real del panel de CDAs (encabezado + filas de
 // criterio con badge/fecha/acciones): mientras carga se ve la estructura, no
 // un spinner centrado.
+const SECCIONES_DATOS_CARGANDO = [
+  { area: "areaGeneral", filas: [1, 1, 1, 3] },
+  { area: "areaDomicilio", filas: [1, 2, 2, 1] },
+  { area: "areaClasificacion", filas: [3] },
+  { area: "areaFechas", filas: [2] },
+];
+
 const CdasPanelSkeleton = () => (
   <section className={styles.cdasSection}>
     <div className={`${styles.sectionCardHeader} ${styles.cdasSectionHeaderRow}`}>
@@ -2796,9 +2803,11 @@ export default function EmpresaDetalle() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido — un usuario
   // vinculado solo por UsuarioCadenaValor no debería poder ver el detalle de
   // NINGUNA empresa (esta pantalla no filtra por cadena propia).
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
 
-  const { data: socio, isLoading } = useSocioPorId(id);
+  const { data: socioConsultado, isLoading: cargandoSocio } = useSocioPorId(id);
+  const socio = verificando ? undefined : socioConsultado;
+  const isLoading = cargandoSocio || verificando;
   // Mismo hook/queryKey que ya usa UsuariosVinculadosSection (ver DatosTab
   // más abajo) - react-query lo dedupea, así que esto no duplica el
   // request, solo expone la lista acá arriba para pasársela a
@@ -2902,23 +2911,38 @@ export default function EmpresaDetalle() {
         </header>
 
         <div className={styles.tabsRow}>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <nav className={styles.tabs} aria-hidden="true">
             {TABS.map((tab) => (
-              <Skeleton key={tab.key} width="9rem" height="2.2rem" radius="0.6rem" />
+              <span key={tab.key} className={styles.tabBtn}>
+                <Skeleton width="6.5rem" height="0.85rem" />
+              </span>
             ))}
-          </div>
+          </nav>
         </div>
 
         <div className={styles.tabContent}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem", padding: "0.5rem 0" }}>
-            <Skeleton width="14rem" height="1rem" />
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ display: "flex", gap: "1rem" }}>
-                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
-                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
-                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
+          <div className={styles.datosTab}>
+            <div className={styles.datosScroll}>
+              <div className={styles.sectionsGrid} aria-busy="true">
+                {SECCIONES_DATOS_CARGANDO.map(({ area, filas }) => (
+                  <section key={area} className={`${styles.sectionCard} ${styles[area]}`}>
+                    <header className={styles.sectionCardHeader}>
+                      <Skeleton width="1.9rem" height="1.9rem" radius="0.55rem" />
+                      <Skeleton width="8rem" height="0.9rem" />
+                    </header>
+                    <div className={styles.sectionCardFields}>
+                      {filas.map((columnas, i) => (
+                        <div key={i} className={`${styles.fieldFull} ${columnas > 1 ? styles.fieldRow : ""}`}>
+                          {Array.from({ length: columnas }).map((_, j) => (
+                            <Skeleton key={j} width="100%" height="2.85rem" radius="0.75rem" />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>

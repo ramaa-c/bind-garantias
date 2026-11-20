@@ -82,7 +82,9 @@ const EmpresaRowSkeleton = () => (
     </td>
     <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
     <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
-    <td></td>
+    <td style={{ textAlign: "right" }}>
+      <Skeleton width="6.25rem" height="1.95rem" radius="0.55rem" style={{ marginLeft: "auto" }} />
+    </td>
     <td></td>
   </tr>
 );
@@ -139,7 +141,7 @@ export default function Empresas() {
   // únicamente en AdminGuard para mantener afuera a un usuario vinculado
   // solo por UsuarioCadenaValor (esta pantalla muestra empresas de TODAS
   // las cadenas, sin ningún filtro propio).
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const [busqueda, setBusqueda] = useState("");
   const [debouncedBusqueda] = useDebounce(busqueda, 400);
   const [tipoPersona, setTipoPersona] = useState(FILTROS_POR_DEFECTO.tipoPersona);
@@ -168,7 +170,9 @@ export default function Empresas() {
     return { Denominacion: term };
   }, [debouncedBusqueda]);
 
-  const { data, isLoading, isFetching } = useObtenerSocios(params);
+  const { data: sociosConsultados, isLoading: cargandoSocios, isFetching } = useObtenerSocios(params);
+  const data = verificando ? undefined : sociosConsultados;
+  const isLoading = cargandoSocios || verificando;
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
 
   const empresas = useMemo(() => {

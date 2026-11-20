@@ -41,12 +41,14 @@ const contarCambios = (actual, guardado) => {
 // alta/edición vive en TipoRelacionSocioModal - acá solo el listado.
 export default function TiposRelacionSocio() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [itemEditar, setItemEditar] = useState(null);
 
-  const { data: activosData, isLoading } = useTiposRelacionSocioActivos();
+  const { data: activosConsultados, isLoading: cargandoActivos } = useTiposRelacionSocioActivos();
+  const activosData = verificando ? undefined : activosConsultados;
+  const isLoading = cargandoActivos || verificando;
   const activos = Array.isArray(activosData)
     ? activosData
     : activosData?.items || activosData?.data || [];
@@ -61,8 +63,10 @@ export default function TiposRelacionSocio() {
   const [requisitosSincronizados, setRequisitosSincronizados] = useState(null);
   const [confirmParamOpen, setConfirmParamOpen] = useState(false);
 
-  const { data: cadenasWebData, isLoading: isLoadingCadenas } =
+  const { data: cadenasWebConsultadas, isLoading: cargandoCadenas } =
     useObtenerTodasWebConEstado();
+  const cadenasWebData = verificando ? undefined : cadenasWebConsultadas;
+  const isLoadingCadenas = cargandoCadenas || verificando;
   const cadenasWeb = Array.isArray(cadenasWebData)
     ? cadenasWebData
     : cadenasWebData?.items || cadenasWebData?.data || [];

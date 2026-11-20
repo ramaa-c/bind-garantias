@@ -5,6 +5,7 @@ import { useCrearCda, useActualizarCda, useProbarCda } from "../../../../hooks/u
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { INTEGRACIONES_MOCKS, SGRPLUS_FUNCIONES } from "../../../../utils/integracionesMocks";
 import { Button } from "../../../ui/Button/Button";
+import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
 import { ReglaAsistente } from "../ReglaAsistente/ReglaAsistente";
@@ -363,6 +364,12 @@ const detectarIntegracion = (expr) => {
 // pantalla elegida). Debe devolver true si guardó con éxito (y mostrar sus
 // propios toasts/errores); el workbench solo orquesta la prueba previa, el
 // modal de confirmación y el estado de carga.
+const COLUMNAS_CARGANDO = [
+  { clase: "colFuente", titulo: "Fuente de Datos", subtitulo: "Elegí la integración y el campo a evaluar", bloques: ["3.1rem", "16rem"] },
+  { clase: "colRegla", titulo: "Definí la Regla", subtitulo: "Condición, mensaje y datos del criterio", bloques: ["3.1rem", "3rem", "3rem", "3.25rem", "3.1rem"] },
+  { clase: "colAcciones", titulo: "Probá y Publicá", subtitulo: "Vinculación por defecto, prueba en vivo y guardado", bloques: ["6rem", "3rem", "3rem"] },
+];
+
 export function CdaWorkbench({
   cdaEditando = null,
   onCancel,
@@ -373,6 +380,7 @@ export function CdaWorkbench({
   subtitulo,
   submitLabel,
   extraToggleOptions,
+  cargando = false,
 }) {
   const { mutateAsync: crearCdaBase } = useCrearCda();
   const { mutateAsync: actualizarCdaBase } = useActualizarCda();
@@ -791,6 +799,40 @@ export function CdaWorkbench({
       setConfirmOpen(false);
     }
   };
+
+  if (cargando) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.titleBox}>
+            {onCancel && (
+              <button type="button" className={styles.backButton} onClick={onCancel}>
+                <FiArrowLeft /> Volver
+              </button>
+            )}
+            <h1>{titulo || "Editar Criterio de Aceptación"}</h1>
+            <p>{subtitulo || "Modificá los datos del criterio seleccionado."}</p>
+          </div>
+        </div>
+        <div className={styles.workbench} aria-busy="true">
+          {COLUMNAS_CARGANDO.map(({ clase, titulo: tituloColumna, subtitulo: subtituloColumna, bloques }, n) => (
+            <div key={clase} className={`${styles.col} ${styles[clase]}`}>
+              <div className={styles.colHeader}>
+                <span className={styles.colStepBadge}>{n + 1}</span>
+                <div>
+                  <h2 className={styles.colTitle}>{tituloColumna}</h2>
+                  <p className={styles.colSubtitle}>{subtituloColumna}</p>
+                </div>
+              </div>
+              {bloques.map((alto, i) => (
+                <Skeleton key={i} width="100%" height={alto} radius="0.75rem" />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

@@ -109,7 +109,7 @@ const UsuarioRowSkeleton = () => (
 );
 
 export default function Usuarios() {
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const emailActual = useAuthStore((state) => state.user?.email || "");
   const [busqueda, setBusqueda] = useState("");
   const [debouncedBusqueda] = useDebounce(busqueda, 300);
@@ -124,7 +124,9 @@ export default function Usuarios() {
     porDefecto: ELEMENTOS_POR_PAGINA,
   });
 
-  const { data, isLoading, isFetching, isError } = useListarUsuarios();
+  const { data: usuariosConsultados, isLoading: cargandoUsuarios, isFetching, isError } = useListarUsuarios();
+  const data = verificando ? undefined : usuariosConsultados;
+  const isLoading = cargandoUsuarios || verificando;
   const bloquearMutation = useBloquearUsuario();
   const desbloquearMutation = useDesbloquearUsuario();
 

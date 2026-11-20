@@ -13,6 +13,7 @@ import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardC
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
+import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { MigracionExitosaModal } from "../MigracionExitosaModal/MigracionExitosaModal";
 import { EstadoMigracionModal } from "../EstadoMigracionModal/EstadoMigracionModal";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
@@ -646,6 +647,16 @@ export function LegajoUniversalBar({
       <>
         {migracionExitosaModal}
         {avisoBanner}
+        <div className={`${styles.container} ${styles.containerCargando}`} aria-busy="true">
+          <Skeleton className={styles.gauge} radius="2.5rem 2.5rem 0.5rem 0.5rem" />
+          <div className={styles.textGroup}>
+            <Skeleton width="9rem" height="0.95rem" />
+            <Skeleton width="70%" height="0.75rem" style={{ marginTop: "0.25rem" }} />
+          </div>
+          <div className={styles.cta}>
+            <Skeleton className={styles.ctaBtn} height="2rem" radius="pill" style={{ minWidth: "8rem" }} />
+          </div>
+        </div>
       </>
     );
   }

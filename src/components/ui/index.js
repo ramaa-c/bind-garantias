@@ -32,7 +32,6 @@ export * from './BuscadorCuit/BuscadorCuit'
 export * from './TicketSimulacion/TicketSimulacion'
 export * from './TicketPrestamoFijo/TicketPrestamoFijo'
 
-export * from './SkeletonTable/SkeletonTable'
 export * from './Skeleton/Skeleton';
 export * from './Paginacion/Paginacion';
 export * from './BuscadorListado/BuscadorListado';

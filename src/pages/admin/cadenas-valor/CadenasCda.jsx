@@ -46,7 +46,7 @@ const LogoCadena = ({ cadena, grande = false }) =>
 
 export default function CadenasCda() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const [searchParams] = useSearchParams();
   const pantallaInicial = PANTALLAS.some((p) => p.value === searchParams.get("pantalla"))
     ? searchParams.get("pantalla")
@@ -58,7 +58,9 @@ export default function CadenasCda() {
   const [verDetalleMovil, setVerDetalleMovil] = useState(() => !!searchParams.get("cadena"));
   const [contenedorPie, setContenedorPie] = useState(null);
 
-  const { data: activeCadenas, isLoading: isLoadingActive } = useObtenerTodasWebConEstado();
+  const { data: cadenasConsultadas, isLoading: cargandoCadenas } = useObtenerTodasWebConEstado();
+  const activeCadenas = verificando ? undefined : cadenasConsultadas;
+  const isLoadingActive = cargandoCadenas || verificando;
 
   // Solo cadenas activas: no tiene sentido configurarle CDAs a una cadena inactiva.
   const activeList = (activeCadenas || []).filter((c) => c.activaOperativa);
@@ -184,7 +186,40 @@ export default function CadenasCda() {
 
         <section className={styles.detalle}>
           {!activeItem ? (
-            !isLoadingActive && (
+            isLoadingActive ? (
+              <div aria-busy="true" className={styles.detalleCargando}>
+                <div className={styles.cadena}>
+                  <Skeleton width="2.1rem" height="2.1rem" radius="0.55rem" />
+                  <Skeleton width="14rem" height="1.05rem" />
+                  <Skeleton width="8rem" height="0.8rem" />
+                </div>
+                <div className={styles.pantallas}>
+                  {PANTALLAS.map((p) => (
+                    <span key={p.value} className={styles.pantalla}>
+                      <Skeleton width="9.5rem" height="1rem" />
+                    </span>
+                  ))}
+                </div>
+                <div className={styles.panel}>
+                  <div className={`${styles.panelCuerpo} ${styles.panelCargando}`}>
+                    <div className={styles.columnaCargando}>
+                      <Skeleton width="45%" height="0.95rem" />
+                      <Skeleton width="85%" height="0.75rem" />
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} width="100%" height="4.25rem" radius="0.75rem" />
+                      ))}
+                    </div>
+                    <div className={styles.columnaCargando}>
+                      <Skeleton width="30%" height="0.95rem" />
+                      <Skeleton width="70%" height="0.75rem" />
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} width="100%" height="3.25rem" radius="0.75rem" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
               <div className={styles.vacio}>
                 <FiInbox aria-hidden="true" />
                 Activá una cadena de valor para configurar sus CDAs.
