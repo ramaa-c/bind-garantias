@@ -202,6 +202,10 @@ export const PendientesEmpresa = () => {
   };
 
   const irAUsuarios = () => navigate(`${basePath}/usuarios`);
+  const irAInvitarUsuario = () => {
+    setAbierto(false);
+    navigate(`${basePath}/usuarios?invitar=1`);
+  };
 
   const items = !visible
     ? []
@@ -237,8 +241,8 @@ export const PendientesEmpresa = () => {
                 titulo: "Vincular un usuario de la empresa",
                 corto: "Vincular un usuario",
                 descripcion:
-                  "El primer usuario que vincules queda como administrador y su email pasa a ser el de la empresa.",
-                accion: { texto: "Vincular", onClick: irAUsuarios },
+                  "Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar.",
+                accion: { texto: "Vincular", onClick: irAInvitarUsuario },
               }),
         faltaTelefono &&
           (puedeValidarTelefono
@@ -248,7 +252,7 @@ export const PendientesEmpresa = () => {
                 icono: <FiPhone />,
                 titulo: "Validar el teléfono de la empresa",
                 corto: "Validar teléfono",
-                descripcion: "Sin teléfono validado no se puede aceptar la solicitud ni migrar a SGR+.",
+                descripcion: "Sin teléfono validado no vas a poder avanzar con tus solicitudes.",
                 accion: {
                   texto: "Validar teléfono",
                   onClick: abrirContacto,
@@ -271,7 +275,7 @@ export const PendientesEmpresa = () => {
           corto: "Email de facturación",
           descripcion: isVendor
             ? "Cargalo si lo conocés, o lo va a completar el usuario de la empresa."
-            : "Sin email de facturación no se puede aceptar la solicitud ni migrar a SGR+.",
+            : "Sin email de facturación no vas a poder avanzar con tus solicitudes.",
           accion: {
             texto: "Cargar email",
             onClick: abrirFacturacion,
@@ -387,7 +391,7 @@ export const PendientesEmpresa = () => {
           onClose={omitirTelefono}
           onGuardar={guardarTelefono}
           textoCancelar="Omitir por ahora"
-          descripcion="Tu empresa todavía no tiene un teléfono validado y sin él no vas a poder avanzar con tus solicitudes ni con la migración a SGR+. Ingresá el número y te enviamos un SMS con un código."
+          descripcion="Tu empresa todavía no tiene un teléfono validado y sin él no vas a poder avanzar con tus solicitudes. Ingresá el número y te enviamos un SMS con un código."
         />
       </FormProvider>
       <FormProvider {...metodosFacturacion}>

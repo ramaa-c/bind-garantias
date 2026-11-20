@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
@@ -331,7 +332,23 @@ export function SociosLegajo({
     });
   }, [esPersonaFisica, requisitos, adminMode, tabsExtra, descripcionBasePorClave, clavesBaseActivas, isLoadingCatalogoActivo, fiadorForzado]);
 
-  const [activeTab, setActiveTab] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("seccion");
+  const setActiveTab = useCallback(
+    (valor) => {
+      setSearchParams(
+        (previos) => {
+          const nuevos = new URLSearchParams(previos);
+          const seccion = typeof valor === "function" ? valor(previos.get("seccion")) : valor;
+          if (seccion) nuevos.set("seccion", seccion);
+          else nuevos.delete("seccion");
+          return nuevos;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);
   const [facturacionModalOpen, setFacturacionModalOpen] = useState(false);
 
@@ -393,7 +410,7 @@ export function SociosLegajo({
         setActiveTab(isMobile ? null : tabsDisponibles[0].key);
       }
     }
-  }, [tabsDisponibles, activeTab]);
+  }, [tabsDisponibles, activeTab, setActiveTab]);
 
   // socioLegajoData.representantes junta Representante Legal (230) y
   // Apoderado (210, ver useObtenerDatosSocioLegajo) - cada pestaña se
@@ -498,7 +515,7 @@ export function SociosLegajo({
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [activeTab, tabsDisponibles]);
+  }, [activeTab, tabsDisponibles, setActiveTab]);
 
   const totalParticipacion = useMemo(() => {
     const sum = accionistas.reduce((a, s) => a + Number(s.participacion || 0), 0);

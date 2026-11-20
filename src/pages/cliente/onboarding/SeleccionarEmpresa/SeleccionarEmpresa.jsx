@@ -310,7 +310,7 @@ export const SeleccionarEmpresa = () => {
   const sinEmpresas = !cargandoEmpresas && empresas.length === 0;
 
   return (
-    <div className={styles.pageContainer}>
+    <div key={vista} className={styles.pageContainer}>
       {/* Mobile: selector de empresa y las dos vistas como pestañas (en
           escritorio los dos están en el sidebar). */}
       {!sinEmpresas && (

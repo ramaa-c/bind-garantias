@@ -22,6 +22,7 @@ import { useVendor } from "../../../hooks/useVendor";
 import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
 import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
 import { useAsistenciaInterna, separarEmpresasAsistidas } from "../../../hooks/useAsistenciaInterna";
+import { rutaPanelVendor } from "../../../utils/vistaPanelVendor";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
@@ -315,9 +316,7 @@ export const OnboardingGuard = ({ children }) => {
   if (usuarioWebId && tieneEmpresas) {
     if (isVendor) {
       if (!activeSocioId && !isSeleccionarEmpresaPage && !isAltaDatosPage) {
-        return (
-          <Navigate to={`${basePath}/seleccionar-empresa`} replace />
-        );
+        return <Navigate to={rutaPanelVendor(basePath)} replace />;
       }
 
       if (

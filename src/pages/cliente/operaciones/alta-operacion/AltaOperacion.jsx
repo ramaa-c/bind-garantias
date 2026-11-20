@@ -330,7 +330,6 @@ export const AltaOperacion = () => {
   });
 
   const tipoProducto = useWatch({ control, name: "tipoProducto" });
-  const familiaProducto = useWatch({ control, name: "familiaProducto" });
   const moneda = useWatch({ control, name: "moneda" });
 
   // Línea real (TipoLimiteCadenaValor) que corresponde al tipoProducto
@@ -889,19 +888,8 @@ export const AltaOperacion = () => {
           montoMaximo: Number(l.montolinea) || 0,
         }));
 
-      const mostrarTipoCalculo = familiaProducto === "cheque";
-      const opcionesCalculo = mostrarTipoCalculo
-        ? [
-            { value: "monto_factura", label: "por monto de factura" },
-            { value: "monto_cheque", label: "por monto de cheque" },
-          ]
-        : [];
-
       return (
         <Paso3Simulador
-          // La simulación se ve en vivo en el panel lateral de
-          // Paso3Simulador (ya no hay modal de resultados): "Enviar
-          // solicitud" valida montos ahí y, si pasan, llega acá.
           onContinuar={async () => {
             handleSubmit(onSubmitFinal, (errors) => {
               console.error("Errores de validación del schema:", errors);
@@ -909,11 +897,10 @@ export const AltaOperacion = () => {
           }}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
-          opcionesCalculo={opcionesCalculo}
-          mostrarTipoCalculo={mostrarTipoCalculo}
+          mostrarTipoCalculo={false}
           disableMonto={esMontoUnico}
           montoMaximoOverride={Number(lineaSeleccionada?.montolinea) || undefined}
-          labelFecha="Plazo estimado"
+          labelFecha="Plazo estimado (opcional)"
           labelMonto="Monto requerido"
           isSubmitting={enviandoSolicitud}
         />
@@ -944,7 +931,7 @@ export const AltaOperacion = () => {
         return {
           badge: "Alta de línea",
           t: "¿Qué querés financiar?",
-          s: "Elegí la línea, definí las condiciones y mirá la simulación al instante.",
+          s: "Elegí la línea y definí las condiciones de tu solicitud.",
         };
       default:
         return { badge: "Alta de Línea", t: "Alta de Operación", s: "" };

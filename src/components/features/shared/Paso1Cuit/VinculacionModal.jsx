@@ -4,6 +4,8 @@ import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import styles from "./VinculacionModal.module.css";
 
+const PREFIJOS_PERSONA_HUMANA = ["20", "23", "24", "25", "26", "27"];
+
 // Confirmación de "esta es mi empresa" antes de vincularla al usuario (es
 // irreversible). A diferencia del ConfirmacionModal genérico, muestra la
 // empresa destacada y exige marcar un check antes de habilitar Confirmar,
@@ -27,6 +29,34 @@ export default function VinculacionModal({
   }
 
   const inicial = (nombreEmpresa || "").trim().charAt(0).toUpperCase() || "?";
+  const esPersonaHumana = PREFIJOS_PERSONA_HUMANA.includes(String(cuit || "").replace(/\D/g, "").slice(0, 2));
+  const textos = esPersonaHumana
+    ? esVendor
+      ? {
+          titulo: "Confirmá la razón social",
+          texto: "Vas a sumar a esta persona humana a los clientes que gestionás:",
+          aviso: "Una vez que confirmes queda vinculada a tu usuario. Asegurate de que sea la correcta.",
+          check: "Confirmo que es la persona que voy a gestionar y que los datos son correctos.",
+        }
+      : {
+          titulo: "Confirmá tu razón social",
+          texto: "Vas a vincular esta razón social a tu usuario:",
+          aviso: "Una vez que confirmes no vas a poder cambiarla. Asegurate de que sea la correcta.",
+          check: "Confirmo que esta razón social es la mía y que los datos son correctos.",
+        }
+    : esVendor
+      ? {
+          titulo: "Confirmá la empresa",
+          texto: "Vas a sumar esta empresa a las que gestionás:",
+          aviso: "Una vez que confirmes queda vinculada a tu usuario. Asegurate de que sea la correcta.",
+          check: "Confirmo que es la empresa que voy a gestionar y que los datos son correctos.",
+        }
+      : {
+          titulo: "Confirmá tu empresa",
+          texto: "Vas a vincular esta empresa a tu usuario:",
+          aviso: "Una vez que confirmes no vas a poder cambiarla. Asegurate de que sea la correcta.",
+          check: "Confirmo que esta es mi empresa y que los datos son correctos.",
+        };
 
   return (
     <Modal
@@ -55,14 +85,10 @@ export default function VinculacionModal({
           <span className={styles.icono} aria-hidden="true">
             <FiLink />
           </span>
-          <h2 className={styles.titulo}>{esVendor ? "Confirmá la empresa" : "Confirmá tu empresa"}</h2>
+          <h2 className={styles.titulo}>{textos.titulo}</h2>
         </div>
 
-        <p className={styles.texto}>
-          {esVendor
-            ? "Vas a sumar esta empresa a las que gestionás:"
-            : "Vas a vincular esta empresa a tu usuario:"}
-        </p>
+        <p className={styles.texto}>{textos.texto}</p>
 
         <div className={styles.empresa}>
           <span className={styles.avatar} aria-hidden="true">
@@ -70,15 +96,15 @@ export default function VinculacionModal({
           </span>
           <div className={styles.empresaTexto}>
             <strong>{nombreEmpresa}</strong>
-            <span>CUIT {cuit}</span>
+            <span>
+              {esPersonaHumana ? "Persona humana · " : ""}CUIT {cuit}
+            </span>
           </div>
         </div>
 
         <p className={styles.aviso}>
           <FiAlertTriangle aria-hidden="true" />
-          {esVendor
-            ? "Una vez que confirmes queda vinculada a tu usuario. Asegurate de que sea la correcta."
-            : "Una vez que confirmes no vas a poder cambiarla. Asegurate de que sea la correcta."}
+          {textos.aviso}
         </p>
 
         <label
@@ -89,11 +115,7 @@ export default function VinculacionModal({
             checked={confirmado}
             onChange={(e) => setConfirmado(e.target.checked)}
           />
-          <span>
-            {esVendor
-              ? "Confirmo que es la empresa que voy a gestionar y que los datos son correctos."
-              : "Confirmo que esta es mi empresa y que los datos son correctos."}
-          </span>
+          <span>{textos.check}</span>
         </label>
       </div>
     </Modal>

@@ -37,6 +37,7 @@ import { useChannel } from "../../../../context/useChannel";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 import styles from "./Sidebar.module.css";
+import { guardarVistaPanelVendor, rutaPanelVendor } from "../../../../utils/vistaPanelVendor";
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -176,9 +177,7 @@ export default function Sidebar({ isOpen, onClose }) {
   // después se elige la nueva, o ninguna para volver al panel con todas.
   // vista: "solicitudes" | "empresas" para ir al panel con todas.
   const handleElegirEmpresa = (socioId, vista = "solicitudes") => {
-    const rutaPanel = !isVendor
-      ? `${basePath}/elegir-empresa`
-      : `${basePath}/seleccionar-empresa${vista === "empresas" ? "?vista=empresas" : ""}`;
+    const rutaPanel = !isVendor ? `${basePath}/elegir-empresa` : rutaPanelVendor(basePath, vista);
     if (!socioId && !socioIdActivo) {
       navigate(rutaPanel);
       onClose();
@@ -187,6 +186,7 @@ export default function Sidebar({ isOpen, onClose }) {
     if (String(socioId ?? "") === String(socioIdActivo ?? "")) return;
     const cambiar = () => {
       cambiarEmpresaStore();
+      if (isVendor && !socioId) guardarVistaPanelVendor(vista);
       if (socioId) {
         setActiveSocioId(socioId);
         navigate(`${basePath}${isVendor ? "/legajo" : "/solicitudes"}`);
@@ -287,7 +287,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const altaCompleta = migrado;
   const mostrarProgreso = empresaOperable && (!migrado || !altaCompletaYaVista);
   const proximoPaso = altaCompleta
-    ? "¡Alta completa! Tu empresa ya está en SGR+"
+    ? "¡Alta completa! Tu empresa ya puede operar"
     : !legajoDesbloqueado
       ? solicitudEnOtraPlataforma
         ? "Tenés una solicitud en curso en otra plataforma"

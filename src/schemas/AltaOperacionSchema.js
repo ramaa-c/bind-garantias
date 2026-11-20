@@ -28,5 +28,5 @@ export const AltaOperacionSchema = z.object({
       invalid_type_error: "Ingresa un monto válido",
     })
     .positive({ message: "El monto debe ser mayor a 0" }),
-  plazo: z.string().min(1, "El plazo es obligatorio"),
+  plazo: z.string().optional(),
 });

@@ -16,84 +16,6 @@ import {
 } from "../../../../hooks/useCatalogos";
 import { simboloMoneda, esMonedaPesos } from "../../../../utils/monedaUtils";
 
-const defaultParametros = {
-  lineas: {
-    tasaGeneral: 35.5,
-    montoMinimo: 1000000,
-    montoMaximo: 500000000,
-    comisionOtorgamiento: 1.5,
-  },
-  cheques: {
-    tasaGeneral: 43.34,
-    montoMinimo: 50000,
-    montoMaximo: 25000000,
-    comisionOtorgamiento: 2.5,
-    derechoMercado: 0.0476,
-    arancelBolsa: 0.2219,
-    valoresCobro: 6000,
-    gestionCobro: 70,
-  },
-  pagares: {
-    tasaGeneral: 32.0,
-    montoMinimo: 500000,
-    montoMaximo: 150000000,
-    comisionOtorgamiento: 2.0275,
-    derechoMercado: 0.06,
-    arancelBolsa: 1.115,
-  },
-  prestamos: {
-    tasaGeneral: 44.0,
-    montoMinimo: 2000000,
-    montoMaximo: 80000000,
-    comisionBanco: 1.0,
-    comisionSgr: 2.0,
-  },
-};
-
-const getRatesConfig = () => {
-  const stored = localStorage.getItem("tasas_y_montos_config");
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      const merged = { ...defaultParametros };
-      Object.keys(defaultParametros).forEach((key) => {
-        merged[key] = { ...defaultParametros[key], ...parsed[key] };
-      });
-      return merged;
-    } catch (e) {
-      console.error("Error parsing stored config", e);
-    }
-  }
-  return defaultParametros;
-};
-
-const calculateDays = (dateStr) => {
-  if (!dateStr) return 71.365;
-  let dateObj;
-  
-  if (typeof dateStr === "string" && dateStr.includes("/")) {
-    const parts = dateStr.split("/");
-    if (parts.length === 3) {
-      dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
-    }
-  }
-  
-  if (!dateObj || isNaN(dateObj.getTime())) {
-    dateObj = new Date(dateStr);
-  }
-  
-  if (isNaN(dateObj.getTime())) return 71.365;
-  
-  const diffTime = dateObj.getTime() - new Date().getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays > 0 ? diffDays : 71.365;
-};
-
-// Rediseño 2026-10: la simulación ya no se abre en un modal al tocar
-// "Calcular" - se recalcula en vivo en un panel lateral (debajo del
-// formulario en mobile, con una barra fija abajo) y "Enviar solicitud" corre
-// las mismas validaciones de monto que antes hacía Calcular, y si pasan,
-// envía directamente (onContinuar).
 export default function Paso3Simulador({
   onContinuar,
   mostrarTipoCalculo = true,
@@ -146,8 +68,6 @@ export default function Paso3Simulador({
 
   const campoFecha = "plazo";
 
-  const config = getRatesConfig();
-
   useEffect(() => {
     if (opcionesProducto?.length === 1) {
       setValue("tipoProducto", opcionesProducto[0].value, {
@@ -178,27 +98,11 @@ export default function Paso3Simulador({
 
     const esValido = await trigger(camposATrigger);
     if (esValido) {
-      // Dynamic validation based on localStorage limits
-      const activeProduct = tipoProductoValue; // cheques, pagares, prestamos
-      const productParams = config[activeProduct];
       const montoNum = Number(montoValue);
-      // montoMaximoOverride es el techo real de la línea elegida
-      // (TipoLimiteCadenaValor.MontoLinea) - cuando está presente manda por
-      // sobre el montoMaximo simulado/local de config[activeProduct].
-      const montoMaximoEfectivo =
-        montoMaximoOverride > 0 ? montoMaximoOverride : productParams?.montoMaximo;
-
-      if (productParams && montoNum < productParams.montoMinimo) {
+      if (montoMaximoOverride > 0 && montoNum > montoMaximoOverride) {
         setError("monto", {
           type: "manual",
-          message: `El monto mínimo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(productParams.montoMinimo)}`,
-        });
-        return;
-      }
-      if (montoMaximoEfectivo > 0 && montoNum > montoMaximoEfectivo) {
-        setError("monto", {
-          type: "manual",
-          message: `El monto máximo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(montoMaximoEfectivo)}`,
+          message: `El monto máximo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(montoMaximoOverride)}`,
         });
         return;
       }
@@ -219,9 +123,6 @@ export default function Paso3Simulador({
     );
   };
 
-  // --- CÁLCULOS SIMULADOS BASADOS EN EL MONTO INGRESADO Y LA CONFIGURACIÓN ---
-  const isMontoFactura = tipoCalculo === "monto_factura";
-  const isDolarPagare = tipoProductoValue === "pagare" && monedaValue === "2";
   const montoNumerico = Number(montoValue) || 0;
   const formatCurrency = (val) =>
     enPesos
@@ -235,162 +136,6 @@ export default function Paso3Simulador({
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(val)}`;
-
-  const formatDolar = (val) =>
-    "USD " +
-    new Intl.NumberFormat("es-AR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(val);
-
-  let netoCheque, totalCostosCheque, filasCostosCheque, datosResumenCheque, datoExtraTotal, textoAlerta;
-
-  if (isDolarPagare) {
-    const activeParams = config.pagares;
-    const sgrPct = activeParams.comisionOtorgamiento / 100;
-    const dias = plazoValue ? calculateDays(plazoValue) : 90;
-    const descuentoPct = (activeParams.tasaGeneral / 100) * (dias / 365);
-    const mercadoPct = activeParams.derechoMercado / 100;
-
-    const sgrVal = montoNumerico * sgrPct;
-    const descuentoVal = montoNumerico * descuentoPct;
-    const mercadoVal = montoNumerico * mercadoPct;
-    const ivaVal = (sgrVal + mercadoVal) * 0.21;
-    const derechoBolsa = 0;
-
-    totalCostosCheque = sgrVal + descuentoVal + mercadoVal + ivaVal;
-    netoCheque = montoNumerico - totalCostosCheque;
-
-    filasCostosCheque = [
-      { label: `Comisión SGR (${activeParams.comisionOtorgamiento}%)`, value: formatDolar(sgrVal) },
-      { label: `Descuento operado (${activeParams.tasaGeneral}% TNA)`, value: formatDolar(descuentoVal) },
-      { label: `Derecho mercado (${activeParams.derechoMercado}%)`, value: formatDolar(mercadoVal) },
-      { label: "Derecho bolsa", value: formatDolar(derechoBolsa) },
-      { label: "IVA (21%)", value: formatDolar(ivaVal) },
-    ];
-
-    datoExtraTotal = { label: "CFT estimado", value: `${((totalCostosCheque / montoNumerico) * (365 / dias) * 100).toFixed(2)}% anual` };
-
-    datosResumenCheque = [
-      { label: "Vto del pagaré", value: plazoValue ? new Date(plazoValue).toLocaleDateString("es-AR") : "31/05/2023" },
-      { label: "Monto del pagaré", value: formatDolar(montoNumerico) },
-    ];
-
-    textoAlerta = (
-      <>
-        Tasa promocional subvencionada por Syngenta. Con cupos y por tiempo limitado
-        <br /><br />
-        <strong>IMPORTANTE</strong>
-        <br /><br />
-        Tasa de interés utilizada para el cálculo: {activeParams.tasaGeneral}% TNA (cierre al día hábil cambiario anterior).
-      </>
-    );
-  } else if (isMontoFactura) {
-    const activeParams = config.cheques;
-    netoCheque = montoNumerico;
-
-    const dias = plazoValue ? calculateDays(plazoValue) : 71.365;
-    const intereses = montoNumerico * (activeParams.tasaGeneral / 100) * (dias / 365);
-    const subsidio = montoNumerico * -0.01;
-    const bonificacion = montoNumerico * (-6.0 / 100) * (dias / 365);
-    const comisionBind = montoNumerico * (activeParams.comisionOtorgamiento / 100);
-    const derechoMercado = montoNumerico * (activeParams.derechoMercado / 100);
-    const arancelBolsa = montoNumerico * (activeParams.arancelBolsa / 100);
-    const valoresCobro = enPesos ? activeParams.valoresCobro * (montoNumerico / 2000000) : 0;
-    const iva = (comisionBind + arancelBolsa + valoresCobro) * 0.21;
-    const descuentoTope = montoNumerico * -0.1248375 * (dias / 71.365);
-
-    totalCostosCheque =
-      intereses +
-      subsidio +
-      bonificacion +
-      comisionBind +
-      derechoMercado +
-      arancelBolsa +
-      valoresCobro +
-      iva +
-      descuentoTope;
-
-    const montoDelCheque = netoCheque + totalCostosCheque;
-
-    filasCostosCheque = [
-      { label: `Intereses (${activeParams.tasaGeneral}% TNA*)`, value: formatCurrency(intereses) },
-      { label: "Subsidio (-1,00% directo)", value: formatCurrency(subsidio) },
-      { label: "Bonificación de puntos de tasa (-6,00% TNA)", value: formatCurrency(bonificacion) },
-      { label: `Comisión Bind Garantías (${activeParams.comisionOtorgamiento}%)`, value: formatCurrency(comisionBind) },
-      { label: `Derecho de mercado (${activeParams.derechoMercado}%)`, value: formatCurrency(derechoMercado) },
-      { label: `Comisión sociedad de bolsa (${activeParams.arancelBolsa}%)`, value: formatCurrency(arancelBolsa) },
-      { label: `Valores al cobro Caja de Valores** ($${activeParams.valoresCobro} base)`, value: formatCurrency(valoresCobro) },
-      { label: "IVA (21,00%)", value: formatCurrency(iva) },
-      { label: "Descuento por tope de tasa (1,00%)", value: formatCurrency(descuentoTope) },
-    ];
-
-    datoExtraTotal = { label: "CFT estimado", value: `${((totalCostosCheque / montoNumerico) * (365 / dias) * 100).toFixed(2)}% anual` };
-
-    datosResumenCheque = [
-      { label: "Vto del cheque", value: plazoValue ? new Date(plazoValue).toLocaleDateString("es-AR") : "31/10/2026" },
-      { label: "Monto del cheque", value: formatCurrency(montoDelCheque) },
-    ];
-
-    textoAlerta = (
-      <>
-        Tasa promocional subvencionada por John Deere. Con cupos y por tiempo limitado
-        <br /><br />
-        Dado que el tipo de cambio y la tasa de interés varían diariamente, los valores expresados son indicativos al solo efecto de permitir estimar el monto del cheque a emitir.
-        <br /><br />
-        La tasa de interés utilizada en el simulador es estimativa.
-      </>
-    );
-  } else {
-    const activeParams = config.cheques;
-    const dias = plazoValue ? calculateDays(plazoValue) : 71.365;
-
-    const comisionBind = montoNumerico * (activeParams.comisionOtorgamiento / 100);
-    const intereses = montoNumerico * (activeParams.tasaGeneral / 100) * (dias / 365);
-    const derechoMercado = montoNumerico * (activeParams.derechoMercado / 100);
-    const arancelBolsa = montoNumerico * (activeParams.arancelBolsa / 100);
-    const valoresCobro = enPesos ? activeParams.valoresCobro : 0;
-    const gestionCobro = enPesos ? activeParams.gestionCobro : 0;
-    const iva = (comisionBind + arancelBolsa + valoresCobro) * 0.21;
-    
-    totalCostosCheque =
-      comisionBind +
-      intereses +
-      derechoMercado +
-      arancelBolsa +
-      valoresCobro +
-      gestionCobro +
-      iva;
-    netoCheque = montoNumerico - totalCostosCheque;
-
-    filasCostosCheque = [
-      {
-        label: `Comisión Bind Garantías (${activeParams.comisionOtorgamiento}%)`,
-        value: formatCurrency(comisionBind),
-      },
-      { label: `Intereses (${activeParams.tasaGeneral}% TNA*)`, value: formatCurrency(intereses) },
-      { label: "Derecho bolsa", value: formatCurrency(0) },
-      { label: `Derecho mercado (${activeParams.derechoMercado}%)`, value: formatCurrency(derechoMercado) },
-      { label: `Arancel Soc Bolsa (${activeParams.arancelBolsa}%)`, value: formatCurrency(arancelBolsa) },
-      ...(enPesos
-        ? [
-            { label: "Valores al cobro", value: formatCurrency(valoresCobro) },
-            { label: "Gestión de cobro", value: formatCurrency(gestionCobro) },
-          ]
-        : []),
-      { label: "IVA", value: formatCurrency(iva) },
-    ];
-
-    datosResumenCheque = [
-      { label: "Vto del cheque", value: plazoValue ? new Date(plazoValue).toLocaleDateString("es-AR") : "31/07/2026" },
-      { label: "Monto del cheque", value: formatCurrency(montoNumerico) },
-    ];
-
-    datoExtraTotal = { label: "CFT estimado", value: `${((totalCostosCheque / montoNumerico) * (365 / dias) * 100).toFixed(2)}% anual` };
-    textoAlerta = enPesos
-      ? "IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa."
-      : "IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa. Los gastos fijos en pesos (valores al cobro y gestión de cobro) no se incluyen en esta estimación.";
-  }
 
   // Con una sola moneda disponible no hay nada que elegir: queda
   // seleccionada siempre (también si el valor guardado no corresponde a
@@ -416,9 +161,10 @@ export default function Paso3Simulador({
     }
   }, [opcionesProducto, tipoProductoValue, setValue]);
 
-  const simulacionLista = !!tipoProductoValue && montoNumerico > 0;
-  const fmt = (val) => (isDolarPagare ? formatDolar(val) : formatCurrency(val));
-  const netoTexto = simulacionLista ? fmt(netoCheque) : "—";
+  const solicitudLista = !!tipoProductoValue && montoNumerico > 0;
+  const montoTexto = montoNumerico > 0 ? formatCurrency(montoNumerico) : "—";
+  const lineaElegida = opcionesProducto.find((o) => String(o.value) === String(tipoProductoValue));
+  const plazoTexto = plazoValue ? new Date(plazoValue).toLocaleDateString("es-AR") : null;
 
   return (
     <div className={styles.container}>
@@ -542,47 +288,31 @@ export default function Paso3Simulador({
         </section>
       </div>
 
-      <aside className={styles.panel} aria-labelledby="alta-sim-titulo">
+      <aside className={styles.panel} aria-labelledby="alta-resumen-titulo">
         <div className={styles.panelHead}>
-          <h2 id="alta-sim-titulo" className={styles.panelTitulo}>
-            Simulación
+          <h2 id="alta-resumen-titulo" className={styles.panelTitulo}>
+            Resumen
           </h2>
-          <span className={styles.panelTag}>Estimada</span>
         </div>
 
-        {simulacionLista ? (
+        {solicitudLista ? (
           <>
             <div className={styles.netoBox}>
-              <span className={styles.netoLabel}>Neto a recibir</span>
-              <strong className={styles.netoValor}>{netoTexto}</strong>
-              {datoExtraTotal && (
-                <span className={styles.netoExtra}>
-                  {datoExtraTotal.label}{" "}
-                  <strong>{datoExtraTotal.value}</strong>
-                </span>
-              )}
+              <span className={styles.netoLabel}>{labelMonto}</span>
+              <strong className={styles.netoValor}>{montoTexto}</strong>
             </div>
 
-            <dl className={styles.costos}>
-              {filasCostosCheque.map((fila) => (
-                <div key={fila.label} className={styles.costoFila}>
-                  <dt>{fila.label}</dt>
-                  <dd>{fila.value}</dd>
-                </div>
-              ))}
-              <div className={`${styles.costoFila} ${styles.costoTotal}`}>
-                <dt>Total de costos</dt>
-                <dd>{fmt(totalCostosCheque)}</dd>
-              </div>
-            </dl>
-
             <div className={styles.resumenGrid}>
-              {datosResumenCheque.map((dato) => (
-                <div key={dato.label} className={styles.resumenItem}>
-                  <span>{dato.label}</span>
-                  <strong>{dato.value}</strong>
+              <div className={styles.resumenItem}>
+                <span>Línea</span>
+                <strong>{lineaElegida?.label || "—"}</strong>
+              </div>
+              {plazoTexto && (
+                <div className={styles.resumenItem}>
+                  <span>{labelFecha.replace(" (opcional)", "")}</span>
+                  <strong>{plazoTexto}</strong>
                 </div>
-              ))}
+              )}
             </div>
           </>
         ) : (
@@ -590,9 +320,7 @@ export default function Paso3Simulador({
             <strong>
               {tipoProductoValue ? "Ingresá un monto" : "Elegí una línea"}
             </strong>
-            <span>
-              Vas a ver acá cuánto recibís, los costos y el CFT estimado.
-            </span>
+            <span>Vas a ver acá el resumen de lo que vas a solicitar.</span>
           </div>
         )}
 
@@ -600,35 +328,27 @@ export default function Paso3Simulador({
           variant="primary"
           onClick={handleEnviar}
           isLoading={isSubmitting}
-          disabled={isSubmitting || !simulacionLista}
+          disabled={isSubmitting || !solicitudLista}
           className={styles.panelCta}
         >
           {isSubmitting ? "ENVIANDO..." : "Enviar solicitud"}
         </Button>
 
-        {simulacionLista && textoAlerta && (
-          <div className={styles.panelNota}>{textoAlerta}</div>
-        )}
-        {!simulacionLista && (
-          <p className={styles.panelNota}>
-            La tasa de interés utilizada en el simulador es estimativa.
-          </p>
-        )}
+        <p className={styles.panelNota}>
+          BIND Garantías va a evaluar tu solicitud y te avisamos el resultado.
+        </p>
       </aside>
 
-      {/* Mobile/tablet: el panel queda debajo del formulario, así que el neto
-          y la acción se repiten en una barra fija abajo para no tener que
-          scrollear hasta el final para enviar. */}
       <div className={styles.barraMovil}>
         <div className={styles.barraNeto}>
-          <span>Neto a recibir</span>
-          <strong>{netoTexto}</strong>
+          <span>{labelMonto}</span>
+          <strong>{montoTexto}</strong>
         </div>
         <Button
           variant="primary"
           onClick={handleEnviar}
           isLoading={isSubmitting}
-          disabled={isSubmitting || !simulacionLista}
+          disabled={isSubmitting || !solicitudLista}
           className={styles.barraCta}
         >
           {isSubmitting ? "ENVIANDO..." : "Enviar solicitud"}

@@ -33,7 +33,7 @@ export function MigracionExitosaModal({ isOpen, onClose, adminMode = false }) {
         <p className={styles.mensaje}>{mensaje}</p>
 
         <Button variant="primary" onClick={onClose} className={styles.btnAceptar}>
-          Aceptar
+          {adminMode ? "Aceptar" : "Ver mis solicitudes"}
         </Button>
       </div>
     </Modal>

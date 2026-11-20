@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   FiUsers,
@@ -7,13 +7,12 @@ import {
   FiMail,
   FiShield,
   FiUserX,
-  FiLifeBuoy,
   FiClock,
   FiInfo,
   FiMoreVertical,
   FiSend,
 } from "react-icons/fi";
-import { Button, Modal, Skeleton, SelectSimple } from "../../../components/ui";
+import { Button, Skeleton, SelectSimple } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/useChannel";
@@ -23,14 +22,10 @@ import {
   ROL_ADMIN,
   ROL_USUARIO,
   ESTADO_INVITACION,
-  RESULTADO_VINCULADA,
 } from "../../../hooks/useUsuariosEmpresa";
-import { ASISTENCIA_ACTIVA } from "../../../hooks/useAsistenciaInterna";
+import { InvitarUsuarioModal } from "../../../components/features/shared/InvitarUsuarioModal/InvitarUsuarioModal";
 import styles from "./UsuariosEmpresa.module.css";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LARGO_MAXIMO_NOMBRE = 75;
-const LARGO_MAXIMO_EMAIL = 100;
 
 const formatearFecha = (iso) => {
   if (!iso) return "";
@@ -39,134 +34,11 @@ const formatearFecha = (iso) => {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(fecha);
 };
 
-const formatearFechaHora = (iso) => {
-  if (!iso) return "";
-  const fecha = new Date(iso);
-  if (Number.isNaN(fecha.getTime())) return "";
-  return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(fecha);
-};
-
 const inicialesDeEmail = (email) => {
   const local = String(email || "").split("@")[0];
   const partes = local.split(/[._\-+]+/).filter(Boolean);
   return ((partes[0]?.[0] || "") + (partes[1]?.[0] || partes[0]?.[1] || "")).toUpperCase() || "?";
 };
-
-function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin }) {
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [errores, setErrores] = useState({});
-  const [enviando, setEnviando] = useState(false);
-
-  const limpiar = () => {
-    setNombre("");
-    setEmail("");
-    setErrores({});
-  };
-
-  const cerrar = () => {
-    if (enviando) return;
-    limpiar();
-    onClose();
-  };
-
-  const enviar = async (e) => {
-    e.preventDefault();
-    const nombreLimpio = nombre.trim();
-    const emailLimpio = email.trim();
-    const nuevosErrores = {};
-    if (!nombreLimpio) nuevosErrores.nombre = "Ingresá el nombre de la persona.";
-    if (!EMAIL_REGEX.test(emailLimpio)) nuevosErrores.email = "Ingresá un correo electrónico válido.";
-    if (Object.keys(nuevosErrores).length > 0) {
-      setErrores(nuevosErrores);
-      return;
-    }
-    setEnviando(true);
-    try {
-      const resultado = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
-      if (resultado === RESULTADO_VINCULADA) {
-        toast.success("Le dimos acceso a la empresa", {
-          description: `${emailLimpio} ya tenía cuenta: puede ingresar cuando quiera.`,
-        });
-      } else {
-        toast.success("Invitación enviada", { description: emailLimpio });
-      }
-      setEnviando(false);
-      limpiar();
-      onClose();
-    } catch (err) {
-      setEnviando(false);
-      setErrores({ general: err.message || "No pudimos enviar la invitación. Probá de nuevo." });
-    }
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={cerrar}
-      title="Invitar usuario"
-      subtitle="Va a poder operar en esta empresa"
-      maxWidth="30rem"
-      preventClose={enviando}
-      footer={
-        <div className={styles.modalAcciones}>
-          <Button type="button" variant="outline" size="md" onClick={cerrar} disabled={enviando}>
-            Cancelar
-          </Button>
-          <Button type="submit" form="form-invitar-usuario" variant="primary" size="md" isLoading={enviando}>
-            <FiMail /> Enviar invitación
-          </Button>
-        </div>
-      }
-    >
-      <form id="form-invitar-usuario" className={styles.formInvitar} onSubmit={enviar} noValidate>
-        <label className={styles.campo}>
-          <span className={styles.campoLabel}>Nombre y apellido</span>
-          <input
-            type="text"
-            className={`${styles.campoInput} ${errores.nombre ? styles.campoInputError : ""}`}
-            placeholder="Ana Pérez"
-            value={nombre}
-            maxLength={LARGO_MAXIMO_NOMBRE}
-            onChange={(e) => {
-              setNombre(e.target.value);
-              setErrores({});
-            }}
-            autoFocus
-          />
-          {errores.nombre && <span className={styles.campoError}>{errores.nombre}</span>}
-        </label>
-
-        <label className={styles.campo}>
-          <span className={styles.campoLabel}>Correo electrónico</span>
-          <input
-            type="email"
-            className={`${styles.campoInput} ${errores.email ? styles.campoInputError : ""}`}
-            placeholder="nombre@empresa.com"
-            value={email}
-            maxLength={LARGO_MAXIMO_EMAIL}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setErrores({});
-            }}
-          />
-          {errores.email && <span className={styles.campoError}>{errores.email}</span>}
-        </label>
-
-        {errores.general && <p className={styles.errorGeneral}>{errores.general}</p>}
-
-        <p className={styles.notaInvitar}>
-          <FiInfo aria-hidden="true" />
-          Si la persona ya tiene una cuenta, le damos acceso directamente. Si no, le enviamos un mail para que se
-          registre.{" "}
-          {entraComoAdmin
-            ? "Es el primer usuario de la empresa: entra como administrador y su email queda como el de la empresa."
-            : "Entra como usuario; una vez vinculada, podés hacerla administradora."}
-        </p>
-      </form>
-    </Modal>
-  );
-}
 
 const OPCIONES_ROL = [
   { value: ROL_ADMIN, label: "Administrador" },
@@ -185,13 +57,10 @@ export default function UsuariosEmpresa() {
     soyAsistente,
     cantidadAdmins,
     primerUsuarioEsAdmin,
-    asistenciaDisponible,
-    asistencia,
     invitar,
     reenviar,
     cambiarRol,
     quitarAcceso,
-    solicitarAsistencia,
   } = useUsuariosEmpresa({
     socioId: socioIdActivo,
     cuit: cuitActivo,
@@ -199,11 +68,25 @@ export default function UsuariosEmpresa() {
     esVendor: isVendor,
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pideInvitar = searchParams.get("invitar") === "1";
   const [invitarAbierto, setInvitarAbierto] = useState(false);
+  const modalInvitarAbierta = invitarAbierto || (pideInvitar && !cargando && soyAdmin);
+
+  const cerrarInvitar = () => {
+    setInvitarAbierto(false);
+    if (!pideInvitar) return;
+    setSearchParams(
+      (previos) => {
+        const nuevos = new URLSearchParams(previos);
+        nuevos.delete("invitar");
+        return nuevos;
+      },
+      { replace: true },
+    );
+  };
   const [aQuitar, setAQuitar] = useState(null);
   const [quitando, setQuitando] = useState(false);
-  const [confirmarAsistencia, setConfirmarAsistencia] = useState(false);
-  const [solicitando, setSolicitando] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(null);
   const [cambiandoRol, setCambiandoRol] = useState(null);
   const [reenviando, setReenviando] = useState(null);
@@ -267,21 +150,6 @@ export default function UsuariosEmpresa() {
       toast.error(error?.message || "No pudimos quitarle el acceso. Probá de nuevo.");
     } finally {
       setQuitando(false);
-    }
-  };
-
-  const pedirAsistencia = async () => {
-    setSolicitando(true);
-    try {
-      await solicitarAsistencia();
-      toast.success("Pedimos asistencia para tu empresa", {
-        description: "Le avisamos por mail al equipo de tu entidad.",
-      });
-      setConfirmarAsistencia(false);
-    } catch (error) {
-      toast.error(error?.message || "No pudimos pedir la asistencia. Probá de nuevo.");
-    } finally {
-      setSolicitando(false);
     }
   };
 
@@ -509,46 +377,9 @@ export default function UsuariosEmpresa() {
         </section>
       )}
 
-      {(asistenciaDisponible || asistencia) && (
-        <section
-          className={`${styles.asistencia} ${asistencia?.estado === ASISTENCIA_ACTIVA ? styles.asistenciaActiva : ""}`}
-          aria-labelledby="usuarios-asistencia"
-        >
-          <span className={styles.asistenciaIcono} aria-hidden="true">
-            <FiLifeBuoy />
-          </span>
-          <div className={styles.asistenciaTexto}>
-            <h2 id="usuarios-asistencia" className={styles.asistenciaTitulo}>
-              Asistencia de tu entidad
-            </h2>
-            {asistencia?.estado === ASISTENCIA_ACTIVA ? (
-              <p className={styles.asistenciaDescripcion}>
-                Una persona de tu entidad está asistiendo a la empresa
-                {asistencia.vencimiento ? ` hasta el ${formatearFechaHora(asistencia.vencimiento)}` : ""}.
-              </p>
-            ) : asistencia ? (
-              <p className={styles.asistenciaDescripcion}>
-                Pediste asistencia el {formatearFechaHora(asistencia.solicitadaEl)}. Cuando la persona ingrese, va a
-                tener acceso por un tiempo limitado.
-              </p>
-            ) : (
-              <p className={styles.asistenciaDescripcion}>
-                Si algo no se puede resolver, una persona de tu entidad puede ingresar como usuario, por un tiempo
-                limitado, para ayudarte.
-              </p>
-            )}
-          </div>
-          {!asistencia && (
-            <button type="button" className={styles.asistenciaBoton} onClick={() => setConfirmarAsistencia(true)}>
-              Solicitar asistencia
-            </button>
-          )}
-        </section>
-      )}
-
       <InvitarUsuarioModal
-        isOpen={invitarAbierto}
-        onClose={() => setInvitarAbierto(false)}
+        isOpen={modalInvitarAbierta}
+        onClose={cerrarInvitar}
         onInvitar={invitar}
         entraComoAdmin={primerUsuarioEsAdmin}
       />
@@ -570,19 +401,6 @@ export default function UsuariosEmpresa() {
           aQuitar ? { titulo: aQuitar.email, subtitulo: aQuitar.rol === ROL_ADMIN ? "Administrador" : "Usuario" } : undefined
         }
         confirmText={aQuitar?.esVos ? "Dejar la empresa" : "Quitar acceso"}
-        cancelText="Volver"
-      />
-
-      <ConfirmacionModal
-        isOpen={confirmarAsistencia}
-        onClose={() => !solicitando && setConfirmarAsistencia(false)}
-        onConfirm={pedirAsistencia}
-        isLoading={solicitando}
-        tone="warning"
-        icono={<FiLifeBuoy />}
-        titulo="¿Solicitar asistencia?"
-        mensaje="Una persona de tu entidad va a poder ingresar a la empresa con el mismo acceso que un usuario, por un tiempo limitado desde su primer ingreso. No se puede cortar antes de que venza."
-        confirmText="Solicitar asistencia"
         cancelText="Volver"
       />
     </section>

@@ -532,7 +532,10 @@ export function LegajoUniversalBar({
   const migracionExitosaModal = (
     <MigracionExitosaModal
       isOpen={showMigracionExitosa}
-      onClose={() => setShowMigracionExitosa(false)}
+      onClose={() => {
+        setShowMigracionExitosa(false);
+        if (!adminMode) navigate(`${basePath}/solicitudes`);
+      }}
       adminMode={adminMode}
     />
   );

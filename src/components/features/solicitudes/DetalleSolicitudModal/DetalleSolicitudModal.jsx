@@ -317,7 +317,7 @@ export const DetalleSolicitudModal = ({
                 <FiServer size={14} />
               </span>
               <div>
-                <p className={styles.estadoSgrTitulo}>Seguimiento en SGR+</p>
+                <p className={styles.estadoSgrTitulo}>Seguimiento de tu solicitud</p>
                 <p className={styles.estadoSgrTexto}>
                   Muy pronto vas a ver acá cada etapa de tu solicitud dentro de BIND Garantías: emisión del
                   certificado, firma del contrato y activación de la línea.

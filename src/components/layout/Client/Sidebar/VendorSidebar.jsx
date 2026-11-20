@@ -241,7 +241,18 @@ export function SelectorEmpresaVendor({ empresas, socioIdActivo, empresaActiva, 
         </ul>
       </div>
       <div className={styles.flotantePie}>
-        <button type="button" className={styles.link} onClick={() => elegir(null)}>
+        <button
+          type="button"
+          className={styles.link}
+          onClick={() => {
+            if (!onVerTodas) {
+              elegir(null);
+              return;
+            }
+            cerrar();
+            onVerTodas();
+          }}
+        >
           <FiBriefcase aria-hidden="true" /> Todas mis empresas
         </button>
         <span>{empresas.length} en total</span>
