@@ -135,6 +135,9 @@ export const catalogosService = {
       })
     ).data,
 
+  obtenerTipoDocumentoArchivo: async () =>
+    (await api.get("catalogos/TipoDocumentoArchivo")).data,
+
   // Trae los parámetros que un Modelo de Documento necesita para generarse
   // (ver api/ModeloDocumentoPDF)
   obtenerParametrosModeloDocumento: async (modeloId) =>

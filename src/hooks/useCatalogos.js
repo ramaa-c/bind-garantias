@@ -155,6 +155,23 @@ export const useTipoModeloDocumento = () =>
     },
   });
 
+export const useTipoDocumentoArchivo = () =>
+  useQuery({
+    queryKey: ["catalogos", "tipoDocumentoArchivo"],
+    queryFn: catalogosService.obtenerTipoDocumentoArchivo,
+    staleTime: STALE_TIME,
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const descripcionPorId = new Map();
+      arrayReal.forEach((item) => {
+        const id = Number(item?.tipodocumentoarchivoid);
+        const descripcion = item?.descripcion?.trim();
+        if (id && descripcion) descripcionPorId.set(id, descripcion);
+      });
+      return descripcionPorId;
+    },
+  });
+
 // TextoModeloDocumento/HTMLModeloDocumento (el contrato completo en base64)
 // se descartan acá: son varios cientos de KB por modelo y no se usan para
 // llenar el combo. Si en algún momento hacen falta, conviene pedirlos aparte

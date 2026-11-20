@@ -5,6 +5,8 @@ import { Button } from "../../../ui/Button/Button";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useRelationMetadata } from "../../../../hooks/useTipoRelacionSocio";
+import { useTipoDocumentoArchivo } from "../../../../hooks/useCatalogos";
+import { TIPO_DOCUMENTO_MAP } from "../../../../services/requisitosService";
 import {
   TABS_TIPO_PERSONA,
   esRelacionVisible,
@@ -42,6 +44,12 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   // Compartida con la mini parametrización de
   // terceros en TiposRelacionSocio.jsx - ver useRelationMetadata.
   const { relationMetadata } = useRelationMetadata();
+  const { data: descripcionPorTipoDocumento } = useTipoDocumentoArchivo();
+
+  const documentMetadata = DOCUMENT_METADATA.map((doc) => ({
+    ...doc,
+    title: descripcionPorTipoDocumento?.get(TIPO_DOCUMENTO_MAP[doc.key]) || doc.title,
+  }));
 
   // Solapa activa actual
   const [activeTab, setActiveTab] = useState("sa");
@@ -163,7 +171,7 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
   const filasDe = (tipo) =>
     tipo === "documentos"
-      ? DOCUMENT_METADATA
+      ? documentMetadata
       : relationMetadata.filter(
           ({ key }) => !(activeTab === "fisica" && (key === "accionistas" || key === "representanteLegal")),
         );
