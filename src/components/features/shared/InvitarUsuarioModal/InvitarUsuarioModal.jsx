@@ -5,9 +5,9 @@ import { Button, Modal } from "../../../ui";
 import { RESULTADO_VINCULADA } from "../../../../hooks/useUsuariosEmpresa";
 import styles from "./InvitarUsuarioModal.module.css";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LARGO_MAXIMO_NOMBRE = 75;
-const LARGO_MAXIMO_EMAIL = 100;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const LARGO_MAXIMO_NOMBRE = 75;
+export const LARGO_MAXIMO_EMAIL = 100;
 
 export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin }) {
   const [nombre, setNombre] = useState("");

@@ -30,8 +30,11 @@ import {
 import { usuarioVinculacionService } from "../../../../services/usuarioVinculacionService";
 import { obtenerDatosTokenApi } from "../../../../api/tokenApi";
 import { useChannel } from "../../../../context/useChannel";
+import { useUsuariosEmpresa } from "../../../../hooks/useUsuariosEmpresa";
 import ContactoModal from "../ContactoModal/ContactoModal";
 import FacturacionModal from "../FacturacionModal/FacturacionModal";
+import { PasoInvitacion } from "./PasoInvitacion";
+import { PASOS_INVITACION } from "./pasosInvitacion";
 import styles from "./PendientesEmpresa.module.css";
 
 const esquemaFacturacion = z.object({
@@ -129,6 +132,7 @@ export const PendientesEmpresa = () => {
   const [facturacionAbierta, setFacturacionAbierta] = useState(false);
   const [avisoBloqueoVisto, setAvisoBloqueoVisto] = useState(null);
   const [todoEnOrden, setTodoEnOrden] = useState(false);
+  const [verOtros, setVerOtros] = useState(false);
 
   const {
     socioIdActivo,
@@ -138,6 +142,7 @@ export const PendientesEmpresa = () => {
     emailFacturacion,
     esAdminEmpresa,
     isVendor,
+    tipoCanalComercializacionId,
     isLoading,
   } = useEmpresaActiva();
   const { cadenaId } = useCadenaActiva();
@@ -161,6 +166,12 @@ export const PendientesEmpresa = () => {
     enabled: isVendor && !!cuitLimpio,
     staleTime: 1000 * 60,
   });
+  const { primerUsuarioEsAdmin, invitar, reenviar } = useUsuariosEmpresa({
+    socioId: isVendor ? socioIdActivo : null,
+    cuit: isVendor ? cuitActivo : null,
+    tipoCanalSocioId: tipoCanalComercializacionId,
+    esVendor: isVendor,
+  });
   const { data: tieneCertificadoPyme, isLoading: cargandoCertificadoPyme } = useTieneCertificadoPyme(socioIdActivo);
   // Con la carga bloqueada (CDA / SGRPlusCore) el aviso de PyME ("podés
   // seguir completando el legajo") contradice al banner de bloqueo de
@@ -178,7 +189,12 @@ export const PendientesEmpresa = () => {
   const puedeValidarTelefono = esAdminEmpresa && !isVendor;
   const faltaUsuario =
     isVendor && !cargandoUsuarios && !usuariosVinculados.some((u) => String(u.usuarioWebId) !== String(miUsuarioWebId));
-  const hayInvitacionPendiente = (invitaciones || []).some((inv) => String(inv.vinculado ?? "") !== "1");
+  const invitacionPendiente = (invitaciones || []).find((inv) => String(inv.vinculado ?? "") !== "1");
+  const hayInvitacionPendiente = !!invitacionPendiente;
+  // Vendor con la empresa ya validada (CDAs aprobados) y sin usuario propio:
+  // invitar al cliente es el próximo paso. Va en el botón y en la cabecera del
+  // panel, con el formulario adentro, en vez de como un pendiente más.
+  const pasoInvitacion = visible && faltaUsuario && !cargandoBloqueo && !cargaBloqueada;
   const faltaCertificadoPyme =
     !cargandoCertificadoPyme && !tieneCertificadoPyme && !cargandoBloqueo && !cargaBloqueada;
 
@@ -224,6 +240,7 @@ export const PendientesEmpresa = () => {
           ),
         },
         faltaUsuario &&
+          !pasoInvitacion &&
           (hayInvitacionPendiente
             ? {
                 id: "invitacion",
@@ -287,7 +304,7 @@ export const PendientesEmpresa = () => {
   const total = items.length;
   const hayBloqueo = items.some((i) => i.nivel === "bloqueo");
 
-  const cantidadVisible = visible ? total : null;
+  const cantidadVisible = visible ? total + (pasoInvitacion ? 1 : 0) : null;
   const [cantidadAnterior, setCantidadAnterior] = useState(cantidadVisible);
   if (cantidadVisible !== cantidadAnterior) {
     setCantidadAnterior(cantidadVisible);
@@ -329,6 +346,7 @@ export const PendientesEmpresa = () => {
 
   const alternar = () => {
     if (hayBloqueo) marcarAvisoBloqueoVisto();
+    setVerOtros(false);
     setAbierto((a) => !a);
   };
 
@@ -404,7 +422,7 @@ export const PendientesEmpresa = () => {
     </>
   );
 
-  if (total === 0) {
+  if (total === 0 && !pasoInvitacion) {
     return (
       <>
         {todoEnOrden && visible && (
@@ -423,8 +441,61 @@ export const PendientesEmpresa = () => {
     );
   }
 
-  const { tono, etiqueta, texto } = textosBoton(items);
-  const iconoTono = tono === "bloqueo" ? <FiX /> : tono === "espera" ? <FiClock /> : <FiAlertCircle />;
+  const { tono, etiqueta, texto } = pasoInvitacion
+    ? hayInvitacionPendiente
+      ? { tono: "espera", etiqueta: "Esperando al cliente", texto: "Invitación enviada" }
+      : { tono: "paso", etiqueta: "Próximo paso", texto: "Invitar al cliente" }
+    : textosBoton(items);
+  const iconoTono = pasoInvitacion ? (
+    hayInvitacionPendiente ? <FiClock /> : <FiMail />
+  ) : tono === "bloqueo" ? (
+    <FiX />
+  ) : tono === "espera" ? (
+    <FiClock />
+  ) : (
+    <FiAlertCircle />
+  );
+  const pasoActualInvitacion = hayInvitacionPendiente ? 2 : 1;
+
+  const renderListaPendientes = (clase) => (
+    <div className={clase}>
+      {SECCIONES.map((seccion) => {
+        const delNivel = items.filter((i) => i.nivel === seccion.nivel);
+        if (delNivel.length === 0) return null;
+        return (
+          <section key={seccion.nivel} className={`${styles.seccion} ${styles[`nivel_${seccion.nivel}`]}`}>
+            <h3 className={styles.seccionTitulo}>
+              <span aria-hidden="true">{seccion.icono}</span>
+              {seccion.titulo}
+              <span className={styles.seccionCantidad}>{delNivel.length}</span>
+            </h3>
+            {delNivel.map((item) => (
+              <div key={item.id} className={styles.item}>
+                <span className={styles.itemIcono} aria-hidden="true">
+                  {item.icono}
+                </span>
+                <div className={styles.itemTextos}>
+                  <strong>{item.titulo}</strong>
+                  <p>{item.descripcion}</p>
+                  {item.accion && (
+                    <Button
+                      variant={item.accion.secundaria ? "outline" : "primary"}
+                      size="sm"
+                      className={styles.itemAccion}
+                      disabled={item.accion.disabled}
+                      onClick={cerrarYEjecutar(item.accion.onClick)}
+                    >
+                      {item.accion.texto}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
+        );
+      })}
+    </div>
+  );
 
   const panel = (
     <div
@@ -434,55 +505,64 @@ export const PendientesEmpresa = () => {
       aria-label="Pendientes de la empresa"
     >
       {esHoja && <span className={styles.asa} aria-hidden="true" />}
-      <div className={styles.panelCabecera}>
-        <strong>Pendientes de la empresa</strong>
-        <span className={styles.panelEmpresa}>{nombreEmpresa}</span>
-        {esHoja && (
-          <button type="button" className={styles.cerrar} onClick={() => setAbierto(false)} aria-label="Cerrar">
-            <FiX />
-          </button>
-        )}
-      </div>
-      <div className={styles.panelCuerpo}>
-        {SECCIONES.map((seccion) => {
-          const delNivel = items.filter((i) => i.nivel === seccion.nivel);
-          if (delNivel.length === 0) return null;
-          return (
-            <section key={seccion.nivel} className={`${styles.seccion} ${styles[`nivel_${seccion.nivel}`]}`}>
-              <h3 className={styles.seccionTitulo}>
-                <span aria-hidden="true">{seccion.icono}</span>
-                {seccion.titulo}
-                <span className={styles.seccionCantidad}>{delNivel.length}</span>
-              </h3>
-              {delNivel.map((item) => (
-                <div key={item.id} className={styles.item}>
-                  <span className={styles.itemIcono} aria-hidden="true">
-                    {item.icono}
-                  </span>
-                  <div className={styles.itemTextos}>
-                    <strong>{item.titulo}</strong>
-                    <p>{item.descripcion}</p>
-                    {item.accion && (
-                      <Button
-                        variant={item.accion.secundaria ? "outline" : "primary"}
-                        size="sm"
-                        className={styles.itemAccion}
-                        disabled={item.accion.disabled}
-                        onClick={cerrarYEjecutar(item.accion.onClick)}
-                      >
-                        {item.accion.texto}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </section>
-          );
-        })}
-      </div>
-      <p className={styles.panelPie}>
-        <FiAlertCircle aria-hidden="true" /> Cada aviso desaparece solo cuando se resuelve.
-      </p>
+      {pasoInvitacion && esHoja && (
+        <button
+          type="button"
+          className={`${styles.cerrar} ${styles.cerrarFlotante}`}
+          onClick={() => setAbierto(false)}
+          aria-label="Cerrar"
+        >
+          <FiX />
+        </button>
+      )}
+      {!pasoInvitacion && (
+        <div className={styles.panelCabecera}>
+          <strong>Pendientes de la empresa</strong>
+          <span className={styles.panelEmpresa}>{nombreEmpresa}</span>
+          {esHoja && (
+            <button type="button" className={styles.cerrar} onClick={() => setAbierto(false)} aria-label="Cerrar">
+              <FiX />
+            </button>
+          )}
+        </div>
+      )}
+      {pasoInvitacion ? (
+        <div className={styles.panelCuerpo}>
+          <PasoInvitacion
+            key={socioIdActivo}
+            nombreEmpresa={nombreEmpresa}
+            invitacion={
+              invitacionPendiente && { email: invitacionPendiente.email || "", nombre: invitacionPendiente.denominacion || "" }
+            }
+            entraComoAdmin={primerUsuarioEsAdmin}
+            onInvitar={invitar}
+            onReenviar={reenviar}
+          />
+          {total > 0 && (
+            <>
+              <button
+                type="button"
+                className={`${styles.verOtros} ${hayBloqueo ? styles.verOtrosBloqueo : ""}`}
+                onClick={() => setVerOtros((v) => !v)}
+                aria-expanded={verOtros}
+              >
+                <FiAlertCircle aria-hidden="true" />
+                {plural(total, "pendiente más", "pendientes más")}
+                {hayBloqueo ? " · uno frena el envío" : ""}
+                <FiChevronDown className={verOtros ? styles.verOtrosAbierto : ""} aria-hidden="true" />
+              </button>
+              {verOtros && renderListaPendientes(styles.listaEnPaso)}
+            </>
+          )}
+        </div>
+      ) : (
+        renderListaPendientes(styles.panelCuerpo)
+      )}
+      {!pasoInvitacion && (
+        <p className={styles.panelPie}>
+          <FiAlertCircle aria-hidden="true" /> Cada aviso desaparece solo cuando se resuelve.
+        </p>
+      )}
     </div>
   );
 
@@ -496,7 +576,7 @@ export const PendientesEmpresa = () => {
         aria-haspopup="dialog"
         aria-label={`${etiqueta}: ${texto}. Ver pendientes de la empresa`}
       >
-        {tono === "bloqueo" && <span className={styles.latido} aria-hidden="true" />}
+        {(tono === "bloqueo" || (pasoInvitacion && hayBloqueo)) && <span className={styles.latido} aria-hidden="true" />}
         <span className={styles.botonIcono} aria-hidden="true">
           {iconoTono}
         </span>
@@ -504,8 +584,15 @@ export const PendientesEmpresa = () => {
           <small>{etiqueta}</small>
           <b>{texto}</b>
         </span>
-        <span className={styles.botonCantidad} aria-hidden="true">
-          {total}
+        {pasoInvitacion && (
+          <span className={styles.botonProgreso} aria-hidden="true">
+            {PASOS_INVITACION.map((paso, i) => (
+              <i key={paso} className={i < pasoActualInvitacion ? styles.progresoHecho : i === pasoActualInvitacion ? styles.progresoActual : ""} />
+            ))}
+          </span>
+        )}
+        <span className={`${styles.botonCantidad} ${pasoInvitacion ? styles.botonCantidadPaso : ""}`} aria-hidden="true">
+          {pasoInvitacion ? (total > 0 ? `+${total}` : "") : total}
         </span>
         <FiChevronDown className={styles.botonFlecha} aria-hidden="true" />
       </button>

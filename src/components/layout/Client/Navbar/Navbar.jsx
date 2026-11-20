@@ -15,7 +15,6 @@ import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import styles from "./Navbar.module.css";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { PendientesEmpresa } from "../../../features/shared/PendientesEmpresa/PendientesEmpresa";
-import { BotonBienvenida } from "../../../features/shared/BotonBienvenida/BotonBienvenida";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useThemeStore, LIGHT_MODE_ENABLED } from "../../../../store/useThemeStore";
 import { useSidebarStore } from "../../../../store/useSidebarStore";
@@ -148,7 +147,6 @@ const Navbar = ({
 
         {user ? (
           <>
-            <BotonBienvenida />
             <PendientesEmpresa />
 
             {/* Sin contenido de ayuda escrito todavía para algunas pantallas
