@@ -11,6 +11,7 @@ import {
   FiInfo,
   FiMoreVertical,
   FiSend,
+  FiBriefcase,
 } from "react-icons/fi";
 import { Button, Skeleton, SelectSimple } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -21,6 +22,7 @@ import {
   useUsuariosEmpresa,
   ROL_ADMIN,
   ROL_USUARIO,
+  ROL_VENDOR,
   ESTADO_INVITACION,
 } from "../../../hooks/useUsuariosEmpresa";
 import { InvitarUsuarioModal } from "../../../components/features/shared/InvitarUsuarioModal/InvitarUsuarioModal";
@@ -40,6 +42,18 @@ const inicialesDeEmail = (email) => {
   return ((partes[0]?.[0] || "") + (partes[1]?.[0] || partes[0]?.[1] || "")).toUpperCase() || "?";
 };
 
+const ETIQUETA_ROL = {
+  [ROL_ADMIN]: "Administrador",
+  [ROL_USUARIO]: "Usuario",
+  [ROL_VENDOR]: "Vendor",
+};
+
+const CLASE_PILL_ROL = {
+  [ROL_ADMIN]: styles.pillAdmin,
+  [ROL_USUARIO]: styles.pillUsuario,
+  [ROL_VENDOR]: styles.pillVendor,
+};
+
 const OPCIONES_ROL = [
   { value: ROL_ADMIN, label: "Administrador" },
   { value: ROL_USUARIO, label: "Usuario" },
@@ -54,6 +68,7 @@ export default function UsuariosEmpresa() {
     usuarios,
     cargando,
     soyAdmin,
+    puedeInvitar,
     soyAsistente,
     cantidadAdmins,
     primerUsuarioEsAdmin,
@@ -71,7 +86,7 @@ export default function UsuariosEmpresa() {
   const [searchParams, setSearchParams] = useSearchParams();
   const pideInvitar = searchParams.get("invitar") === "1";
   const [invitarAbierto, setInvitarAbierto] = useState(false);
-  const modalInvitarAbierta = invitarAbierto || (pideInvitar && !cargando && soyAdmin);
+  const modalInvitarAbierta = invitarAbierto || (pideInvitar && !cargando && puedeInvitar);
 
   const cerrarInvitar = () => {
     setInvitarAbierto(false);
@@ -156,7 +171,8 @@ export default function UsuariosEmpresa() {
   const vinculados = usuarios.filter((u) => u.estado !== ESTADO_INVITACION);
   const invitaciones = usuarios.filter((u) => u.estado === ESTADO_INVITACION);
   const admins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
-  const comunes = vinculados.length - admins;
+  const comunes = vinculados.filter((u) => u.rol === ROL_USUARIO).length;
+  const vendors = vinculados.filter((u) => u.rol === ROL_VENDOR).length;
 
   const renderInvitacion = (usuario) => (
     <li key={usuario.id} className={`${styles.fila} ${styles.filaInvitacion}`}>
@@ -213,9 +229,10 @@ export default function UsuariosEmpresa() {
             </span>
             <span className={styles.etiquetas}>
               {usuario.esVos && <span className={`${styles.pill} ${styles.pillVos}`}>Vos</span>}
-              <span className={`${styles.pill} ${usuario.rol === ROL_ADMIN ? styles.pillAdmin : styles.pillUsuario}`}>
+              <span className={`${styles.pill} ${CLASE_PILL_ROL[usuario.rol]}`}>
                 {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
-                {usuario.rol === ROL_ADMIN ? "Administrador" : "Usuario"}
+                {usuario.rol === ROL_VENDOR && <FiBriefcase aria-hidden="true" />}
+                {ETIQUETA_ROL[usuario.rol]}
               </span>
             </span>
           </span>
@@ -224,7 +241,7 @@ export default function UsuariosEmpresa() {
           </span>
         </span>
 
-        {soyAdmin && (
+        {soyAdmin && usuario.rol !== ROL_VENDOR && (
           <span className={styles.acciones}>
             {esUltimoAdmin && <span className={styles.unicoAdmin}>Único administrador</span>}
             <span className={styles.accionesEscritorio}>
@@ -329,7 +346,7 @@ export default function UsuariosEmpresa() {
             <p className={styles.subtitulo}>Quiénes pueden operar en {nombreEmpresa || "esta empresa"}.</p>
           </div>
         </div>
-        {soyAdmin && (
+        {puedeInvitar && (
           <Button type="button" variant="primary" size="sm" onClick={() => setInvitarAbierto(true)}>
             <FiUserPlus /> Invitar usuario
           </Button>
@@ -339,7 +356,9 @@ export default function UsuariosEmpresa() {
       {!soyAdmin && !cargando && (
         <p className={styles.avisoComun}>
           <FiInfo aria-hidden="true" />
-          Solo los administradores de la empresa pueden invitar personas o cambiar roles.
+          {isVendor
+            ? "Como vendor podés invitar personas de la empresa. Los roles los administra la empresa."
+            : "Solo los administradores de la empresa pueden invitar personas o cambiar roles."}
         </p>
       )}
 
@@ -350,8 +369,13 @@ export default function UsuariosEmpresa() {
           </h2>
           {!cargando && (
             <span className={styles.contador}>
-              {admins} {admins === 1 ? "administrador" : "administradores"} · {comunes}{" "}
-              {comunes === 1 ? "usuario" : "usuarios"}
+              {[
+                `${admins} ${admins === 1 ? "administrador" : "administradores"}`,
+                `${comunes} ${comunes === 1 ? "usuario" : "usuarios"}`,
+                vendors > 0 && `${vendors} ${vendors === 1 ? "vendor" : "vendors"}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           )}
         </div>
@@ -366,7 +390,7 @@ export default function UsuariosEmpresa() {
         </ul>
       </section>
 
-      {soyAdmin && !cargando && invitaciones.length > 0 && (
+      {puedeInvitar && !cargando && invitaciones.length > 0 && (
         <section className={styles.seccion} aria-labelledby="usuarios-invitaciones">
           <div className={styles.seccionCabecera}>
             <h2 id="usuarios-invitaciones" className={styles.seccionTitulo}>
@@ -398,7 +422,7 @@ export default function UsuariosEmpresa() {
             : "Ya no va a poder ver ni operar esta empresa. Los datos que cargó quedan en el legajo."
         }
         detalle={
-          aQuitar ? { titulo: aQuitar.email, subtitulo: aQuitar.rol === ROL_ADMIN ? "Administrador" : "Usuario" } : undefined
+          aQuitar ? { titulo: aQuitar.email, subtitulo: ETIQUETA_ROL[aQuitar.rol] } : undefined
         }
         confirmText={aQuitar?.esVos ? "Dejar la empresa" : "Quitar acceso"}
         cancelText="Volver"
