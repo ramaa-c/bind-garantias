@@ -9,7 +9,6 @@ import { cdaService } from "../../../services/cdaService";
 import { esCdaActivo, esCdaActivoEstricto, getCdaId, getCdaProp } from "../../../utils/cdaUtils";
 import { resolverGrupoCda } from "../../../utils/grupoCdaUtils";
 import { TODAS_PANTALLAS_CDA_GLOBAL } from "../../../utils/pantallasCda";
-import { Spinner } from "../../../components/ui/Spinner/Spinner";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { CdaWorkbench, ToggleOptionRow } from "../../../components/features/admin/CdaWorkbench/CdaWorkbench";
 import { FiAlertCircle } from "react-icons/fi";
@@ -21,7 +20,7 @@ import styles from "./CdaFormPage.module.css";
 // para /admin/cdas/nuevo (esCdaId ausente) y /admin/cdas/:cdaId (edición).
 export default function CdaFormPage() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const { cdaId } = useParams();
   const esEdicion = !!cdaId;
   const navigate = useNavigate();
@@ -30,7 +29,9 @@ export default function CdaFormPage() {
   const usuarioWebId = useUsuarioWebIdActual();
 
   // useObtenerCda ya gatea "enabled" con !!cdaId por su cuenta.
-  const { data: cdaData, isLoading: isLoadingCda } = useObtenerCda(cdaId);
+  const { data: cdaConsultado, isLoading: cargandoCda } = useObtenerCda(cdaId);
+  const cdaData = verificando ? undefined : cdaConsultado;
+  const isLoadingCda = cargandoCda || verificando;
   // El GET filtrado por CdaID devuelve la misma forma "array o envuelto" que
   // el listado completo (ver cdaService.obtenerCda) - nunca un objeto suelto.
   const cdaEncontrado = esEdicion
@@ -344,11 +345,7 @@ export default function CdaFormPage() {
   if (bloqueado) return null;
 
   if (esEdicion && isLoadingCda) {
-    return (
-      <div className={styles.loadingWrap}>
-        <Spinner />
-      </div>
-    );
+    return <CdaWorkbench cargando onCancel={volverAlListado} />;
   }
 
   if (noEncontrado) {

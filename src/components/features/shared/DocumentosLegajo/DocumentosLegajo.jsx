@@ -36,6 +36,7 @@ import {
   BuscadorCuit,
   SelectFecha,
   InfoTooltip,
+  Skeleton,
   Spinner,
 } from "../../../ui";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
@@ -663,7 +664,12 @@ export function DocumentosLegajo({
           </p>
         </header>
 
-        {(() => {
+        {cargandoArchivos ? (
+          <div className={styles.viewerCargando} aria-busy="true" aria-label="Cargando archivos">
+            <Skeleton width="11rem" height="2.4rem" radius="0.7rem" />
+            <Skeleton className={styles.dropzoneCargando} width="100%" radius="0.875rem" />
+          </div>
+        ) : (() => {
             const bloqueSubTabs = showSubTabs && (
               <div className={styles.subTabsContainer}>
                 {files.map((file, idx) => {

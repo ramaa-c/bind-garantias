@@ -338,7 +338,7 @@ const LineaCard = ({
 // --- MAIN PAGE COMPONENT ---
 export default function LineasCadena() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
   const [isLineaModalOpen, setIsLineaModalOpen] = useState(false);
   const [activeLinea, setActiveLinea] = useState(null);
@@ -365,7 +365,9 @@ export default function LineasCadena() {
   });
 
   // Queries
-  const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWebConEstado();
+  const { data: cadenasConsultadas, isLoading: cargandoCadenas } = useObtenerTodasWebConEstado();
+  const cadenas = verificando ? undefined : cadenasConsultadas;
+  const isLoadingCadenas = cargandoCadenas || verificando;
   const { data: lineas, isLoading: isLoadingLineas } =
     useObtenerLimitesCadenaValor(selectedCadenaId);
   const { data: monedas } = useMonedas();

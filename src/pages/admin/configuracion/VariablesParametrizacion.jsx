@@ -9,9 +9,9 @@ import l from "../../../components/features/admin/ListadoAdmin/ListadoAdmin.modu
 const RowSkeleton = () => (
   <tr>
     <td><Skeleton width="60%" height="0.9rem" /></td>
-    <td><Skeleton width="30%" height="0.85rem" /></td>
-    <td style={{ textAlign: "center" }}>
-      <Skeleton width="28px" height="28px" radius="0.4rem" style={{ margin: "0 auto" }} />
+    <td><Skeleton width="5rem" height="1.25rem" radius="pill" /></td>
+    <td style={{ textAlign: "right" }}>
+      <Skeleton width="4.75rem" height="1.95rem" radius="0.55rem" style={{ marginLeft: "auto" }} />
     </td>
   </tr>
 );

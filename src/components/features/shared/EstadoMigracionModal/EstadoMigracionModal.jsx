@@ -12,7 +12,7 @@ import {
   FiPlusCircle,
 } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
-import { Spinner } from "../../../ui/Spinner/Spinner";
+import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { Button } from "../../../ui/Button/Button";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId } from "../../../../hooks/useSocios";
@@ -240,7 +240,31 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
       }
     >
       {cargando ? (
-        <Spinner center size={50} />
+        <div className={styles.container} aria-busy="true">
+          <div className={styles.resumen}>
+            <Skeleton className={styles.gauge} radius="2.5rem 2.5rem 0.5rem 0.5rem" />
+            <div className={styles.resumenTexto}>
+              <Skeleton width="9rem" height="0.95rem" />
+              <Skeleton width="13rem" height="0.75rem" style={{ marginTop: "0.3rem" }} />
+            </div>
+          </div>
+          {[4, 3].map((filas, i) => (
+            <div key={i} className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <Skeleton width="7rem" height="0.8rem" />
+                <Skeleton width="2.5rem" height="0.8rem" />
+              </div>
+              <ul className={styles.checklist}>
+                {Array.from({ length: filas }).map((_, j) => (
+                  <li key={j} className={styles.checklistItem}>
+                    <Skeleton width="1.1rem" height="1.1rem" radius="50%" />
+                    <Skeleton width={`${55 - j * 7}%`} height="0.8rem" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className={styles.container}>
           {hero ? (

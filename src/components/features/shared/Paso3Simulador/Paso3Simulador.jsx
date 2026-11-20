@@ -6,7 +6,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { FiSliders } from "react-icons/fi";
-import { Button, InputMonto, SelectFecha, SelectSocio } from "../../../ui";
+import { Button, InputMonto, SelectFecha, SelectSocio, Skeleton } from "../../../ui";
 import SelectorLinea from "./SelectorLinea";
 import styles from "./Paso3Simulador.module.css";
 import {
@@ -468,7 +468,17 @@ export default function Paso3Simulador({
           </div>
 
           {cargandoProductos ? (
-            <p className={styles.lineasVacio}>Cargando líneas...</p>
+            <div className={styles.lineasTarjetas} aria-busy="true" aria-label="Cargando líneas">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className={styles.lineaTarjeta}>
+                  <Skeleton width="2.5rem" height="2.5rem" radius="0.625rem" />
+                  <span className={styles.lineaTexto}>
+                    <Skeleton width="8rem" height="0.9rem" />
+                    <Skeleton width="11rem" height="0.7rem" style={{ marginTop: "0.35rem" }} />
+                  </span>
+                </div>
+              ))}
+            </div>
           ) : (
             <Controller
               name="tipoProducto"

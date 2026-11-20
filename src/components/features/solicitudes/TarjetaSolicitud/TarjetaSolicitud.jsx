@@ -1,6 +1,7 @@
 import React from "react";
 import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash } from "react-icons/fi";
 import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
+import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import styles from "./TarjetaSolicitud.module.css";
 
 const ESTADOS = {
@@ -17,6 +18,29 @@ const getStatusKey = (estado) => {
   if (e?.includes("cancel") || e?.includes("venc")) return "statusCancelled";
   return "statusWaiting";
 };
+
+export const TarjetaSolicitudSkeleton = () => (
+  <div className={`${styles.card} ${styles.cardCargando}`} aria-hidden="true">
+    <Skeleton className={styles.icono} radius="0.8rem" />
+    <div className={styles.info}>
+      <div className={styles.tituloFila}>
+        <Skeleton width="7rem" height="1rem" />
+        <Skeleton width="5.5rem" height="1.3rem" radius="pill" />
+      </div>
+      <Skeleton width="11rem" height="0.75rem" />
+    </div>
+    <div className={styles.montoBlock}>
+      <Skeleton width="6.5rem" height="0.65rem" />
+      <Skeleton width="8rem" height="1.25rem" />
+    </div>
+    <div className={styles.recorrido}>
+      <Skeleton width="100%" height="2.25rem" radius="0.6rem" />
+    </div>
+    <div className={styles.acciones}>
+      <Skeleton width="6.5rem" height="2.25rem" radius="pill" />
+    </div>
+  </div>
+);
 
 export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
   const statusKey = getStatusKey(solicitud.estado);

@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
+import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import styles from "./DetalleSolicitudModal.module.css";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../../services/sociosService";
@@ -62,7 +63,7 @@ export const DetalleSolicitudModal = ({
   const socio = Array.isArray(socioResp)
     ? socioResp[0]
     : socioResp?.items?.[0] || socioResp?.data?.[0];
-  const nombreFinal = nombreEmpresa || socio?.denominacion || "Cargando...";
+  const nombreFinal = nombreEmpresa || socio?.denominacion || "Empresa sin nombre";
 
   const socioIdTarget = solicitud?.socioid || socio?.socioid;
 
@@ -246,7 +247,7 @@ export const DetalleSolicitudModal = ({
           </div>
 
           <h2 className={styles.empresaNombre}>
-            {cargandoSocio ? "Buscando..." : nombreFinal}
+            {cargandoSocio ? <Skeleton width="14rem" height="1.35rem" /> : nombreFinal}
           </h2>
           <p className={styles.empresaCuit}>
             CUIT {solicitud.cuit || "No disponible"}
@@ -335,17 +336,25 @@ export const DetalleSolicitudModal = ({
               Accionistas / Fiadores
             </span>
             <span className={styles.countPill}>
-              {cargandoAccionistas
-                ? "Cargando..."
-                : `${accionistas.length} persona${accionistas.length !== 1 ? "s" : ""}`}
+              {cargandoAccionistas ? (
+                <Skeleton width="4.5rem" height="0.7rem" />
+              ) : (
+                `${accionistas.length} persona${accionistas.length !== 1 ? "s" : ""}`
+              )}
             </span>
           </div>
 
           <div className={styles.fiadoresGrid}>
             {cargandoAccionistas ? (
-              <p className={styles.emptyText}>
-                Buscando accionistas en el sistema...
-              </p>
+              Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className={styles.fiadorCard} aria-busy="true">
+                  <Skeleton width="2rem" height="2rem" radius="0.5625rem" />
+                  <div className={styles.fiadorInfo}>
+                    <Skeleton width="70%" height="0.85rem" />
+                    <Skeleton width="50%" height="0.5rem" radius="pill" style={{ marginTop: "0.45rem" }} />
+                  </div>
+                </div>
+              ))
             ) : accionistas.length > 0 ? (
               accionistas.map((accionista, i) => {
                 const nombre =

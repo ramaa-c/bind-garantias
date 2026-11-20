@@ -12,10 +12,10 @@ import {
   SelectSimple,
   SelectFechaSimple,
   Spinner,
-  SkeletonTable,
 } from "../../../components/ui";
 import {
   TarjetaSolicitud,
+  TarjetaSolicitudSkeleton,
   DetalleSolicitudModal,
   LegajoUniversalBar,
 } from "../../../components/features";
@@ -552,7 +552,7 @@ export default function Solicitudes() {
         
         <div className={styles.listContainer}>
           {isLoadingData ? (
-            <SkeletonTable rows={3} />
+            Array.from({ length: 3 }).map((_, i) => <TarjetaSolicitudSkeleton key={i} />)
           ) : listaSolicitudes.length === 0 ? (
             <div className={styles.emptyState}>
               <p>Todavía no tenés solicitudes. Cargá la primera con "Nueva operación".</p>

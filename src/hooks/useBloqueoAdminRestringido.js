@@ -9,9 +9,11 @@ import { useAdminRestrictions } from "./useAdminRestrictions";
 // cada página individual, para que no dependan únicamente de ese guard: si el
 // día de mañana se agrega una ruta nueva sin envolverla bien, o la lógica de
 // AdminGuard cambia sin querer, estas páginas igual se protegen solas.
-// Devuelve `true` mientras haya que bloquear el render (todavía cargando el
-// chequeo, o ya confirmado que está restringido) — el caller corta con un
-// `if (bloqueado) return null;` antes de renderizar contenido real.
+// Devuelve `bloqueado` (ya confirmado que está restringido: el caller corta
+// con `if (bloqueado) return null;`) y `verificando` (el chequeo todavía no
+// terminó: el caller se dibuja en modo carga, con su skeleton, sin mostrar
+// datos reales). Antes las dos cosas cortaban el render y el admin general
+// veía la pantalla vacía hasta que terminaba el chequeo.
 export const useBloqueoAdminRestringido = () => {
   const navigate = useNavigate();
   const { isRestricted, isPending } = useAdminRestrictions();
@@ -22,7 +24,7 @@ export const useBloqueoAdminRestringido = () => {
     }
   }, [isPending, isRestricted, navigate]);
 
-  return isPending || isRestricted;
+  return { bloqueado: !isPending && isRestricted, verificando: isPending };
 };
 
 export default useBloqueoAdminRestringido;

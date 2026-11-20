@@ -223,13 +223,15 @@ const ConfigModalInner = ({
 // --- MAIN PAGE COMPONENT ---
 export default function LineasProducto() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const [selectedTipoLimiteId, setSelectedTipoLimiteId] = useState("");
   const [activeProducto, setActiveProducto] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: limitTypes, isLoading: isLoadingLimitTypes } =
+  const { data: tiposConsultados, isLoading: cargandoTipos } =
     useTiposProducto();
+  const limitTypes = verificando ? undefined : tiposConsultados;
+  const isLoadingLimitTypes = cargandoTipos || verificando;
   const { data: allObligaciones } = useObligaciones();
 
   const { data: productosAsociados, isFetching: isFetchingProductos } =
@@ -295,7 +297,7 @@ export default function LineasProducto() {
       </div>
 
       <div className={styles.cardSection}>
-        {isFetchingProductos ? (
+        {selectedTipoLimiteId && isFetchingProductos ? (
           <div className={styles.productoCardGrid}>
             {[1, 2, 3, 4].map((i) => (
               <LineaSkeletonCard key={i} />

@@ -26,6 +26,14 @@
   outline-offset: 2px;
 }
 
+.containerCargando,
+.containerCargando:hover {
+  --tone-rgb: var(--overlay-rgb);
+  border-color: rgba(var(--overlay-rgb), 0.08);
+  background: var(--bg-elevado);
+  cursor: default;
+}
+
 .toneWarning {
   --tone-rgb: 245, 244, 0;
   --tone-color: var(--color-amarillo-bind);

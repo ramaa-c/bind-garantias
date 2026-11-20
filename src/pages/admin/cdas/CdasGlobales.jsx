@@ -77,9 +77,11 @@ const CdaRowSkeleton = () => (
 // (compartible, con "atrás" del navegador funcionando como se espera).
 export default function CdasGlobales() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
-  const bloqueado = useBloqueoAdminRestringido();
+  const { bloqueado, verificando } = useBloqueoAdminRestringido();
   const navigate = useNavigate();
-  const { data: todosCdasData, isLoading: isLoadingLista } = useObtenerTodosCdas();
+  const { data: cdasConsultados, isLoading: cargandoLista } = useObtenerTodosCdas();
+  const todosCdasData = verificando ? undefined : cdasConsultados;
+  const isLoadingLista = cargandoLista || verificando;
   const [searchTerm, setSearchTerm] = useState("");
   const [pantallaFiltro, setPantallaFiltro] = useState("TODAS");
   const [pagina, setPagina] = useState(1);

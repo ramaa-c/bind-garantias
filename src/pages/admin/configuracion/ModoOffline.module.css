@@ -60,16 +60,6 @@
   }
 }
 
-.loadingState {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.875rem;
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
 /* ── ESTADO NO DISPONIBLE (sin ningún dato) ────────────────────────────────
    Reemplaza statusHero + workspace por completo cuando ni siquiera hay un
    último estado conocido: mostrar la UI normal ahí caería en los defaults de
