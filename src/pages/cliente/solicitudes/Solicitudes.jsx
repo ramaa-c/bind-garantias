@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
-import { FiPlus, FiSearch, FiClock, FiX, FiXCircle, FiSliders, FiChevronDown } from "react-icons/fi";
+import { FiPlus, FiSearch, FiClock, FiX, FiXCircle, FiSliders, FiChevronDown, FiUserCheck } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { toast } from "sonner";
 import {
@@ -23,7 +23,6 @@ import { FilaSolicitudHistorial } from "../../../components/features/solicitudes
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
 import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useVerificarHabilitacionNuevaOperacion } from "../../../hooks/useVerificarHabilitacionSolicitudes";
@@ -41,7 +40,9 @@ import {
   ESTADO_RECHAZADA,
   estadoTextoDesde,
   esEstadoEnCurso,
+  esPorConfirmar,
   MOTIVO_CANCELACION_SOCIO,
+  MOTIVO_RECHAZO_EMPRESA,
   MENSAJE_SOLICITUD_OTRA_PLATAFORMA,
   procesosVigentes,
   procesosHuerfanosPorRechazoAutomatico,
@@ -163,7 +164,6 @@ export default function Solicitudes() {
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
   const [modalNuevaOperacionBloqueada, setModalNuevaOperacionBloqueada] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const {
     habilitada: nuevaOperacionHabilitada,
@@ -171,7 +171,8 @@ export default function Solicitudes() {
     cuitVerificado: cuitNuevaOperacionVerificado,
   } = useVerificarHabilitacionNuevaOperacion();
 
-  const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
+  const { cuitActivo, nombreEmpresa, socioIdActivo, esAdminEmpresa, isVendor } = useEmpresaActiva();
+  const puedeRevisar = esAdminEmpresa && !isVendor;
   const socioIdFinal = socioIdActivo || 0;
 
   const { data: solicitudesReal, isLoading: cargandoSolicitudes } =
@@ -213,12 +214,6 @@ export default function Solicitudes() {
   };
 
   const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
-
-  useEffect(() => {
-    const handler = () => setIsHelpOpen((prev) => !prev);
-    document.addEventListener("bindHelp:toggle", handler);
-    return () => document.removeEventListener("bindHelp:toggle", handler);
-  }, []);
 
   // Se bloquea el botón "Nueva Operación" (no el submit al final del
   // wizard) apenas exista CUALQUIER solicitud en curso — de cualquier línea,
@@ -369,47 +364,49 @@ export default function Solicitudes() {
   }, [listaFiltrada]);
 
   const [solicitudACancelar, setSolicitudACancelar] = useState(null);
+  const [decisionRevision, setDecisionRevision] = useState(null);
   const actualizarLimiteMutation = useActualizarLimiteSocio();
+
+  const porConfirmar = useMemo(
+    () => solicitudesEnCurso.filter((s) => esPorConfirmar(s.tipoLimiteEstadoId)),
+    [solicitudesEnCurso],
+  );
+
+  const cambiarEstadoSolicitud = async (solicitud, estado, observaciones) => {
+    await actualizarLimiteMutation.mutateAsync({
+      ...solicitud.raw,
+      tipolimiteestadoid: estado,
+      observaciones,
+    });
+
+    // Igual que en Dashboard.jsx (admin): todo cambio de estado en
+    // TipoLimiteSocio se refleja también en SolicitudEnProceso — ambas
+    // tablas usan literalmente el mismo catálogo (2026-08-18), así que no
+    // hace falta traducir el valor. TipoLimiteSocio.SolicitudID viaja
+    // siempre en null, así que la fila se ubica por (Cuit, TipoLimiteID,
+    // CadenaValorID) en vez de por ID. No bloquea el cambio si falla,
+    // queda solo logueado — es una sincronización secundaria.
+    const tipoLimiteId = solicitud.raw?.tipolimiteid ?? solicitud.raw?.TipoLimiteID;
+    const cadenaValorId = solicitud.raw?.cadenavalorid ?? solicitud.raw?.CadenaValorID;
+    if (tipoLimiteId && cadenaValorId && cuitActivo) {
+      solicitudesService
+        .sincronizarEstadoSolicitudEnProcesoPorClave(cuitActivo, tipoLimiteId, cadenaValorId, estado)
+        .catch((syncErr) => {
+          console.error(
+            `[Solicitudes] No se pudo sincronizar el estado en SolicitudEnProceso para la solicitud N°${solicitud.id}:`,
+            syncErr,
+          );
+        })
+        .finally(() => {
+          queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
+        });
+    }
+  };
 
   const handleConfirmarCancelacion = async () => {
     if (!solicitudACancelar?.raw) return;
     try {
-      await actualizarLimiteMutation.mutateAsync({
-        ...solicitudACancelar.raw,
-        tipolimiteestadoid: ESTADO_CANCELADA,
-        observaciones: MOTIVO_CANCELACION_SOCIO,
-      });
-
-      // Igual que en Dashboard.jsx (admin): todo cambio de estado en
-      // TipoLimiteSocio se refleja también en SolicitudEnProceso — ambas
-      // tablas usan literalmente el mismo catálogo (2026-08-18), así que no
-      // hace falta traducir el valor. TipoLimiteSocio.SolicitudID viaja
-      // siempre en null, así que la fila se ubica por (Cuit, TipoLimiteID,
-      // CadenaValorID) en vez de por ID. No bloquea la cancelación si falla,
-      // queda solo logueado — es una sincronización secundaria.
-      const tipoLimiteId =
-        solicitudACancelar.raw?.tipolimiteid ?? solicitudACancelar.raw?.TipoLimiteID;
-      const cadenaValorId =
-        solicitudACancelar.raw?.cadenavalorid ?? solicitudACancelar.raw?.CadenaValorID;
-      if (tipoLimiteId && cadenaValorId && cuitActivo) {
-        solicitudesService
-          .sincronizarEstadoSolicitudEnProcesoPorClave(cuitActivo, tipoLimiteId, cadenaValorId, ESTADO_CANCELADA)
-          .catch((syncErr) => {
-            console.error(
-              `[Solicitudes] No se pudo sincronizar el estado en SolicitudEnProceso para la solicitud N°${solicitudACancelar.id}:`,
-              syncErr,
-            );
-          })
-          .finally(() => {
-            // Sin esto, useObtenerSolicitudesEnProceso (staleTime 5min) sigue
-            // devolviendo la fila ya sincronizada/borrada del lado del
-            // backend, y tieneSolicitudPendiente sigue bloqueando "Nueva
-            // Operación" aunque la cancelación haya funcionado (reportado en
-            // vivo, 2026-09-15).
-            queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
-          });
-      }
-
+      await cambiarEstadoSolicitud(solicitudACancelar, ESTADO_CANCELADA, MOTIVO_CANCELACION_SOCIO);
       toast.success(`Solicitud N°${solicitudACancelar.id} cancelada`, {
         description: "Ya podés iniciar una nueva operación.",
       });
@@ -418,6 +415,51 @@ export default function Solicitudes() {
       toast.error("No se pudo cancelar la solicitud: " + mensajeNegocio(err, err.message));
     }
   };
+
+  const abrirDecision = (accion) => {
+    setDecisionRevision({ solicitud: solicitudSeleccionada, accion });
+    setSolicitudSeleccionada(null);
+  };
+
+  const handleConfirmarDecision = async () => {
+    const { solicitud, accion } = decisionRevision || {};
+    if (!solicitud?.raw) return;
+    const acepta = accion === "aceptar";
+    try {
+      await cambiarEstadoSolicitud(
+        solicitud,
+        acepta ? ESTADO_PENDIENTE : ESTADO_CANCELADA,
+        acepta ? "" : MOTIVO_RECHAZO_EMPRESA,
+      );
+      toast.success(acepta ? `Aceptaste la Solicitud N°${solicitud.id}` : `Rechazaste la Solicitud N°${solicitud.id}`, {
+        description: acepta
+          ? "Pasó a evaluación de BIND Garantías."
+          : "Quedó cancelada. Ya podés iniciar una nueva operación.",
+      });
+      setDecisionRevision(null);
+    } catch (err) {
+      toast.error(
+        (acepta ? "No se pudo aceptar la solicitud: " : "No se pudo rechazar la solicitud: ") +
+          mensajeNegocio(err, err.message),
+      );
+    }
+  };
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pideRevisar = searchParams.get("revisar");
+  useEffect(() => {
+    if (!pideRevisar || isLoadingData) return;
+    const elegida = porConfirmar.find((s) => s.id === pideRevisar) || porConfirmar[0];
+    if (elegida && puedeRevisar) setSolicitudSeleccionada(elegida);
+    setSearchParams(
+      (previos) => {
+        const nuevos = new URLSearchParams(previos);
+        nuevos.delete("revisar");
+        return nuevos;
+      },
+      { replace: true },
+    );
+  }, [pideRevisar, isLoadingData, porConfirmar, puedeRevisar, setSearchParams]);
 
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {
@@ -550,6 +592,25 @@ export default function Solicitudes() {
           <LegajoUniversalBar context="solicitudes" />
         )}
         
+        {puedeRevisar && porConfirmar.length > 0 && (
+          <div className={styles.avisoRevision} role="status">
+            <span className={styles.avisoRevisionIcono} aria-hidden="true">
+              <FiUserCheck />
+            </span>
+            <div className={styles.avisoRevisionTexto}>
+              <strong>
+                {porConfirmar.length === 1
+                  ? "Tenés una solicitud para revisar"
+                  : `Tenés ${porConfirmar.length} solicitudes para revisar`}
+              </strong>
+              <span>Tu ejecutivo la cargó por la empresa. Aceptala para que BIND Garantías la evalúe, o rechazala.</span>
+            </div>
+            <Button variant="primary" size="sm" onClick={() => setSolicitudSeleccionada(porConfirmar[0])}>
+              Revisar
+            </Button>
+          </div>
+        )}
+
         <div className={styles.listContainer}>
           {isLoadingData ? (
             Array.from({ length: 3 }).map((_, i) => <TarjetaSolicitudSkeleton key={i} />)
@@ -564,24 +625,37 @@ export default function Solicitudes() {
                   <h2 id="solicitudes-en-curso" className={`${styles.seccionTitulo} ${styles.seccionTituloEnCurso}`}>
                     En curso
                   </h2>
-                  {solicitudesEnCurso.map((item) => (
-                    <TarjetaSolicitud
-                      key={item.id}
-                      solicitud={item}
-                      onVerDetalle={setSolicitudSeleccionada}
-                      acciones={
-                        item.raw
-                          ? [
-                              {
-                                label: "Cancelar",
-                                variant: "danger",
-                                onClick: () => setSolicitudACancelar(item),
-                              },
-                            ]
-                          : undefined
-                      }
-                    />
-                  ))}
+                  {solicitudesEnCurso.map((item) => {
+                    const paraRevisar = puedeRevisar && esPorConfirmar(item.tipoLimiteEstadoId);
+                    return (
+                      <TarjetaSolicitud
+                        key={item.id}
+                        solicitud={item}
+                        onVerDetalle={setSolicitudSeleccionada}
+                        destacada={paraRevisar}
+                        aviso={
+                          paraRevisar
+                            ? "La cargó tu ejecutivo: necesita tu revisión"
+                            : esPorConfirmar(item.tipoLimiteEstadoId)
+                              ? "Espera la confirmación del administrador de la empresa"
+                              : null
+                        }
+                        acciones={
+                          !item.raw
+                            ? undefined
+                            : paraRevisar
+                              ? [{ label: "Revisar", variant: "primary", onClick: () => setSolicitudSeleccionada(item) }]
+                              : [
+                                  {
+                                    label: "Cancelar",
+                                    variant: "danger",
+                                    onClick: () => setSolicitudACancelar(item),
+                                  },
+                                ]
+                        }
+                      />
+                    );
+                  })}
                 </section>
               )}
 
@@ -731,6 +805,36 @@ export default function Solicitudes() {
         onClose={() => setSolicitudSeleccionada(null)}
         solicitud={solicitudSeleccionada}
         nombreEmpresa={nombreEmpresaActiva}
+        revision={
+          puedeRevisar && solicitudSeleccionada?.raw && esPorConfirmar(solicitudSeleccionada.tipoLimiteEstadoId)
+            ? {
+                onAceptar: () => abrirDecision("aceptar"),
+                onRechazar: () => abrirDecision("rechazar"),
+                decidiendo: actualizarLimiteMutation.isPending,
+              }
+            : null
+        }
+      />
+
+      <ConfirmacionModal
+        isOpen={!!decisionRevision}
+        onClose={() => setDecisionRevision(null)}
+        onConfirm={handleConfirmarDecision}
+        isLoading={actualizarLimiteMutation.isPending}
+        tone={decisionRevision?.accion === "rechazar" ? "danger" : "neutral"}
+        titulo={
+          decisionRevision?.accion === "rechazar"
+            ? `¿Rechazar la Solicitud N° ${decisionRevision?.solicitud?.id ?? ""}?`
+            : `¿Aceptar la Solicitud N° ${decisionRevision?.solicitud?.id ?? ""}?`
+        }
+        mensaje={
+          decisionRevision?.accion === "rechazar"
+            ? "La solicitud que cargó tu ejecutivo se cancela y no se puede retomar."
+            : `Confirmás que la empresa pide ${decisionRevision?.solicitud?.lineaNombre || decisionRevision?.solicitud?.tipo || "esta línea"} por ${decisionRevision?.solicitud?.moneda ?? "$"} ${decisionRevision?.solicitud?.monto ?? ""}. Pasa a evaluación de BIND Garantías.`
+        }
+        icono={decisionRevision?.accion === "rechazar" ? <FiXCircle /> : <FiUserCheck />}
+        confirmText={decisionRevision?.accion === "rechazar" ? "Sí, rechazar" : "Sí, aceptar"}
+        cancelText="Volver"
       />
 
       <ConfirmacionModal
@@ -778,12 +882,6 @@ export default function Solicitudes() {
           "No podés iniciar una nueva operación en este momento."
         }
         buttonText="Entendido"
-      />
-
-      <HelpDrawer
-        isOpen={isHelpOpen}
-        onClose={() => setIsHelpOpen(false)}
-        contexto="inicio"
       />
     </div>
   );

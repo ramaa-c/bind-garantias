@@ -15,6 +15,7 @@ import {
   FiAlertCircle,
   FiActivity,
   FiServer,
+  FiUserCheck,
 } from "react-icons/fi";
 import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
 
@@ -25,6 +26,7 @@ const estadoConfig = {
   Aprobada: { color: styles.badgeGreen, label: "Aprobada" },
   Aprobado: { color: styles.badgeGreen, label: "Aprobado" },
   Pendiente: { color: styles.badgeYellow, label: "Pendiente" },
+  "Por confirmar": { color: styles.badgeBlue, label: "Por confirmar" },
   Rechazada: { color: styles.badgeRed, label: "Rechazada" },
   Rechazado: { color: styles.badgeRed, label: "Rechazado" },
 };
@@ -34,6 +36,7 @@ export const DetalleSolicitudModal = ({
   onClose,
   solicitud,
   nombreEmpresa,
+  revision = null,
 }) => {
   const cuit = solicitud?.cuit || "";
   const estadoValue = solicitud?.estado || "";
@@ -47,6 +50,7 @@ export const DetalleSolicitudModal = ({
   // solicitud Cancelada la cancela el propio socio, no hay "motivo" que
   // mostrarle a él mismo.
   const esRechazada = estadoValue === "Rechazada" || estadoValue === "Rechazado";
+  const porConfirmar = estadoValue === "Por confirmar";
 
   const tipoLabel =
     tipoValue === "Cheque"
@@ -313,6 +317,23 @@ export const DetalleSolicitudModal = ({
           </div>
           <div className={styles.estadoBloque}>
             <EstadoSolicitudPasos estado={estadoValue} fecha={solicitud.fecha} orientacion="vertical" />
+            {porConfirmar && (
+              <div className={styles.revision}>
+                <span className={styles.revisionIcono} aria-hidden="true">
+                  <FiUserCheck size={14} />
+                </span>
+                <div>
+                  <p className={styles.estadoSgrTitulo}>
+                    {revision ? "Necesita tu revisión" : "Falta la confirmación de la empresa"}
+                  </p>
+                  <p className={styles.estadoSgrTexto}>
+                    {revision
+                      ? "La cargó tu ejecutivo por la empresa. Revisá la línea y el monto: si la aceptás, pasa a evaluación de BIND Garantías; si la rechazás, se cancela."
+                      : "La cargó el ejecutivo. Pasa a evaluación de BIND Garantías cuando el administrador de la empresa la acepte."}
+                  </p>
+                </div>
+              </div>
+            )}
             <div className={styles.estadoSgr}>
               <span className={styles.estadoSgrIcono} aria-hidden="true">
                 <FiServer size={14} />
@@ -415,13 +436,24 @@ export const DetalleSolicitudModal = ({
           <span className={styles.footerHint}>
             {solicitud.fecha ? `Operación del ${solicitud.fecha}` : ""}
           </span>
-          <Button
-            variant="primary"
-            className={styles.btnClose}
-            onClick={onClose}
-          >
-            Cerrar
-          </Button>
+          {revision ? (
+            <div className={styles.footerAcciones}>
+              <Button variant="outline" onClick={revision.onRechazar} disabled={revision.decidiendo}>
+                Rechazar
+              </Button>
+              <Button variant="primary" onClick={revision.onAceptar} disabled={revision.decidiendo}>
+                Aceptar solicitud
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              className={styles.btnClose}
+              onClick={onClose}
+            >
+              Cerrar
+            </Button>
+          )}
         </div>
       </div>
     </Modal>

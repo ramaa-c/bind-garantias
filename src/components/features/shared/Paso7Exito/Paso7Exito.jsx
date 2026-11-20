@@ -81,6 +81,7 @@ export default function Paso7Exito({
       : null;
   const plazoFormateado = resumen ? formatearPlazo(resumen.plazo) : null;
   const rechazada = !!resumen?.rechazada;
+  const porConfirmar = !rechazada && !!resumen?.porConfirmar;
 
   // Acción principal según dónde quedó el socio: el próximo paso pendiente
   // que ya esté habilitado. Si no queda ninguno, solo se ofrece volver.
@@ -136,7 +137,7 @@ export default function Paso7Exito({
               <span
                 className={`${styles.chip} ${rechazada ? styles.chipRechazada : styles.chipOk}`}
               >
-                {rechazada ? "No aprobada" : "Pre-aprobada"}
+                {rechazada ? "No aprobada" : porConfirmar ? "Por confirmar" : "Pre-aprobada"}
               </span>
               {!!resumen?.id && (
                 <span className={styles.chip}>Solicitud N° {resumen.id}</span>
@@ -145,12 +146,16 @@ export default function Paso7Exito({
             <h1 id="exito-titulo" className={styles.titulo}>
               {rechazada
                 ? "Tu solicitud fue registrada"
-                : "¡Felicitaciones! Tu solicitud está pre-aprobada"}
+                : porConfirmar
+                  ? "Solicitud cargada: falta que la empresa la confirme"
+                  : "¡Felicitaciones! Tu solicitud está pre-aprobada"}
             </h1>
             <p className={styles.subtitulo}>
               {rechazada
                 ? "No superó la evaluación automática de la línea. Podés realizar una nueva solicitud cuando quieras."
-                : "Restan 2 pasos para activar tu línea de crédito."}
+                : porConfirmar
+                  ? "El administrador de la empresa la va a ver para aceptarla o rechazarla apenas ingrese. Recién cuando la acepte pasa a evaluación de BIND Garantías."
+                  : "Restan 2 pasos para activar tu línea de crédito."}
             </p>
           </div>
         </div>

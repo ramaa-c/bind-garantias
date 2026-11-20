@@ -34,10 +34,12 @@ import {
   normalizarHistorialLinea,
 } from "../../../../utils/executeCda";
 import {
+  ESTADO_PENDIENTE,
   ESTADO_APROBADA,
   ESTADO_RECHAZADA,
   ESTADO_CANCELADA,
   ESTADO_VENCIDA,
+  esPorConfirmar,
   quitarPrefijoRechazoAutomatico,
 } from "../../../../utils/estadoLimiteSocio";
 import styles from "./SolicitudPanel.module.css";
@@ -188,7 +190,8 @@ export const SolicitudPanel = ({
   if (!isOpen || !solicitud) return null;
 
   const estadoId = Number(solicitud.tipoLimiteEstadoId);
-  const esPendiente = tonoEstado(estadoId) === "pendiente";
+  const esPendiente = estadoId === ESTADO_PENDIENTE;
+  const esperaEmpresa = esPorConfirmar(estadoId);
   const esAprobada = estadoId === ESTADO_APROBADA;
   const observaciones = quitarPrefijoRechazoAutomatico(
     solicitud.raw?.observaciones ?? solicitud.raw?.Observaciones,
@@ -578,7 +581,13 @@ export const SolicitudPanel = ({
             </>
           ) : (
             <>
-              <span className={styles.pieEspacio} />
+              <span className={styles.pieEspacio}>
+                {esperaEmpresa && (
+                  <span className={styles.pieAviso}>
+                    La cargó el vendor: se puede decidir cuando la empresa la confirme.
+                  </span>
+                )}
+              </span>
               <Button type="button" variant="outlineBlue" size="md" onClick={onClose}>
                 Cerrar
               </Button>

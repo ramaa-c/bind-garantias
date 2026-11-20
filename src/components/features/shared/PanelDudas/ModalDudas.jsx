@@ -1,9 +1,9 @@
 import React from "react";
-import { FiHelpCircle, FiX } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import { ContenidoDudas } from "./ContenidoDudas";
 import styles from "./ModalDudas.module.css";
 
-export const ModalDudas = ({ isOpen, onClose, contexto, pasoActual }) => {
+export const ModalDudas = ({ isOpen, onClose }) => {
 
   return (
     <>
@@ -21,7 +21,7 @@ export const ModalDudas = ({ isOpen, onClose, contexto, pasoActual }) => {
         </div>
         
         <div className={styles.contentScroll}>
-          <ContenidoDudas contexto={contexto} pasoActual={pasoActual} />
+          <ContenidoDudas />
         </div>
       </div>
     </>

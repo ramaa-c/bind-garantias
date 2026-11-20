@@ -13,3 +13,8 @@ export const esSocioVacio = (socio) => {
   );
   return !denominacion && !tipopersonaid && !socioestadoid;
 };
+
+const PREFIJOS_PERSONA_HUMANA = ["20", "23", "24", "25", "26", "27"];
+
+export const esCuitPersonaHumana = (cuit) =>
+  PREFIJOS_PERSONA_HUMANA.includes(String(cuit || "").replace(/\D/g, "").slice(0, 2));

@@ -13,6 +13,7 @@ import { cerrarSesionApi } from "../../../api/tokenApi";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { useChannel } from "../../../context/useChannel";
+import { useRutaInicio } from "../../../hooks/useRutaInicio";
 import {
   extraerRegistroUsuario,
   esAdministradorActivo,
@@ -62,7 +63,7 @@ const leerOtpPendiente = () => {
 // porque no es dueño de ningún Socio). AdminGuard no valida el "role" que
 // se setea al loguear, así que no hace falta nada especial del lado del
 // guard — solo decidir bien el destino acá.
-const resolverAccesoPostLogin = async (email, basePath) => {
+const resolverAccesoPostLogin = async (email, rutaInicio) => {
   try {
     const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
     const registro = extraerRegistroUsuario(usuarioDb);
@@ -78,7 +79,7 @@ const resolverAccesoPostLogin = async (email, basePath) => {
 
     const usuarioWebId =
       registro?.usuariowebid ?? registro?.UsuarioWebID ?? registro?.id ?? null;
-    if (!usuarioWebId) return { permitido: true, destino: `${basePath}/legajo` };
+    if (!usuarioWebId) return { permitido: true, destino: rutaInicio };
 
     // ⚠️ El backend filtra por el param "usuarioid" (no "usuariowebid") —
     // ver el mismo aviso en useAdminRestrictions.js.
@@ -88,12 +89,12 @@ const resolverAccesoPostLogin = async (email, basePath) => {
     const tieneCadenas = vinculosCadenaActivos(cadenasData).length > 0;
     return {
       permitido: true,
-      destino: tieneCadenas ? "/admin" : `${basePath}/legajo`,
+      destino: tieneCadenas ? "/admin" : rutaInicio,
     };
   } catch {
     // Ante cualquier falla de esta verificación extra, seguir el camino
     // normal en vez de bloquear el login por completo.
-    return { permitido: true, destino: `${basePath}/legajo` };
+    return { permitido: true, destino: rutaInicio };
   }
 };
 
@@ -341,6 +342,7 @@ const Login = () => {
   const setUser = useAuthStore((state) => state.setUser);
   const theme = useThemeStore((state) => state.theme);
   const { channelInfo, basePath } = useChannel();
+  const rutaInicio = useRutaInicio();
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: solicitarCodigo, isPending: solicitandoCodigo } =
     useSolicitarCodigoLogin();
@@ -454,7 +456,7 @@ const Login = () => {
         { email: formData.email, password: formData.otp },
         {
           onSuccess: async () => {
-            const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+            const acceso = await resolverAccesoPostLogin(formData.email, rutaInicio);
             if (!acceso.permitido) {
               cerrarSesionApi();
               setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
@@ -503,7 +505,7 @@ const Login = () => {
         { email: formData.email, password: formData.password },
         {
           onSuccess: async () => {
-            const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+            const acceso = await resolverAccesoPostLogin(formData.email, rutaInicio);
             if (!acceso.permitido) {
               cerrarSesionApi();
               setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });

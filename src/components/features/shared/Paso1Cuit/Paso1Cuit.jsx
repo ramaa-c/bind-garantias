@@ -12,6 +12,7 @@ import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { mensajeDeApi } from "../../../../utils/mensajesError";
 import { guardarSocioPendiente } from "../../../../utils/altaEmpresaPendiente";
+import { esCuitPersonaHumana } from "../../../../utils/socioUtils";
 import { useAuthStore } from "../../../../store/useAuthStore";
 
 import styles from "./Paso1Cuit.module.css";
@@ -28,11 +29,15 @@ const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 // que quedó pendiente de revisión. No aplica a errores de sistema (caída de
 // un servicio, red, etc.) - esos sí necesitan su propio mensaje porque
 // ofrecen "Reintentar".
-const MENSAJE_VALIDACION_RECHAZADA =
-  "Registramos algunas observaciones sobre tu empresa. Vas a poder continuar con la carga, pero tu legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.";
-// Vendor: da de alta una empresa que va a gestionar, no la propia.
-const MENSAJE_VALIDACION_RECHAZADA_VENDOR =
-  "Registramos algunas observaciones sobre la empresa. Vas a poder continuar con la carga, pero su legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.";
+const sujetoDelCuit = (cuit, isVendor) => {
+  const sustantivo = esCuitPersonaHumana(cuit) ? "razón social" : "empresa";
+  return isVendor ? `la ${sustantivo}` : `tu ${sustantivo}`;
+};
+
+const mensajeValidacionRechazada = (cuit, isVendor) =>
+  `Registramos algunas observaciones sobre ${sujetoDelCuit(cuit, isVendor)}. Vas a poder continuar con la carga, pero ${
+    isVendor ? "su" : "tu"
+  } legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.`;
 
 const formatearCuit = (cuit) => {
   const limpio = String(cuit || "").replace(/\D/g, "");
@@ -47,9 +52,6 @@ const formatearCuit = (cuit) => {
 // "durante" (en el click de handleValidar, con datos potencialmente todavía
 // en vuelo) ni tenga forma de desincronizarse de lo que ve el resto del wizard.
 export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, isVendor = false, vendorCuit = null }) {
-  const mensajeValidacionRechazada = isVendor
-    ? MENSAJE_VALIDACION_RECHAZADA_VENDOR
-    : MENSAJE_VALIDACION_RECHAZADA;
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
@@ -308,7 +310,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
                 error: esErrorSistema
                   ? resultCda.errors.find((e) => e.isInvalidante)?.message ||
                     "No pudimos completar la validación."
-                  : mensajeValidacionRechazada,
+                  : mensajeValidacionRechazada(cuitEnProcesoRef.current, isVendor),
               }
             : p,
         ),
@@ -372,7 +374,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           resultSgrCore.data.message ||
           "El socio no cumple con los requisitos del sistema.";
         // El motivo real solo se loguea (para debug) - a partir de acá se le
-        // muestra al usuario el mensaje genérico (MENSAJE_VALIDACION_RECHAZADA,
+        // muestra al usuario el mensaje genérico (mensajeValidacionRechazada,
         // ver más abajo), no este detalle (SGRPLUSPLA-174).
         console.log("[Paso1Cuit] SGRPlus Core rechazó al socio:", sgrCoreMensaje);
       }
@@ -394,7 +396,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
             ? {
                 ...p,
                 estado: "error",
-                error: mensajeValidacionRechazada,
+                error: mensajeValidacionRechazada(cuitEnProcesoRef.current, isVendor),
               }
             : { ...p, estado: "completado" }
           : p.id === "pyme"
@@ -463,7 +465,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
 
     setProcesoModal({
       isOpen: true,
-      titulo: isVendor ? "Validando la empresa" : "Validando tu empresa",
+      titulo: `Validando ${sujetoDelCuit(cuit, isVendor)}`,
       pasos: [
         {
           id: "socio",

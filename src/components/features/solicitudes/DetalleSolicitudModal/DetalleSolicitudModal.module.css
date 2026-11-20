@@ -75,6 +75,11 @@
   color: var(--text-muted);
 }
 
+.badgeBlue {
+  background: rgba(107, 130, 255, 0.15);
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
 .empresaNombre {
   margin: 0;
   font-size: 1.25rem;
@@ -282,6 +287,33 @@
 
 .btnClose {
   min-width: 7rem;
+}
+
+.footerAcciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.revision {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(107, 130, 255, 0.08);
+  border: 1px solid rgba(107, 130, 255, 0.35);
+}
+
+.revisionIcono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
+  background: rgba(107, 130, 255, 0.15);
+  border: 1px solid rgba(107, 130, 255, 0.35);
+  color: var(--color-azul-bind-300, #8a9fff);
 }
 
 @media (max-width: 36rem) {

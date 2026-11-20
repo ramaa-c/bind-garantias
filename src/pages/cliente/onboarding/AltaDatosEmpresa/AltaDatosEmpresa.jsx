@@ -7,7 +7,6 @@ import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSche
 import { BarraProgreso, Button, Modal } from "../../../../components/ui";
 import { LoadingScreen } from "../../../../components/ui";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
-import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
 import { usuarioService } from "../../../../services/usuarioService";
 import { avisarBloqueoPorSeguridad } from "../../../../utils/usuarioUtils";
@@ -28,6 +27,7 @@ import {
 } from "../../../../utils/altaEmpresaPendiente";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/useChannel";
+import { useRutaInicio } from "../../../../hooks/useRutaInicio";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./AltaDatosEmpresa.module.css";
 import { FiAlertCircle, FiMail, FiLock, FiLogOut } from "react-icons/fi";
@@ -90,6 +90,7 @@ export const AltaDatosEmpresa = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { basePath } = useChannel();
+  const rutaInicio = useRutaInicio();
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorId = Number(cadenaSlug);
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
@@ -118,14 +119,6 @@ export const AltaDatosEmpresa = () => {
     socioParaCompletar ? 2 : 1,
   );
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
-
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-
-  useEffect(() => {
-    const handler = () => setIsHelpOpen((prev) => !prev);
-    document.addEventListener("bindHelp:toggle", handler);
-    return () => document.removeEventListener("bindHelp:toggle", handler);
-  }, []);
 
   const [socioExistenteModal, setSocioExistenteModal] = useState({
     isOpen: false,
@@ -475,12 +468,13 @@ export const AltaDatosEmpresa = () => {
         toast.success("Empresa creada y vinculada correctamente");
 
         // Vendor o no: la empresa recién creada/vinculada queda como activa
-        // y se entra directo a su legajo — es una elección tan explícita
+        // y se entra directo a ella (Solicitudes si la cadena tiene línea
+        // habilitada, Legajo si no) — es una elección tan explícita
         // como cuando el vendor la elige desde SeleccionarEmpresa.jsx (que
         // también llama a setActiveSocioId), no tiene sentido mandarlo a
         // "elegir" algo que acaba de crear él mismo.
         setActiveSocioId(socioId);
-        navigate(`${basePath}/legajo`, { replace: true });
+        navigate(rutaInicio, { replace: true });
       } else {
         throw new Error(
           "No pudimos identificar tu usuario para vincular la empresa.",
@@ -760,13 +754,6 @@ export const AltaDatosEmpresa = () => {
           </div>
         </div>
       </div>
-
-      <HelpDrawer
-        isOpen={isHelpOpen}
-        onClose={() => setIsHelpOpen(false)}
-        contexto="alta_datos_empresa"
-        pasoActual={pasoActual}
-      />
 
       <Modal
         isOpen={socioExistenteModal.isOpen}

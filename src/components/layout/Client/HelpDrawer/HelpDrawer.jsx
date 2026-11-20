@@ -5,7 +5,7 @@ import { PanelDudas } from "../../../features/shared/PanelDudas/PanelDudas";
 import { ModalDudas } from "../../../features/shared/PanelDudas/ModalDudas";
 import styles from "./HelpDrawer.module.css";
 
-export function HelpDrawer({ isOpen, onClose, contexto, pasoActual }) {
+export function HelpDrawer({ isOpen, onClose }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -27,12 +27,7 @@ export function HelpDrawer({ isOpen, onClose, contexto, pasoActual }) {
 
   if (isMobile) {
     return createPortal(
-      <ModalDudas
-        isOpen={isOpen}
-        onClose={onClose}
-        contexto={contexto}
-        pasoActual={pasoActual}
-      />,
+      <ModalDudas isOpen={isOpen} onClose={onClose} />,
       document.body,
     );
   }
@@ -60,7 +55,7 @@ export function HelpDrawer({ isOpen, onClose, contexto, pasoActual }) {
           </button>
         </div>
         <div className={styles.drawerBody}>
-          <PanelDudas contexto={contexto} pasoActual={pasoActual} />
+          <PanelDudas />
         </div>
       </aside>
     </div>,

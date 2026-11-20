@@ -5,28 +5,20 @@ import {
   useFormState,
   useWatch,
 } from "react-hook-form";
-import { FiSliders } from "react-icons/fi";
-import { Button, InputMonto, SelectFecha, SelectSocio, Skeleton } from "../../../ui";
+import { Button, InputMonto, SelectFecha, Skeleton } from "../../../ui";
 import SelectorLinea from "./SelectorLinea";
 import styles from "./Paso3Simulador.module.css";
-import {
-  useMonedas,
-  useTiposProducto,
-  useTipoContrato,
-} from "../../../../hooks/useCatalogos";
+import { useMonedas, useTiposProducto } from "../../../../hooks/useCatalogos";
 import { simboloMoneda, esMonedaPesos } from "../../../../utils/monedaUtils";
 
 export default function Paso3Simulador({
   onContinuar,
-  mostrarTipoCalculo = true,
   mostrarMonto = true,
   mostrarFecha = true,
   labelFecha = "Fecha de pago",
   labelMonto = "Monto",
   opcionesProducto: propOpcionesProducto,
   opcionesMoneda: propOpcionesMoneda,
-  opcionesCalculo: propOpcionesCalculo,
-  disableTipoCalculo = false,
   disableTipoProducto = false,
   disableMonto = false,
   montoMaximoOverride,
@@ -46,15 +38,6 @@ export default function Paso3Simulador({
     propOpcionesProducto || productosData?.opciones || [];
   const cargandoProductos = !propOpcionesProducto && isLoadingProductos;
 
-  const { data: contratosData, isLoading: cargandoContratos } =
-    useTipoContrato();
-  const opcionesCalculo = propOpcionesCalculo || contratosData?.opciones || [];
-
-  const tipoCalculo = useWatch({
-    control,
-    name: "tipoCalculo",
-    defaultValue: "",
-  });
   const monedaValue = useWatch({ control, name: "moneda", defaultValue: "" });
   const tipoProductoValue = useWatch({
     control,
@@ -76,14 +59,6 @@ export default function Paso3Simulador({
     }
   }, [opcionesProducto, setValue]);
 
-  useEffect(() => {
-    if (opcionesCalculo?.length === 1 && mostrarTipoCalculo) {
-      setValue("tipoCalculo", opcionesCalculo[0].value, {
-        shouldValidate: false,
-      });
-    }
-  }, [opcionesCalculo, setValue, mostrarTipoCalculo]);
-
   const simboloActual =
     monedasData?.raw.find((m) => m.monedaid.toString() === monedaValue)
       ?.simbolo || simboloMoneda(monedaValue);
@@ -93,7 +68,6 @@ export default function Paso3Simulador({
     if (isSubmitting) return;
     const camposATrigger = ["moneda", "tipoProducto"];
     if (mostrarMonto) camposATrigger.push("monto");
-    if (mostrarTipoCalculo) camposATrigger.push("tipoCalculo");
     if (mostrarFecha) camposATrigger.push(campoFecha);
 
     const esValido = await trigger(camposATrigger);
@@ -108,19 +82,6 @@ export default function Paso3Simulador({
       }
       onContinuar();
     }
-  };
-
-  const isValidSelection = (error, val) => {
-    if (error) return false;
-    if (val === undefined || val === null) return false;
-    if (Array.isArray(val) && val.length === 0) return false;
-    const strVal = String(val).trim();
-    return (
-      strVal !== "" &&
-      strVal !== "0" &&
-      strVal !== "false" &&
-      strVal !== "[object Object]"
-    );
   };
 
   const montoNumerico = Number(montoValue) || 0;
@@ -279,19 +240,6 @@ export default function Paso3Simulador({
                 label={labelFecha}
                 disabled={isSubmitting}
                 error={errorPlazo}
-              />
-            )}
-
-            {mostrarTipoCalculo && (
-              <SelectSocio
-                name="tipoCalculo"
-                control={control}
-                label={cargandoContratos ? "Cargando..." : "Tipo de cálculo"}
-                icon={<FiSliders />}
-                options={opcionesCalculo}
-                disabled={cargandoContratos || disableTipoCalculo || isSubmitting}
-                error={errors.tipoCalculo?.message}
-                esValido={isValidSelection(errors.tipoCalculo, tipoCalculo)}
               />
             )}
           </div>

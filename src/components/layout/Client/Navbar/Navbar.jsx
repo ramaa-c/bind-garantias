@@ -30,7 +30,7 @@ const Navbar = ({
   textoEnlace = "Registrate",
   rutaDestino = "/registro",
   onToggleSidebar,
-  hideHelpButton = false,
+  conAyuda = false,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -149,10 +149,7 @@ const Navbar = ({
           <>
             <PendientesEmpresa />
 
-            {/* Sin contenido de ayuda escrito todavía para algunas pantallas
-                (ej. Seleccionar Empresa) - mejor ocultar el botón ahí que
-                abrir un drawer vacío. */}
-            {!hideHelpButton && (
+            {conAyuda && (
               <button
                 type="button"
                 className={styles.iconButton}

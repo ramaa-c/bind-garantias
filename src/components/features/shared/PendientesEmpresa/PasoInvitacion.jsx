@@ -42,7 +42,7 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
       const resultado = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
       if (resultado === RESULTADO_VINCULADA) {
         toast.success("Le dimos acceso a la empresa", {
-          description: `${emailLimpio} ya tenía cuenta: puede ingresar cuando quiera.`,
+          description: `${emailLimpio} ya tenía cuenta: le avisamos por mail que ya puede operar con la empresa.`,
         });
       } else {
         toast.success("Mail de bienvenida enviado", { description: emailLimpio });
@@ -137,7 +137,7 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
             <FiInfo aria-hidden="true" />
             {entraComoAdmin
               ? "Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar."
-              : "Entra como usuario de la empresa; si ya tiene una cuenta, le damos acceso directamente."}
+              : "Entra como usuario de la empresa; si ya tiene una cuenta, le damos acceso y le avisamos por mail."}
           </p>
           {errores.general && <p className={styles.campoErrorGeneral}>{errores.general}</p>}
           <div className={styles.pasoAcciones}>

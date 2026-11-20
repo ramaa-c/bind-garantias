@@ -141,7 +141,7 @@ const rutasCliente = (
                 element={
                   <OnboardingGuard>
                     <LegajoDataGuard>
-                      <DashboardLayout>
+                      <DashboardLayout conAyuda>
                         <SociosView />
                       </DashboardLayout>
                     </LegajoDataGuard>
@@ -204,7 +204,7 @@ const rutasCliente = (
                 path="seleccionar-empresa"
                 element={
                   <OnboardingGuard>
-                    <DashboardLayout hideHelpButton>
+                    <DashboardLayout>
                       <SeleccionarEmpresa />
                     </DashboardLayout>
                   </OnboardingGuard>
@@ -224,7 +224,7 @@ const rutasCliente = (
                 path="elegir-empresa"
                 element={
                   <OnboardingGuard>
-                    <DashboardLayout hideHelpButton>
+                    <DashboardLayout>
                       <ElegirEmpresa />
                     </DashboardLayout>
                   </OnboardingGuard>

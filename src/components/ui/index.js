@@ -29,8 +29,6 @@ export * from './SelectFechaSimple/SelectFechaSimple';
 export * from './SelectSimple/SelectSimple';
 export * from './Switch/Switch';
 export * from './BuscadorCuit/BuscadorCuit'
-export * from './TicketSimulacion/TicketSimulacion'
-export * from './TicketPrestamoFijo/TicketPrestamoFijo'
 
 export * from './Skeleton/Skeleton';
 export * from './Paginacion/Paginacion';

@@ -9,7 +9,7 @@ const MARGEN_FINAL_PX = 24;
 const ANCHO_REFERENCIA_RANGO_2 = 1443;
 const ZOOM_MARCO_MINIMO = 0.75;
 
-export default function DashboardLayout({ children, hideHelpButton = false }) {
+export default function DashboardLayout({ children, conAyuda = false }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [hayMasAbajo, setHayMasAbajo] = useState(false);
   const columnaRef = useRef(null);
@@ -96,7 +96,7 @@ export default function DashboardLayout({ children, hideHelpButton = false }) {
         <Navbar
           usuario="asesoramiento@mailinator.com"
           onToggleSidebar={toggleSidebar}
-          hideHelpButton={hideHelpButton}
+          conAyuda={conAyuda}
         />
         <div className={`${styles.mainColumn} scroll-visible`} ref={columnaRef}>
           <main className={styles.content} ref={contenidoRef}>

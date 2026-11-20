@@ -8,6 +8,7 @@ const normalizarEstado = (estado) => {
   if (e.includes("rechaz")) return "rechazada";
   if (e.includes("cancel")) return "cancelada";
   if (e.includes("venc")) return "vencida";
+  if (e.includes("confirmar")) return "porConfirmar";
   return "pendiente";
 };
 
@@ -29,6 +30,20 @@ const armarPasosSolicitud = (estado, fecha) => {
         ayuda: actual === "cancelada" ? "La cancelaste antes de que se resolviera" : "Pasó el plazo sin resolverse",
         tono: "cancelado",
       },
+    ];
+  }
+
+  if (actual === "porConfirmar") {
+    return [
+      { ...enviada, label: "Solicitud cargada", ayuda: fecha ? `El ${fecha}, por el ejecutivo` : "Por el ejecutivo" },
+      {
+        key: "confirmacion",
+        label: "Confirmación de la empresa",
+        ayuda: "El administrador de la empresa la acepta o la rechaza",
+        tono: "actual",
+      },
+      { key: "evaluacion", label: "En evaluación", ayuda: "BIND Garantías la revisa después", tono: "pendiente" },
+      { key: "aprobada", label: "Aprobada", ayuda: "Te avisamos cuando se resuelva", tono: "pendiente" },
     ];
   }
 

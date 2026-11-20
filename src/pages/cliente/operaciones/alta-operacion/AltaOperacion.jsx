@@ -16,7 +16,6 @@ import {
   Paso7Exito,
   ConfirmacionBorradorModal,
 } from "../../../../components/features";
-import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { Alert, Spinner, LoadingScreen } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
 import { solicitudesService } from "../../../../services/solicitudesService";
@@ -42,9 +41,10 @@ import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 import {
   esProcesoDeOtraPlataforma,
-  ESTADO_PENDIENTE,
   ESTADO_RECHAZADA,
   ESTADO_CANCELADA,
+  estadoInicialSolicitud,
+  esPorConfirmar,
   MOTIVOS_RECHAZO_AUTOMATICO,
   construirMotivoRechazoAutomatico,
   quitarPrefijoRechazoAutomatico,
@@ -65,6 +65,7 @@ export const AltaOperacion = () => {
   const {
     cuitActivo,
     socioIdActivo,
+    isVendor,
     isLoading: isLoadingEmpresa,
   } = useEmpresaActiva();
 
@@ -137,7 +138,6 @@ export const AltaOperacion = () => {
     }
   });
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [validandoAcceso, setValidandoAcceso] = useState(true);
   // Reemplaza el viejo patrón de toast + navigate: en vez de sacar al socio
   // de la pantalla, se le muestra el motivo en pantalla y se bloquea el botón
@@ -148,12 +148,6 @@ export const AltaOperacion = () => {
     bloqueado: false,
     motivo: "",
   });
-
-  useEffect(() => {
-    const handler = () => setIsHelpOpen((prev) => !prev);
-    document.addEventListener("bindHelp:toggle", handler);
-    return () => document.removeEventListener("bindHelp:toggle", handler);
-  }, []);
 
   useEffect(() => {
     if (resumenSolicitud) {
@@ -435,7 +429,7 @@ export const AltaOperacion = () => {
 
   const enviarSolicitud = async (data) => {
     // Guarda de reentrada: el botón de "Continuar" recién queda disabled
-    // (isSubmitting, ver TicketPrestamoFijo/TicketSimulacion) cuando React
+    // (isSubmitting, ver Paso3Simulador) cuando React
     // termina de re-renderizar con enviandoSolicitud=true — pero antes de
     // eso, handleSubmit(onSubmitFinal) ya corrió la validación (async) y
     // llegó hasta acá. Un segundo click en esa ventana (usuario impaciente,
@@ -573,6 +567,7 @@ export const AltaOperacion = () => {
         : rechazosCdaLinea.map((e) => e.message).join("; ");
       const motivoRechazoAutomatico =
         construirMotivoRechazoAutomatico(motivoRechazoBase);
+      const estadoAlCrear = estadoInicialSolicitud(isVendor);
 
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
@@ -627,7 +622,7 @@ export const AltaOperacion = () => {
         cadenavalorid: Number(cadenaSlug),
         monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
-        estadosolicitud: ESTADO_PENDIENTE,
+        estadosolicitud: estadoAlCrear,
         idexterno: 0,
         terceroviaid: 4000000,
         terceropresentanteid: 0,
@@ -686,7 +681,7 @@ export const AltaOperacion = () => {
         // no el TipoLimiteEstadoID heredado de SGR+. Si no llegó al
         // PorcentajeMinimoSolicitud o el CDA de la línea rechazó, queda
         // rechazada automáticamente.
-        tipolimiteestadoid: debeRechazarseAutomaticamente ? ESTADO_RECHAZADA : ESTADO_PENDIENTE,
+        tipolimiteestadoid: debeRechazarseAutomaticamente ? ESTADO_RECHAZADA : estadoAlCrear,
         observaciones: debeRechazarseAutomaticamente ? motivoRechazoAutomatico : "",
         sucursalid: 0,
         terceromercadoid: 400004,
@@ -803,6 +798,7 @@ export const AltaOperacion = () => {
         monedaId: Number(cleanData.moneda) || 5000,
         plazo: cleanData.plazo,
         rechazada: quedoRechazada,
+        porConfirmar: !quedoRechazada && esPorConfirmar(estadoAlCrear),
         motivoRechazo: quedoRechazada ? motivoRechazoFinal : "",
       });
 
@@ -897,7 +893,6 @@ export const AltaOperacion = () => {
           }}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
-          mostrarTipoCalculo={false}
           disableMonto={esMontoUnico}
           montoMaximoOverride={Number(lineaSeleccionada?.montolinea) || undefined}
           labelFecha="Plazo estimado (opcional)"
@@ -1052,12 +1047,6 @@ export const AltaOperacion = () => {
         onClose={continuarBorrador}
         onConfirm={confirmarReinicioOperacion}
         onContinueBorrador={continuarBorrador}
-      />
-      <HelpDrawer
-        isOpen={isHelpOpen}
-        onClose={() => setIsHelpOpen(false)}
-        contexto="alta_operacion"
-        pasoActual={pasoActual}
       />
     </div>
   );

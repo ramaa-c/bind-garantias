@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useChannel } from "../../../context/useChannel";
+import { useRutaInicio } from "../../../hooks/useRutaInicio";
 
 // Evita que un usuario ya logueado vea login/registro/recuperar-clave -
 // análogo cliente del useEffect que ya hace LoginAdmin.jsx para admin. Acá se armó como guard
@@ -16,7 +17,8 @@ export const GuestGuard = ({ children }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const activeSocioId = useAuthStore((state) => state.activeSocioId);
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
-  const { basePath, esSitioAdmin } = useChannel();
+  const { esSitioAdmin } = useChannel();
+  const rutaInicio = useRutaInicio();
 
   // Volver a /login con una sesión que nunca se cerró (activeSocioId de la
   // última empresa usada todavía en el store) no debe reanudar en
@@ -42,7 +44,7 @@ export const GuestGuard = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={`${basePath}/legajo`} replace />;
+    return <Navigate to={rutaInicio} replace />;
   }
 
   return <>{children}</>;

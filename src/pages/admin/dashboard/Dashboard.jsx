@@ -35,6 +35,7 @@ import {
   ESTADO_CANCELADA,
   ESTADO_VENCIDA,
   estadoTextoDesde,
+  esPorConfirmar,
   esRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
 import styles from "./Dashboard.module.css";
@@ -373,7 +374,9 @@ export default function Dashboard() {
               ? "Cancelada por el cliente"
               : Number(tipoLimiteEstadoId) === ESTADO_VENCIDA
                 ? "Vencida"
-                : "Espera de validación del Administrador";
+                : esPorConfirmar(tipoLimiteEstadoId)
+                  ? "Espera la confirmación de la empresa"
+                  : "Espera de validación del Administrador";
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
       const tipoText = familiaDeLinea(tipoLimiteId);

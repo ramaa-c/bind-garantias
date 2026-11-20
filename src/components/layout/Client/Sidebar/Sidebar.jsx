@@ -34,6 +34,7 @@ import { useFinAsistencia } from "../../../../hooks/useFinAsistencia";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/useChannel";
+import { rutaInicioEmpresa } from "../../../../hooks/useRutaInicio";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 import styles from "./Sidebar.module.css";
@@ -189,7 +190,7 @@ export default function Sidebar({ isOpen, onClose }) {
       if (isVendor && !socioId) guardarVistaPanelVendor(vista);
       if (socioId) {
         setActiveSocioId(socioId);
-        navigate(`${basePath}${isVendor ? "/legajo" : "/solicitudes"}`);
+        navigate(rutaInicioEmpresa(basePath, isSolicitudesEnabled));
       } else {
         navigate(rutaPanel);
       }

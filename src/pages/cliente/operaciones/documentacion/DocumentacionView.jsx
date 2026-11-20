@@ -12,7 +12,6 @@ import {
 import { ESTRUCTURA_LEGAJO } from "../../../../components/features/shared/DocumentosLegajo/DocumentosLegajo.constants";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
-import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useBloqueoLegajo } from "../../../../hooks/useSocios";
@@ -42,15 +41,8 @@ const DOC_TITLES = {
 
 export default function DocumentacionView() {
   const queryClient = useQueryClient();
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [sincronizando, setSincronizando] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-
-  useEffect(() => {
-    const handler = () => setIsHelpOpen((prev) => !prev);
-    document.addEventListener("bindHelp:toggle", handler);
-    return () => document.removeEventListener("bindHelp:toggle", handler);
-  }, []);
 
   const { socioIdActivo, cuitActivo, tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
 
@@ -185,12 +177,6 @@ export default function DocumentacionView() {
           <DocumentosLegajo />
         </form>
       </FormProvider>
-
-      <HelpDrawer
-        isOpen={isHelpOpen}
-        onClose={() => setIsHelpOpen(false)}
-        contexto="inicio"
-      />
 
       <ConfirmacionModal
         isOpen={showConfirmModal}

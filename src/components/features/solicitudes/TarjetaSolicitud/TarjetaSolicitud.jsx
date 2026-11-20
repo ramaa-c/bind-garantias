@@ -1,5 +1,5 @@
 import React from "react";
-import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash } from "react-icons/fi";
+import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash, FiUserCheck } from "react-icons/fi";
 import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import styles from "./TarjetaSolicitud.module.css";
@@ -9,6 +9,7 @@ const ESTADOS = {
   statusRejected: { icon: FiXCircle, label: "Rechazada" },
   statusCancelled: { icon: FiSlash, label: "Cancelada" },
   statusWaiting: { icon: FiClock, label: "Pendiente" },
+  statusConfirm: { icon: FiUserCheck, label: "Por confirmar" },
 };
 
 const getStatusKey = (estado) => {
@@ -16,6 +17,7 @@ const getStatusKey = (estado) => {
   if (e?.includes("aprob")) return "statusApproved";
   if (e?.includes("rechaz")) return "statusRejected";
   if (e?.includes("cancel") || e?.includes("venc")) return "statusCancelled";
+  if (e?.includes("confirmar")) return "statusConfirm";
   return "statusWaiting";
 };
 
@@ -42,7 +44,7 @@ export const TarjetaSolicitudSkeleton = () => (
   </div>
 );
 
-export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
+export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones, aviso, destacada = false }) => {
   const statusKey = getStatusKey(solicitud.estado);
   const StatusIcon = ESTADOS[statusKey].icon;
 
@@ -68,7 +70,7 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
 
   return (
     <article
-      className={`${styles.card} ${styles[statusKey]}`}
+      className={`${styles.card} ${styles[statusKey]} ${destacada ? styles.destacada : ""}`}
       role="button"
       tabIndex={0}
       aria-label={`Ver detalle de la solicitud N° ${solicitud.id}`}
@@ -93,6 +95,7 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
         <span className={styles.meta}>
           Solicitud N° {solicitud.id} · {solicitud.fecha || "-"}
         </span>
+        {aviso && <span className={styles.aviso}>{aviso}</span>}
       </div>
 
       <div className={styles.montoBlock}>
@@ -114,7 +117,12 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
           </button>
         )}
         {otrasAcciones?.map((accion) => (
-          <button type="button" key={accion.label} className={styles.btnAction} onClick={sinPropagar(accion.onClick)}>
+          <button
+            type="button"
+            key={accion.label}
+            className={accion.variant === "primary" ? styles.btnPrimary : styles.btnAction}
+            onClick={sinPropagar(accion.onClick)}
+          >
             {accion.label}
           </button>
         ))}

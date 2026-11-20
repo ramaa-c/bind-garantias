@@ -167,11 +167,7 @@ export default function SociosView() {
         <SociosLegajo />
       </div>
 
-      <HelpDrawer
-        isOpen={isHelpOpen}
-        onClose={() => setIsHelpOpen(false)}
-        contexto="inicio"
-      />
+      <HelpDrawer isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       <ConfirmacionModal
         isOpen={showConfirmModal}

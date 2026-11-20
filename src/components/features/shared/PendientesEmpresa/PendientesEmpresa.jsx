@@ -14,6 +14,8 @@ import {
   FiFileText,
   FiMail,
   FiPhone,
+  FiShieldOff,
+  FiUserCheck,
   FiUserPlus,
   FiX,
 } from "react-icons/fi";
@@ -31,6 +33,8 @@ import { usuarioVinculacionService } from "../../../../services/usuarioVinculaci
 import { obtenerDatosTokenApi } from "../../../../api/tokenApi";
 import { useChannel } from "../../../../context/useChannel";
 import { useUsuariosEmpresa } from "../../../../hooks/useUsuariosEmpresa";
+import { useObtenerLimitesSocio } from "../../../../hooks/useSolicitudes";
+import { esPorConfirmar } from "../../../../utils/estadoLimiteSocio";
 import ContactoModal from "../ContactoModal/ContactoModal";
 import FacturacionModal from "../FacturacionModal/FacturacionModal";
 import { PasoInvitacion } from "./PasoInvitacion";
@@ -176,10 +180,15 @@ export const PendientesEmpresa = () => {
   // Con la carga bloqueada (CDA / SGRPlusCore) el aviso de PyME ("podés
   // seguir completando el legajo") contradice al banner de bloqueo de
   // LegajoUniversalBar: en ese caso no se suma acá.
-  const { bloqueado: cargaBloqueada, cargando: cargandoBloqueo } = useBloqueoLegajo(
-    socioIdActivo,
-    cadenaId,
-    cuitActivo,
+  const {
+    bloqueado: cargaBloqueada,
+    cargando: cargandoBloqueo,
+    motivoSgrCore,
+  } = useBloqueoLegajo(socioIdActivo, cadenaId, cuitActivo);
+  const puedeRevisarSolicitudes = esAdminEmpresa && !isVendor;
+  const { data: limitesSocio } = useObtenerLimitesSocio(puedeRevisarSolicitudes ? socioIdActivo : null);
+  const solicitudesParaRevisar = (Array.isArray(limitesSocio) ? limitesSocio : []).filter((l) =>
+    esPorConfirmar(l.tipolimiteestadoid),
   );
 
   const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
@@ -218,6 +227,8 @@ export const PendientesEmpresa = () => {
   };
 
   const irAUsuarios = () => navigate(`${basePath}/usuarios`);
+  const irARevisarSolicitud = () =>
+    navigate(`${basePath}/solicitudes?revisar=${solicitudesParaRevisar[0]?.tipolimitesocioid ?? ""}`);
   const irAInvitarUsuario = () => {
     setAbierto(false);
     navigate(`${basePath}/usuarios?invitar=1`);
@@ -226,6 +237,33 @@ export const PendientesEmpresa = () => {
   const items = !visible
     ? []
     : [
+        cargaBloqueada && {
+          id: "validacion",
+          nivel: "bloqueo",
+          icono: <FiShieldOff />,
+          titulo: "La empresa no superó la validación",
+          corto: "Validación no superada",
+          descripcion: (
+            <>
+              {motivoSgrCore || "No superó las validaciones de aceptación."} Por ahora{" "}
+              <strong>no se puede cargar ni modificar el legajo</strong>: comunicate con BIND Garantías para que lo
+              revisemos.
+            </>
+          ),
+        },
+        solicitudesParaRevisar.length > 0 && {
+          id: "revision",
+          nivel: "bloqueo",
+          icono: <FiUserCheck />,
+          titulo:
+            solicitudesParaRevisar.length === 1
+              ? "Una solicitud espera tu revisión"
+              : `${solicitudesParaRevisar.length} solicitudes esperan tu revisión`,
+          corto: "Solicitud para revisar",
+          descripcion:
+            "La cargó tu ejecutivo por la empresa. Hasta que la aceptes, BIND Garantías no la evalúa.",
+          accion: { texto: "Revisar", onClick: irARevisarSolicitud },
+        },
         faltaCertificadoPyme && {
           id: "pyme",
           nivel: "bloqueo",

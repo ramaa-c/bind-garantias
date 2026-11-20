@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { FiLink, FiAlertTriangle } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
+import { esCuitPersonaHumana } from "../../../../utils/socioUtils";
 import styles from "./VinculacionModal.module.css";
-
-const PREFIJOS_PERSONA_HUMANA = ["20", "23", "24", "25", "26", "27"];
 
 // Confirmación de "esta es mi empresa" antes de vincularla al usuario (es
 // irreversible). A diferencia del ConfirmacionModal genérico, muestra la
@@ -29,7 +28,7 @@ export default function VinculacionModal({
   }
 
   const inicial = (nombreEmpresa || "").trim().charAt(0).toUpperCase() || "?";
-  const esPersonaHumana = PREFIJOS_PERSONA_HUMANA.includes(String(cuit || "").replace(/\D/g, "").slice(0, 2));
+  const esPersonaHumana = esCuitPersonaHumana(cuit);
   const textos = esPersonaHumana
     ? esVendor
       ? {

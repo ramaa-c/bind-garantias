@@ -17,6 +17,7 @@ import { DetalleSolicitudModal } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useChannel } from "../../../../context/useChannel";
+import { useRutaInicio } from "../../../../hooks/useRutaInicio";
 import { useEmpresasVendor, useSolicitudesVendor } from "../../../../hooks/useEmpresasVendor";
 import { useTiposProducto } from "../../../../hooks/useCatalogos";
 import { useActualizarLimiteSocio } from "../../../../hooks/useLinea";
@@ -113,6 +114,7 @@ export const SeleccionarEmpresa = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { basePath } = useChannel();
+  const rutaInicio = useRutaInicio();
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
 
@@ -243,11 +245,9 @@ export const SeleccionarEmpresa = () => {
 
   /* — acciones — */
   const entrarAEmpresa = (empresa, { destino, estado } = {}) => {
-    const tieneSolicitudes = (resumenPorEmpresa.get(String(empresa.socioId))?.total || 0) > 0;
-    const ruta = destino || (tieneSolicitudes ? "/legajo" : "/solicitudes");
     cambiarEmpresa();
     setActiveSocioId(empresa.socioId);
-    navigate(`${basePath}${ruta}`, estado ? { state: estado } : undefined);
+    navigate(destino ? `${basePath}${destino}` : rutaInicio, estado ? { state: estado } : undefined);
   };
   const empresaDeSolicitud = (s) => ({ socioId: s.socioid, nombre: s.empresaNombre, cuit: s.cuit });
   // Las validaciones de "Nueva operación" (solicitud pendiente, borrador,
@@ -301,7 +301,7 @@ export const SeleccionarEmpresa = () => {
     <FilaSolicitudVendor
       key={`${s.socioid}-${s.id}`}
       solicitud={s}
-      onEntrar={() => entrarAEmpresa(empresaDeSolicitud(s), { destino: "/legajo" })}
+      onEntrar={() => entrarAEmpresa(empresaDeSolicitud(s))}
       onVerDetalle={setSolicitudSeleccionada}
       onCancelar={s.enCurso && s.raw ? setSolicitudACancelar : undefined}
     />

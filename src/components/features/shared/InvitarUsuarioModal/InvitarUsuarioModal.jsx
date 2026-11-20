@@ -43,7 +43,7 @@ export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin
       const resultado = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
       if (resultado === RESULTADO_VINCULADA) {
         toast.success("Le dimos acceso a la empresa", {
-          description: `${emailLimpio} ya tenía cuenta: puede ingresar cuando quiera.`,
+          description: `${emailLimpio} ya tenía cuenta: le avisamos por mail que ya puede operar con la empresa.`,
         });
       } else {
         toast.success("Invitación enviada", { description: emailLimpio });
@@ -114,8 +114,8 @@ export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin
 
         <p className={styles.notaInvitar}>
           <FiInfo aria-hidden="true" />
-          Si la persona ya tiene una cuenta, le damos acceso directamente. Si no, le enviamos un mail para que se
-          registre.{" "}
+          Si la persona ya tiene una cuenta, le damos acceso y le avisamos por mail. Si no, le enviamos un mail para
+          que se registre.{" "}
           {entraComoAdmin
             ? "Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar."
             : "Entra como usuario; una vez vinculada, podés hacerla administradora."}

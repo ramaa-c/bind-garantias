@@ -114,8 +114,20 @@ export const quitarPrefijoRechazoAutomatico = (observaciones) =>
 
 export const MOTIVO_CANCELACION_SOCIO = "Cancelada por el socio desde la plataforma.";
 
+export const MOTIVO_RECHAZO_EMPRESA = "La empresa no confirmó la solicitud cargada por su ejecutivo.";
+
+export const ESTADO_TEXTO_POR_CONFIRMAR = "Por confirmar";
+
+export const esPorConfirmar = (estadoId) => Number(estadoId) === ESTADO_INICIAL;
+
+export const VENDOR_CREA_POR_CONFIRMAR = false;
+
+export const estadoInicialSolicitud = (esVendor) =>
+  esVendor && VENDOR_CREA_POR_CONFIRMAR ? ESTADO_INICIAL : ESTADO_PENDIENTE;
+
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);
+  if (id === ESTADO_INICIAL) return ESTADO_TEXTO_POR_CONFIRMAR;
   if (id === ESTADO_APROBADA) return "Aprobada";
   if (id === ESTADO_RECHAZADA) return "Rechazada";
   if (id === ESTADO_CANCELADA) return "Cancelada";
