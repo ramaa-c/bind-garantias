@@ -14,6 +14,7 @@ import { obtenerDatosTokenApi } from "../api/tokenApi";
 
 export const ROL_ADMIN = "admin";
 export const ROL_USUARIO = "usuario";
+export const ROL_VENDOR = "vendor";
 export const ESTADO_VINCULADO = "vinculado";
 export const ESTADO_INVITACION = "invitacion";
 
@@ -53,24 +54,29 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
           id: String(u.usuarioWebId),
           usuarioWebId: u.usuarioWebId,
           email: (esVos && emailPropio) || u.email || `Usuario #${u.usuarioWebId}`,
-          rol: u.esAdministradorCuit ? ROL_ADMIN : ROL_USUARIO,
+          // El vendor opera la empresa con su propio rol, nunca como
+          // administrador del CUIT (aunque el vínculo diga lo contrario).
+          rol: esVos && esVendor ? ROL_VENDOR : u.esAdministradorCuit ? ROL_ADMIN : ROL_USUARIO,
           estado: ESTADO_VINCULADO,
           desde: u.momentoCreacion || null,
           esVos,
         };
       }),
-    [usuariosVinculados, emailPropio, miUsuarioWebId],
+    [usuariosVinculados, emailPropio, miUsuarioWebId, esVendor],
   );
 
   const yo = vinculados.find((u) => u.esVos);
   const soyAdmin = yo?.rol === ROL_ADMIN;
+  // El vendor invita a la empresa (mail de bienvenida) sin ser administrador;
+  // cambiar roles o quitar accesos sigue siendo solo de los administradores.
+  const puedeInvitar = soyAdmin || esVendor;
   const soyAsistente = !!asistenciaQueAtiendo(socioId);
   const cuitLimpio = String(cuit || "").replace(/\D/g, "");
 
   const { data: invitacionesApi, isPending: cargandoInvitaciones } = useQuery({
     queryKey: ["usuarioVinculacion", "lista", cuitLimpio],
     queryFn: () => usuarioVinculacionService.listarInvitaciones(cuitLimpio),
-    enabled: soyAdmin && !!cuitLimpio,
+    enabled: puedeInvitar && !!cuitLimpio,
     staleTime: 1000 * 60,
   });
 
@@ -195,8 +201,9 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
 
   return {
     usuarios,
-    cargando: isLoading || (soyAdmin && !!cuitLimpio && cargandoInvitaciones),
+    cargando: isLoading || (puedeInvitar && !!cuitLimpio && cargandoInvitaciones),
     soyAdmin,
+    puedeInvitar,
     soyAsistente,
     cantidadAdmins,
     primerUsuarioEsAdmin,
