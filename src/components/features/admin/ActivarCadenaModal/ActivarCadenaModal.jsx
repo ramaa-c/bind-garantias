@@ -463,11 +463,9 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
                     hideErrorSpace
                   />
-                  {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
+                  {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && modelosDocumentoOpciones.length === 0 && (
                     <span className={f.ayuda}>
-                      {modelosDocumentoOpciones.length === 0
-                        ? "Ningún modelo de este tipo se puede generar desde una solicitud."
-                        : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
+                      Sin modelos disponibles para este tipo.
                     </span>
                   )}
                 </div>

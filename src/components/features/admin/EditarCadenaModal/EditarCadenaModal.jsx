@@ -25,7 +25,7 @@ const construirDatosFormulario = (activeItem) => ({
   montomaximo: activeItem?.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
   montomaximoutilizado: activeItem?.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
   porcentajemaximoutilizado: activeItem?.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
-  monedaid: activeItem?.monedaid != null ? activeItem.monedaid.toString() : "",
+  monedaid: Number(activeItem?.monedaid) > 0 ? activeItem.monedaid.toString() : "",
   activa: activeItem?.activa || "1",
   // El listado de cadenas solo trae ModeloDocumentoID (no el TipoModeloDocumentoID
   // que le dio origen), así que el combo de Tipo arranca vacío en edición aunque
@@ -283,9 +283,13 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       footer={
         <>
           <span className={`${f.pieAyuda} ${!formState.monedaid ? f.pieAyudaError : ""}`}>
-            {formState.monedaid
-              ? "Los campos con * son obligatorios"
-              : "Esta cadena no tiene moneda asignada. Contactá a soporte para configurarla."}
+            {!formState.monedaid
+              ? "Esta cadena no tiene moneda asignada. Contactá a soporte para configurarla."
+              : sinCambios && tipoModeloDocumentoIdUI && Number(formState.modelodocumentoid) === 0
+                ? "Elegí un modelo para guardar."
+                : sinCambios
+                  ? "No hay cambios para guardar."
+                  : "Los campos con * son obligatorios"}
           </span>
           <Button variant="adminNeutro" onClick={onClose} disabled={actualizarMutation.isPending}>
             Cancelar
@@ -392,11 +396,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
                 hideErrorSpace
               />
-              {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
+              {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && modelosDocumentoOpciones.length === 0 && (
                 <span className={f.ayuda}>
-                  {modelosDocumentoOpciones.length === 0
-                    ? "Ningún modelo de este tipo se puede generar desde una solicitud."
-                    : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
+                  Sin modelos disponibles para este tipo.
                 </span>
               )}
             </div>
