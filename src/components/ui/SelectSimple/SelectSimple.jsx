@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 import ReactSelect from "react-select";
 import inputStyles from "../InputSimple/InputSimple.module.css";
+import { useMenuFlotante } from "./useMenuFlotante";
 
 export const SelectSimple = ({
   name,
@@ -21,6 +22,7 @@ export const SelectSimple = ({
   className = "",
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const propsMenuFlotante = useMenuFlotante();
 
   // We determine if we are in admin mode to apply the blue focus theme
   const isAdmin = variant === "admin" || (variant !== "client" && typeof window !== "undefined" && window.location.pathname.includes("/admin"));
@@ -170,8 +172,7 @@ export const SelectSimple = ({
               if (onBl) onBl();
             }}
             aria-label={label}
-            menuPortalTarget={typeof window !== "undefined" ? document.body : null}
-            menuPosition="fixed"
+            {...propsMenuFlotante}
           />
           <label className={inputStyles.label}>
             {label}

@@ -3,6 +3,7 @@ import { Controller } from "react-hook-form";
 import ReactSelect from "react-select";
 import CreatableSelect from "react-select/creatable";
 import styles from "./SelectSocio.module.css";
+import { useMenuFlotante } from "../SelectSimple/useMenuFlotante";
 
 const customStyles = {
   control: (base, state) => ({
@@ -92,9 +93,12 @@ export const SelectSocio = ({
   disabled,
   isLoading,
   isCreatable = false,
+  onMenuOpen,
+  onMenuClose,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const propsMenuFlotante = useMenuFlotante({ onMenuOpen, onMenuClose });
 
   return (
     <Controller
@@ -161,7 +165,7 @@ export const SelectSocio = ({
                   styles={customStyles}
                   className={styles.selectWrapper}
                   icon={icon}
-                  menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                  {...propsMenuFlotante}
                   isDisabled={disabled || isLoading}
                   isLoading={isLoading}
                   formatCreateLabel={(inputValue) => `Crear "${inputValue}"`}
