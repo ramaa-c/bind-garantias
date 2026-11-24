@@ -5,8 +5,7 @@ import { Button } from "../../../ui/Button/Button";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useRelationMetadata } from "../../../../hooks/useTipoRelacionSocio";
-import { useTipoDocumentoArchivo } from "../../../../hooks/useCatalogos";
-import { TIPO_DOCUMENTO_MAP } from "../../../../services/requisitosService";
+import { useTituloDocumento } from "../../../../hooks/useCatalogos";
 import {
   TABS_TIPO_PERSONA,
   esRelacionVisible,
@@ -17,20 +16,20 @@ import styles from "./RequisitosConfigModal.module.css";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 const DOCUMENT_METADATA = [
-  { key: "estatuto", title: "Estatuto Social", desc: "Normas constitutivas de la entidad legal." },
-  { key: "eecc", title: "Estados Contables (EECC)", desc: "Estados contables auditados de los últimos ejercicios." },
-  { key: "balance", title: "Balance de Sumas y Saldos", desc: "Estado de sumas y saldos firmado por contador público." },
-  { key: "ddjjIva", title: "Declaración Jurada de IVA", desc: "Últimas declaraciones juradas de IVA presentadas." },
-  { key: "poderes", title: "Poderes", desc: "Copia de representación legal para firmantes." },
-  { key: "certificadoPyme", title: "Certificado PyME", desc: "Certificado oficial emitido por el Ministerio de Producción / ARCA." },
-  { key: "actaDesignacion", title: "Acta de Designación de Autoridades", desc: "Acta de designación de autoridades vigente." },
-  { key: "actaSocios", title: "Acta de Reunión de Socios", desc: "Acta de última reunión de socios o asamblea de la sociedad." },
-  { key: "f1272", title: "Formulario F1272", desc: "Formulario de declaración de PyME ante la ARCA." },
-  { key: "ddjjGanancias", title: "DDJJ de Ganancias", desc: "Última declaración jurada de Ganancias presentada (Física)." },
-  { key: "manifestacionBienes", title: "Manifestación de Bienes", desc: "Manifestación de bienes o DDJJ de Bienes Personales (Física)." },
-  { key: "constanciaMonotributo", title: "Constancia de Monotributo", desc: "Constancia de opción al Monotributo de ARCA (Física)." },
-  { key: "cartasDocumento", title: "Cartas Documento", desc: "Cartas documento operativas relacionadas." },
-  { key: "otrosDocumentos", title: "Otros Documentos", desc: "Cualquier otra documentación de respaldo del legajo." }
+  { key: "estatuto", desc: "Normas constitutivas de la entidad legal." },
+  { key: "eecc", desc: "Estados contables auditados de los últimos ejercicios." },
+  { key: "balance", desc: "Estado de sumas y saldos firmado por contador público." },
+  { key: "ddjjIva", desc: "Últimas declaraciones juradas de IVA presentadas." },
+  { key: "poderes", desc: "Copia de representación legal para firmantes." },
+  { key: "certificadoPyme", desc: "Certificado oficial emitido por el Ministerio de Producción / ARCA." },
+  { key: "actaDesignacion", desc: "Acta de designación de autoridades vigente." },
+  { key: "actaSocios", desc: "Acta de última reunión de socios o asamblea de la sociedad." },
+  { key: "f1272", desc: "Formulario de declaración de PyME ante la ARCA." },
+  { key: "ddjjGanancias", desc: "Última declaración jurada de Ganancias presentada (Física)." },
+  { key: "manifestacionBienes", desc: "Manifestación de bienes o DDJJ de Bienes Personales (Física)." },
+  { key: "constanciaMonotributo", desc: "Constancia de opción al Monotributo de ARCA (Física)." },
+  { key: "cartasDocumento", desc: "Cartas documento operativas relacionadas." },
+  { key: "otrosDocumentos", desc: "Cualquier otra documentación de respaldo del legajo." }
 ];
 
 const TABS = TABS_TIPO_PERSONA;
@@ -44,12 +43,9 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   // Compartida con la mini parametrización de
   // terceros en TiposRelacionSocio.jsx - ver useRelationMetadata.
   const { relationMetadata } = useRelationMetadata();
-  const { data: descripcionPorTipoDocumento } = useTipoDocumentoArchivo();
+  const tituloDe = useTituloDocumento();
 
-  const documentMetadata = DOCUMENT_METADATA.map((doc) => ({
-    ...doc,
-    title: descripcionPorTipoDocumento?.get(TIPO_DOCUMENTO_MAP[doc.key]) || doc.title,
-  }));
+  const documentMetadata = DOCUMENT_METADATA.map((doc) => ({ ...doc, title: tituloDe(doc.key) }));
 
   // Solapa activa actual
   const [activeTab, setActiveTab] = useState("sa");

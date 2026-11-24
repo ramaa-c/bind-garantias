@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { sociosService } from "../../../../services/sociosService";
 import { useCertificadoPyme } from "../../../../hooks/useSocios";
+import { useTamanioEmpresa, useTipoActividadGlobal } from "../../../../hooks/useCatalogos";
+import { formatearTextoCatalogo } from "../../../../utils/textoCatalogo";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectFechaSimple } from "../../../ui/SelectFechaSimple/SelectFechaSimple";
@@ -16,20 +18,21 @@ const FORM_INICIAL = { fchDesde: "", fchHasta: "", numero: "", observaciones: ""
 
 // Ids de TipoActividadGlobal / TamanioEmpresa de SGR+. La API exige un sector (1 a 5): con 0 la migración
 // del socio a SGR+ falla por la clave foránea de TipoActividadGlobal.
-const OPCIONES_SECTOR = [
-  { value: "1", label: "Agropecuario" },
-  { value: "2", label: "Industria y minería" },
-  { value: "3", label: "Construcción" },
-  { value: "4", label: "Comercio" },
-  { value: "5", label: "Servicios" },
-];
-const OPCIONES_TAMANIO = [
-  { value: "0", label: "Sin información" },
-  { value: "1", label: "Micro" },
-  { value: "2", label: "Pequeña" },
-  { value: "3", label: "Mediana tramo 1" },
-  { value: "4", label: "Mediana tramo 2" },
-];
+const SECTOR_MINIMO = 1;
+const SECTOR_MAXIMO = 5;
+const aOpciones = (lista, campoId, conId = false) =>
+  [...lista]
+    .sort((a, b) => Number(a[campoId]) - Number(b[campoId]))
+    .map((item) => {
+      const descripcion = formatearTextoCatalogo(item.descripcion);
+      return { value: String(item[campoId]), label: conId ? `${item[campoId]} - ${descripcion}` : descripcion };
+    });
+
+const esSectorAdmitido = (s) => {
+  const id = Number(s.tipoactividadglobalid);
+  return id >= SECTOR_MINIMO && id <= SECTOR_MAXIMO;
+};
+
 const etiquetaDe = (opciones, valor) => opciones.find((o) => o.value === String(valor))?.label;
 
 const formatearFecha = (fecha) => {
@@ -79,6 +82,13 @@ const calcularVigencia = (hasta) => {
 export function CertificadoPymeAdmin({ socioId, cuit }) {
   const queryClient = useQueryClient();
   const { data: certificados, isLoading } = useCertificadoPyme(socioId);
+  const { data: sectores } = useTipoActividadGlobal();
+  const { data: tamanios } = useTamanioEmpresa();
+  const sectoresAdmitidos = (sectores?.raw || []).filter(esSectorAdmitido);
+  const nombresSector = aOpciones(sectoresAdmitidos, "tipoactividadglobalid");
+  const opcionesSector = aOpciones(sectoresAdmitidos, "tipoactividadglobalid", true);
+  const nombresTamanio = aOpciones(tamanios?.raw || [], "tamanioempresaid");
+  const opcionesTamanio = aOpciones(tamanios?.raw || [], "tamanioempresaid", true);
   const [reverificando, setReverificando] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [certificadoEditando, setCertificadoEditando] = useState(null);
@@ -266,11 +276,11 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Sector</span>
-                <span className={styles.factValue}>{etiquetaDe(OPCIONES_SECTOR, sectorActual) || "Sin definir (editalo)"}</span>
+                <span className={styles.factValue}>{etiquetaDe(nombresSector, sectorActual) || "Sin definir (editalo)"}</span>
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Tamaño</span>
-                <span className={styles.factValue}>{etiquetaDe(OPCIONES_TAMANIO, tamanioActual) || "—"}</span>
+                <span className={styles.factValue}>{etiquetaDe(nombresTamanio, tamanioActual) || "—"}</span>
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Observaciones</span>
@@ -365,7 +375,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               label="Sector *"
               value={form.sector}
               onChange={(val) => setForm((f) => ({ ...f, sector: val }))}
-              options={OPCIONES_SECTOR}
+              options={opcionesSector}
               isSearchable={false}
               hideErrorSpace
               variant="admin"
@@ -374,7 +384,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               label="Tamaño"
               value={form.tamanio}
               onChange={(val) => setForm((f) => ({ ...f, tamanio: val }))}
-              options={OPCIONES_TAMANIO}
+              options={opcionesTamanio}
               isSearchable={false}
               hideErrorSpace
               variant="admin"

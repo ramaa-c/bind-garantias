@@ -16,12 +16,12 @@ import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea, useLimitesDeCadenas } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
-import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
+import { useTiposProducto, useParametrosModelosDocumento, useCatalogoMonedas } from "../../../hooks/useCatalogos";
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
 import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
 import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
-import { importeEnPesosDeLimite, importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
+import { importeEnPesosDeLimite, importeOriginalDeLimite } from "../../../utils/monedaUtils";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { SolicitudPanel } from "../../../components/features/admin/SolicitudPanel/SolicitudPanel";
 import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
@@ -248,6 +248,7 @@ export default function Dashboard() {
   // mostraba como Pagaré). Se infiere por palabra clave de la Descripcion
   // global, igual que del lado cliente.
   const { data: tiposLimiteGlobal } = useTiposProducto();
+  const { simboloDe } = useCatalogoMonedas();
   const familiaDeLinea = useCallback(
     (tipoLimiteId) =>
       `Alta de línea (${etiquetaFamiliaDeLinea(tiposLimiteGlobal, tipoLimiteId)})`,
@@ -398,7 +399,7 @@ export default function Dashboard() {
         monto: importeLimite
           ? new Intl.NumberFormat("es-AR").format(importeLimite)
           : "0",
-        moneda: simboloMoneda(monedaId),
+        moneda: simboloDe(monedaId),
         importePesos: importeEnPesosDeLimite(l),
         cliente: socio?.denominacion || "Socio no encontrado",
         cuit: socio?.cuit || "—",
@@ -433,6 +434,7 @@ export default function Dashboard() {
     familiaDeLinea,
     tiposLimiteGlobal,
     cadenaInfoPorId,
+    simboloDe,
   ]);
 
   const lineasPorCadena = useLimitesDeCadenas(solicitudesCanal.map((s) => s.cadenavalorid));

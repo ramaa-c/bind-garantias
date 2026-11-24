@@ -55,7 +55,7 @@ import {
   validarArchivo,
   FORMATOS_ARCHIVO,
 } from "../../../../utils/fileUtils";
-import { ESTRUCTURA_LEGAJO } from "./DocumentosLegajo.constants";
+import { useEstructuraLegajo } from "../../../../hooks/useEstructuraLegajo";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 // Ícono de los botones de descarga en ZIP según en qué fase esté
@@ -156,15 +156,16 @@ export function DocumentosLegajo({
   // fallback por tipo de persona/sociedad — sigue siendo mejor que mostrar
   // el legajo completo sin ningún criterio.
   const { cadenaId: cadenaActivaId } = useCadenaActiva();
+  const estructuraLegajo = useEstructuraLegajo();
   const cadenaId = adminMode ? Number(cadenaIdOverride) || null : cadenaActivaId;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const estructuraFiltrada = useMemo(() => {
-    return ESTRUCTURA_LEGAJO.filter((item) => {
+    return estructuraLegajo.filter((item) => {
       const configVal = requisitos?.documentos?.[item.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [requisitos]);
+  }, [requisitos, estructuraLegajo]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -1058,7 +1059,7 @@ export function DocumentosLegajo({
             descargarLegajoCompletoZip(
               archivosBackend,
               socioArchivoService.obtenerContenido,
-              ESTRUCTURA_LEGAJO,
+              estructuraLegajo,
               socioArchivoService.TIPO_DOCUMENTO_MAP,
               `Legajo_Completo_${cleanRazonSocial}.zip`,
             ),

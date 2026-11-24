@@ -12,6 +12,7 @@ import { CargaArchivos } from "../../../ui/CargaArchivos/CargaArchivos";
 import { FORMATOS_ARCHIVO } from "../../../../utils/fileUtils";
 import styles from "./DocumentosEmpresaModal.module.css";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { useTituloDocumento } from "../../../../hooks/useCatalogos";
 import { toast } from "sonner";
 
 export const DocumentosEmpresaModal = ({
@@ -25,80 +26,67 @@ export const DocumentosEmpresaModal = ({
   onArchivosBackendChange,
   requisitos,
 }) => {
+  const tituloDe = useTituloDocumento();
   const allDocs = [
     {
       key: "estatuto",
-      title: "Estatuto Social",
       info: "Normas constitutivas de la entidad legal.",
     },
     {
       key: "eecc",
-      title: "Estados Contables (EECC)",
       info: "Estados contables auditados de los últimos ejercicios.",
     },
     {
       key: "balance",
-      title: "Balance de Sumas y Saldos",
       info: "Último balance de la empresa firmado por contador público.",
     },
     {
       key: "ddjjIva",
-      title: "Declaración Jurada de IVA",
       info: "Declaración jurada de IVA y su constancia de presentación.",
     },
     {
       key: "poderes",
-      title: "Poderes",
       info: "Copia de representación legal para firmantes.",
     },
     {
       key: "certificadoPyme",
-      title: "Certificado PyME",
       info: "Certificado oficial emitido por el Ministerio de Producción / ARCA.",
     },
     {
       key: "actaDesignacion",
-      title: "Acta de Designación de Autoridades",
       info: "Designación de autoridades vigente o declaración jurada equivalente.",
     },
     {
       key: "actaSocios",
-      title: "Acta de Reunión de Socios",
       info: "Acta de última reunión de socios o asamblea.",
     },
     {
       key: "f1272",
-      title: "Formulario F1272",
       info: "Formulario de declaración de PyME ante la ARCA.",
     },
     {
       key: "ddjjGanancias",
-      title: "DDJJ de Ganancias",
       info: "Declaración jurada de Ganancias presentada ante ARCA.",
     },
     {
       key: "manifestacionBienes",
-      title: "Manifestación de Bienes",
       info: "Manifestación de bienes o DDJJ de Bienes Personales.",
     },
     {
       key: "constanciaMonotributo",
-      title: "Constancia de Monotributo",
       info: "Constancia de opción al Monotributo de ARCA.",
     },
     {
       key: "cartasDocumento",
-      title: "Cartas Documento",
       info: "Cartas documento operativas relacionadas.",
     },
     {
       key: "otrosDocumentos",
-      title: "Otros Documentos",
       info: "Cualquier otra documentación de respaldo del legajo.",
     },
   ];
 
-  const docs = allDocs.filter(({ key }) => {
+  const docs = allDocs.map((doc) => ({ ...doc, title: tituloDe(doc.key) })).filter(({ key }) => {
     const configVal = requisitos?.documentos?.[key];
     return configVal !== 0; // 0 = no mostrar
   });

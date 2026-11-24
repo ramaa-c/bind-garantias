@@ -6,6 +6,7 @@ import { useObtenerDatosSocioLegajo, useEstadoCdaTerceros } from "./useTerceros"
 import { useTiposRelacionSocioActivos } from "./useTipoRelacionSocio";
 import { socioArchivoService } from "../services/socioArchivoService";
 import { useCadenaActiva } from "./useCadenaActiva";
+import { useTituloDocumento } from "./useCatalogos";
 import {
   RELACION_APODERADO_ID,
   RELACION_REPRESENTANTE_LEGAL_ID,
@@ -17,23 +18,6 @@ import {
   resolverRelacionesBaseActivas,
 } from "../utils/relacionesTercerosUtils";
 
-
-const DOCUMENT_TITLES = {
-  estatuto: "Estatuto Social",
-  balance: "Balance de Sumas y Saldos",
-  ddjjIva: "DDJJ de IVA",
-  cartasDocumento: "Cartas Documento",
-  poderes: "Poderes",
-  certificadoPyme: "Certificado de PyME",
-  otrosDocumentos: "Otros documentos",
-  eecc: "Estados Contables (EECC)",
-  actaDesignacion: "Acta de Designación de Autoridades",
-  actaSocios: "Acta de Reunión de Socios",
-  f1272: "Formulario F1272",
-  ddjjGanancias: "DDJJ de Ganancias",
-  manifestacionBienes: "Manifestación de Bienes",
-  constanciaMonotributo: "Constancia de Monotributo",
-};
 
 const normalizarTexto = (str) =>
   String(str || "")
@@ -143,6 +127,8 @@ export const useValidacionLegajo = ({
     ...Object.values(porTipoRelacion).flat().map((r) => r.id),
   ], cadenaId);
 
+  const tituloDe = useTituloDocumento();
+
   const { data: archivosBackend = [], isLoading: loadingArchivos } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
     queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo, true),
@@ -193,7 +179,7 @@ export const useValidacionLegajo = ({
         if (tieneDoc) {
           requisitosCompletados++;
         } else {
-          const docTitle = DOCUMENT_TITLES[key] || key;
+          const docTitle = tituloDe(key) || key;
           const msg = `Falta subir el documento obligatorio: ${docTitle}.`;
           errores.push(msg);
           erroresDocumentos.push(msg);

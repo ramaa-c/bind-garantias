@@ -30,10 +30,10 @@ import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/useChannel";
 import { mensajeNegocio } from "../../../utils/mensajesError";
-import { useTiposProducto } from "../../../hooks/useCatalogos";
+import { useTiposProducto, useCatalogoMonedas } from "../../../hooks/useCatalogos";
 import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
 import { etiquetaFamiliaDeLinea } from "../../../utils/familiaLinea";
-import { importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
+import { importeOriginalDeLimite } from "../../../utils/monedaUtils";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
@@ -180,6 +180,7 @@ export default function Solicitudes() {
   const { data: solicitudesEnProceso, isLoading: cargandoProceso } =
     useObtenerSolicitudesEnProceso(cuitActivo);
   const { data: tiposLimiteGlobal, isLoading: cargandoTiposLimite } = useTiposProducto();
+  const { simboloDe } = useCatalogoMonedas();
 
   const isLoadingData = cargandoSolicitudes || cargandoProceso || cargandoTiposLimite;
 
@@ -283,7 +284,7 @@ export default function Solicitudes() {
           tiposLimiteGlobal?.raw?.find((t) => Number(t.tipolimiteid) === Number(s.tipolimiteid))
             ?.descripcion || "",
         monto: new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(s)),
-        moneda: simboloMoneda(s.monedaid),
+        moneda: simboloDe(s.monedaid),
         estado: estadoTextoDesde(tipoLimiteEstadoId),
         tipoLimiteEstadoId,
         fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
@@ -293,7 +294,7 @@ export default function Solicitudes() {
         raw: s,
       };
     });
-  }, [solicitudesReal, socioIdFinal, cuitActivo, tiposLimiteGlobal]);
+  }, [solicitudesReal, socioIdFinal, cuitActivo, tiposLimiteGlobal, simboloDe]);
 
   const listaFiltrada = useMemo(() => {
     const texto = (filtros.busqueda || "").trim().toLowerCase();

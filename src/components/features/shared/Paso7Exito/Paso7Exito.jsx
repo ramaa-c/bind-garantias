@@ -14,19 +14,11 @@ import { Button } from "../../../ui/Button/Button";
 import { useChannel } from "../../../../context/useChannel";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
+import { useCatalogoMonedas } from "../../../../hooks/useCatalogos";
+import { MONEDA_DOLAR, MONEDA_PESOS } from "../../../../utils/monedaUtils";
 import styles from "./Paso7Exito.module.css";
 
-const SIMBOLOS_MONEDA = {
-  2: "U$D",
-  10: "UVAS",
-  500: "€",
-  5000: "$",
-};
-
-const NOMBRES_MONEDA = {
-  2: "Dólares",
-  5000: "Pesos",
-};
+const MONEDAS_CON_NOMBRE_VISIBLE = [MONEDA_PESOS, MONEDA_DOLAR];
 
 const formatearPlazo = (plazo) => {
   if (!plazo) return null;
@@ -55,6 +47,10 @@ export default function Paso7Exito({
 
   // Con el legajo completo, el paso 2 solo esta pendiente si todavia faltan documentos obligatorios
   const { faltanDocumentos, isLoading: cargandoDocumentos } = useValidacionLegajo();
+  const { simboloDe, nombreDe } = useCatalogoMonedas();
+  const nombreMoneda = MONEDAS_CON_NOMBRE_VISIBLE.includes(String(resumen?.monedaId))
+    ? nombreDe(resumen.monedaId)
+    : "";
 
   const handleFinalizar = () => {
     onVolverInicio();
@@ -77,7 +73,7 @@ export default function Paso7Exito({
 
   const montoFormateado =
     resumen && Number.isFinite(resumen.monto)
-      ? `${SIMBOLOS_MONEDA[resumen.monedaId] || "$"} ${resumen.monto.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ? `${simboloDe(resumen.monedaId)} ${resumen.monto.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : null;
   const plazoFormateado = resumen ? formatearPlazo(resumen.plazo) : null;
   const rechazada = !!resumen?.rechazada;
@@ -175,10 +171,10 @@ export default function Paso7Exito({
                 <dd>{resumen.linea}</dd>
               </div>
             )}
-            {NOMBRES_MONEDA[resumen.monedaId] && (
+            {nombreMoneda && (
               <div className={styles.resumenItem}>
                 <dt>Moneda</dt>
-                <dd>{NOMBRES_MONEDA[resumen.monedaId]}</dd>
+                <dd>{nombreMoneda}</dd>
               </div>
             )}
             {plazoFormateado && (

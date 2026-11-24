@@ -8,6 +8,7 @@ import { lineaService } from "../../../services/lineaService";
 import {
   useTipoCanalComercializacion,
   useEquipoComercial,
+  useCatalogoMonedas,
 } from "../../../hooks/useCatalogos";
 import { Spinner, Button, Skeleton, Switch, FiltroDesplegable } from "../../../components/ui";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
@@ -22,7 +23,6 @@ import { toast } from "sonner";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import { mensajeNegocio } from "../../../utils/mensajesError";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../utils/empresaAvatar";
-import { simboloMoneda } from "../../../utils/monedaUtils";
 
 // Mismo criterio que Empresas.jsx/CdasGlobales.jsx: con el alto de fila
 // blindado a una sola línea (table-layout:fixed + truncado, ver
@@ -105,6 +105,7 @@ const ACCIONES = [
 export default function CadenasValor() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
   const { bloqueado, verificando } = useBloqueoAdminRestringido();
+  const { simboloDe } = useCatalogoMonedas();
   const [searchTerm, setSearchTerm] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("todas");
   const [canalFiltro, setCanalFiltro] = useState(OPCION_TODOS.value);
@@ -313,7 +314,7 @@ export default function CadenasValor() {
     const asignado = Number(item.montomaximo) || 0;
     const disponible = Math.max(0, cupoCore - asignado);
     const porcentajeAsignado = Math.min(100, Math.round((asignado / cupoCore) * 100));
-    const simbolo = simboloMoneda(item.monedaid);
+    const simbolo = simboloDe(item.monedaid);
     const nivel =
       porcentajeAsignado >= 90 ? styles.cupoPeligro : porcentajeAsignado >= 70 ? styles.cupoAlerta : "";
     return (

@@ -20,7 +20,7 @@ import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { useChannel } from "../../../../context/useChannel";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo.constants";
+import { useEstructuraLegajo } from "../../../../hooks/useEstructuraLegajo";
 import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo.constants";
 import styles from "./EstadoMigracionModal.module.css";
 
@@ -118,6 +118,7 @@ function ChecklistSection({ icon, title, items, bloqueado, notaBloqueo, numero, 
 export function EstadoMigracionModal({ isOpen, onClose }) {
   const navigate = useNavigate();
   const { basePath } = useChannel();
+  const estructuraLegajo = useEstructuraLegajo();
   const { socioIdActivo, nombreEmpresa, tipoPersonaId } = useEmpresaActiva();
   const { data: socioWeb, isLoading: cargandoSocio } = useSocioWebPorId(socioIdActivo);
   const {
@@ -146,7 +147,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const legajoSgrPlus = Number(socioWeb?.legajo) > 0 ? socioWeb.legajo : null;
   const estaMigrado = !!legajoSgrPlus;
 
-  const documentosChecklist = ESTRUCTURA_LEGAJO.filter(
+  const documentosChecklist = estructuraLegajo.filter(
     (doc) => doc.category === "Documentación" && requisitos?.documentos?.[doc.key] === 1,
   ).map((doc) => ({
     key: doc.key,

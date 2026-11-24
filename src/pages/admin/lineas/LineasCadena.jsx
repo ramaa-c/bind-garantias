@@ -17,7 +17,8 @@ import {
   useObtenerTodasWebConEstado,
   useObtenerUtilizado,
 } from "../../../hooks/useCadenaValor";
-import { useMonedas, useTiposProducto, useObligaciones } from "../../../hooks/useCatalogos";
+import { useMonedas, useCatalogoMonedas, useTiposProducto, useObligaciones } from "../../../hooks/useCatalogos";
+import { MONEDA_DOLAR, MONEDA_PESOS } from "../../../utils/monedaUtils";
 import {
   useObtenerLimitesCadenaValor,
   useCrearLimiteCadenaValor,
@@ -36,13 +37,6 @@ import {
 } from "../../../components/ui";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import styles from "./LineasProductos.module.css";
-
-const MOCK_MONEDAS = [
-  { monedaid: 2, simbolo: "u$s" },
-  { monedaid: 10, simbolo: "UVAS" },
-  { monedaid: 500, simbolo: "Euros" },
-  { monedaid: 5000, simbolo: "$ARG" },
-];
 
 // El input de días usa thousandsSeparator "." (ej: "3.000"), y ese punto
 // hace que parseInt corte en el primer separador (parseInt("3.000", 10) da
@@ -194,9 +188,7 @@ const LineaCard = ({
   // por separado en el modal, acotados a las monedas permitidas por la
   // cadena) — se resuelve el símbolo de cada uno por separado en vez de
   // asumir que comparten el mismo.
-  const simboloDe = (monedaId) =>
-    MOCK_MONEDAS.find((m) => String(m.monedaid) === String(monedaId))
-      ?.simbolo || "$";
+  const { simboloDe } = useCatalogoMonedas();
   const simboloMonedaLinea = simboloDe(linea.monedalineaid);
   const simboloMonedaContrato = simboloDe(linea.monedacontratoid);
 
@@ -388,12 +380,12 @@ export default function LineasCadena() {
   const selectedMonedaData = monedas?.raw?.find(
     (m) => String(m.monedaid) === String(formData.monedaLineaId),
   );
-  const monedaSimbolo = selectedMonedaData?.simbolo || "$";
+  const monedaSimbolo = selectedMonedaData?.simbolo?.trim() || "";
 
   const selectedMonedaContratoData = monedas?.raw?.find(
     (m) => String(m.monedaid) === String(formData.monedaContratoId),
   );
-  const monedaContratoSimbolo = selectedMonedaContratoData?.simbolo || "$";
+  const monedaContratoSimbolo = selectedMonedaContratoData?.simbolo?.trim() || "";
 
   // La moneda de la cadena (CadenaValor.MonedaID) acota qué monedas puede
   // tener una línea: si la cadena es en Pesos (5000), sus líneas solo pueden
@@ -403,7 +395,9 @@ export default function LineasCadena() {
     ? Number(selectedCadena.monedaid)
     : null;
   const monedasPermitidasIds =
-    monedaCadenaId === 2 ? [2, 5000] : [5000];
+    monedaCadenaId === Number(MONEDA_DOLAR)
+      ? [Number(MONEDA_DOLAR), Number(MONEDA_PESOS)]
+      : [Number(MONEDA_PESOS)];
   const currenciesOptionsTodas = monedas?.opciones || [];
   const currenciesOptions = monedaCadenaId
     ? currenciesOptionsTodas.filter((o) =>

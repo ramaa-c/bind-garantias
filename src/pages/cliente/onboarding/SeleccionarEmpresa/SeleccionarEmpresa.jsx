@@ -19,11 +19,11 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 import { useChannel } from "../../../../context/useChannel";
 import { useRutaInicio } from "../../../../hooks/useRutaInicio";
 import { useEmpresasVendor, useSolicitudesVendor } from "../../../../hooks/useEmpresasVendor";
-import { useTiposProducto } from "../../../../hooks/useCatalogos";
+import { useTiposProducto, useCatalogoMonedas } from "../../../../hooks/useCatalogos";
 import { useActualizarLimiteSocio } from "../../../../hooks/useLinea";
 import { solicitudesService } from "../../../../services/solicitudesService";
 import { etiquetaFamiliaDeLinea } from "../../../../utils/familiaLinea";
-import { importeOriginalDeLimite, simboloMoneda } from "../../../../utils/monedaUtils";
+import { importeOriginalDeLimite } from "../../../../utils/monedaUtils";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import {
   ESTADO_PENDIENTE,
@@ -124,6 +124,7 @@ export const SeleccionarEmpresa = () => {
   const { empresas, cargando: cargandoEmpresas } = useEmpresasVendor();
   const { porEmpresa, cargando: cargandoSolicitudes, hayErrores } = useSolicitudesVendor(empresas);
   const { data: tiposLimiteGlobal } = useTiposProducto();
+  const { simboloDe } = useCatalogoMonedas();
 
   const { control, register } = useForm({
     defaultValues: { busqueda: "", ordenSolicitudes: "desc", ordenEmpresas: "az" },
@@ -161,7 +162,7 @@ export const SeleccionarEmpresa = () => {
               tiposLimiteGlobal?.raw?.find((t) => Number(t.tipolimiteid) === Number(s.tipolimiteid))
                 ?.descripcion || "",
             monto: new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(s)),
-            moneda: simboloMoneda(s.monedaid),
+            moneda: simboloDe(s.monedaid),
             estado: estadoTextoDesde(tipoLimiteEstadoId),
             enCurso: esEstadoEnCurso(tipoLimiteEstadoId),
             fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "-",
@@ -172,7 +173,7 @@ export const SeleccionarEmpresa = () => {
           };
         }),
       ),
-    [porEmpresa, tiposLimiteGlobal],
+    [porEmpresa, tiposLimiteGlobal, simboloDe],
   );
 
   const resumenPorEmpresa = useMemo(() => {

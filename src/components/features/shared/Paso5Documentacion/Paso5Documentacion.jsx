@@ -35,23 +35,24 @@ import { validarArchivo } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+import { useTituloDocumento } from "../../../../hooks/useCatalogos";
 
 
 const DOC_ITEMS = [
-  { key: "estatuto", label: "Estatuto Social" },
-  { key: "eecc", label: "Estados Contables (EECC)" },
-  { key: "balance", label: "Balance de Sumas y Saldos" },
-  { key: "ddjjIva", label: "Declaración Jurada de IVA" },
-  { key: "poderes", label: "Poderes" },
-  { key: "certificadoPyme", label: "Certificado PyME" },
-  { key: "actaDesignacion", label: "Acta de Designación de Autoridades" },
-  { key: "actaSocios", label: "Acta de Reunión de Socios" },
-  { key: "f1272", label: "Formulario F1272" },
-  { key: "ddjjGanancias", label: "DDJJ de Ganancias" },
-  { key: "manifestacionBienes", label: "Manifestación de Bienes" },
-  { key: "constanciaMonotributo", label: "Constancia de Monotributo" },
-  { key: "cartasDocumento", label: "Cartas Documento" },
-  { key: "otrosDocumentos", label: "Otros Documentos" },
+  { key: "estatuto" },
+  { key: "eecc" },
+  { key: "balance" },
+  { key: "ddjjIva" },
+  { key: "poderes" },
+  { key: "certificadoPyme" },
+  { key: "actaDesignacion" },
+  { key: "actaSocios" },
+  { key: "f1272" },
+  { key: "ddjjGanancias" },
+  { key: "manifestacionBienes" },
+  { key: "constanciaMonotributo" },
+  { key: "cartasDocumento" },
+  { key: "otrosDocumentos" },
 ];
 
 const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
@@ -102,7 +103,8 @@ export default function Paso5Documentacion({
   const mostrarSeccionReps = mostrarApoderado || mostrarRepLegal;
   const repRequerido = requisitoApoderados === 1 || requisitoRepLegal === 1;
 
-  const docItemsFiltered = DOC_ITEMS.filter(({ key }) => {
+  const tituloDe = useTituloDocumento();
+  const docItemsFiltered = DOC_ITEMS.map(({ key }) => ({ key, label: tituloDe(key) })).filter(({ key }) => {
     const configVal = requisitos?.documentos?.[key];
     return configVal !== 0; // 0 = no mostrar
   });

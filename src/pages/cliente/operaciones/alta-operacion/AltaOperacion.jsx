@@ -29,7 +29,8 @@ import { useChannel } from "../../../../context/useChannel";
 import { familiaDeLinea } from "../../../../utils/familiaLinea";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
-import { useTiposProducto, useMonedas } from "../../../../hooks/useCatalogos";
+import { useTiposProducto, useMonedas, useCatalogoMonedas } from "../../../../hooks/useCatalogos";
+import { MONEDA_DOLAR } from "../../../../utils/monedaUtils";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
 import {
   consultaVariablesParametrizacion,
@@ -50,7 +51,6 @@ import {
   quitarPrefijoRechazoAutomatico,
 } from "../../../../utils/estadoLimiteSocio";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
-import { simboloMoneda } from "../../../../utils/monedaUtils";
 
 const STORAGE_KEY = "draft_alta_operacion_v2";
 
@@ -114,6 +114,7 @@ export const AltaOperacion = () => {
   // submit corre.
   const { data: tiposLimiteGlobal } = useTiposProducto();
   const { data: monedasCatalogo } = useMonedas();
+  const { simboloDe } = useCatalogoMonedas();
 
   // Posición consolidada del socio (todas sus líneas, todas las cadenas):
   // fuente del "utilizado" para las reglas de monto por línea (ver más abajo,
@@ -573,7 +574,7 @@ export const AltaOperacion = () => {
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
       // SolicitudEnProceso huérfana sin línea asociada.
       let importeEnPesos = Math.round(montoLimpio);
-      if (Number(cleanData.moneda) === 2) {
+      if (String(cleanData.moneda) === MONEDA_DOLAR) {
         const ayer = new Date();
         ayer.setDate(ayer.getDate() - 1);
         const fechaCotizacion = ayer.toISOString().split("T")[0];
@@ -694,7 +695,7 @@ export const AltaOperacion = () => {
         resolucion: "",
         tipolimitesolicitudid: 1,
         importemonex:
-          Number(cleanData.moneda) === 2
+          String(cleanData.moneda) === MONEDA_DOLAR
             ? Math.round(montoLimpio)
             : importeEnPesos,
         tipolibradorid: 2,
@@ -825,7 +826,7 @@ export const AltaOperacion = () => {
 
   const handleIrASolicitudes = () => {
     const data = getValues();
-    const simbolo = simboloMoneda(data.moneda);
+    const simbolo = simboloDe(data.moneda);
 
     const montoLimpio = Number(data.monto) || 0;
     const montoFormateado = montoLimpio.toLocaleString("es-AR", {

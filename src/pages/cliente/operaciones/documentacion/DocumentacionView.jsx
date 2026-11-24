@@ -22,23 +22,6 @@ import styles from "./DocumentacionView.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 
-const DOC_TITLES = {
-  estatuto: "Estatuto Social",
-  balance: "Último Balance",
-  ddjjIva: "Declaración Jurada de IVA",
-  cartasDocumento: "Cartas Documento",
-  poderes: "Poderes",
-  certificadoPyme: "Certificado de PyME",
-  otrosDocumentos: "Otros documentos",
-  eecc: "Estados Contables (EECC)",
-  actaDesignacion: "Acta de Designación de Autoridades",
-  actaSocios: "Acta de Reunión de Socios",
-  f1272: "Formulario F1272",
-  ddjjGanancias: "DDJJ de Ganancias",
-  manifestacionBienes: "Manifestación de Bienes",
-  constanciaMonotributo: "Constancia de Monotributo",
-};
-
 export default function DocumentacionView() {
   const queryClient = useQueryClient();
   const [sincronizando, setSincronizando] = useState(false);

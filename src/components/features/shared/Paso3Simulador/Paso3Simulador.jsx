@@ -9,7 +9,7 @@ import { Button, InputMonto, SelectFecha, Skeleton } from "../../../ui";
 import SelectorLinea from "./SelectorLinea";
 import styles from "./Paso3Simulador.module.css";
 import { useMonedas, useTiposProducto } from "../../../../hooks/useCatalogos";
-import { simboloMoneda, esMonedaPesos } from "../../../../utils/monedaUtils";
+import { esMonedaPesos } from "../../../../utils/monedaUtils";
 
 export default function Paso3Simulador({
   onContinuar,
@@ -61,7 +61,7 @@ export default function Paso3Simulador({
 
   const simboloActual =
     monedasData?.raw.find((m) => m.monedaid.toString() === monedaValue)
-      ?.simbolo || simboloMoneda(monedaValue);
+      ?.simbolo?.trim() || "";
   const enPesos = esMonedaPesos(monedaValue);
 
   const handleEnviar = async () => {

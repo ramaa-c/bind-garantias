@@ -64,6 +64,7 @@ import {
   useTipoCanalComercializacion,
   useEstadoExecuteCda,
   useTiposProducto,
+  useCatalogoMonedas,
 } from "../../../hooks/useCatalogos";
 import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../hooks/useCda";
 import { useObtenerLimitesPorSocio, useHistorialesCdaLineas } from "../../../hooks/useLinea";
@@ -74,7 +75,7 @@ import {
   estadoTextoDesde,
   esRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
-import { importeOriginalDeLimite, simboloMoneda } from "../../../utils/monedaUtils";
+import { importeOriginalDeLimite } from "../../../utils/monedaUtils";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useCadenaDelSocio } from "../../../hooks/useCadenaDelSocio";
@@ -112,7 +113,7 @@ import {
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { NotificarSocioModal } from "../../../components/features/admin/NotificarSocioModal/NotificarSocioModal";
 import { DocumentosLegajo } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
-import { ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo.constants";
+import { useEstructuraLegajo } from "../../../hooks/useEstructuraLegajo";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
 import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
 import { CertificadoPymeAdmin } from "../../../components/features/admin/CertificadoPymeAdmin/CertificadoPymeAdmin";
@@ -1264,6 +1265,7 @@ function CdasLineasSection({ socio, descripcionPorCda, reglaGlobalPorCda }) {
   const { data: limitesSocio, isLoading: cargandoLineas } = useObtenerLimitesPorSocio(socio?.socioid);
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
   const { data: tiposLimite } = useTiposProducto();
+  const { simboloDe } = useCatalogoMonedas();
 
   const lineas = useMemo(() => {
     const nombrePorCadena = new Map(
@@ -1288,12 +1290,12 @@ function CdasLineasSection({ socio, descripcionPorCda, reglaGlobalPorCda }) {
           nombre: descripcionPorTipo.get(tipoLimiteId) || `Línea #${tipoLimiteId}`,
           estadoTexto: estadoTextoDesde(estadoId),
           rechazoAutomatico: estadoId === ESTADO_RECHAZADA && esRechazoAutomatico(l.observaciones),
-          monto: `${simboloMoneda(l.monedaid)} ${new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(l))}`,
+          monto: `${simboloDe(l.monedaid)} ${new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(l))}`,
         };
       })
       .filter((l) => l.id)
       .sort((a, b) => b.id - a.id);
-  }, [limitesSocio, cadenasWeb, tiposLimite]);
+  }, [limitesSocio, cadenasWeb, tiposLimite, simboloDe]);
 
   const { data: historiales, isLoading: cargandoHistoriales } = useHistorialesCdaLineas(lineas.map((l) => l.id));
 
@@ -2792,6 +2794,7 @@ function HistorialCdaModal({ isOpen, onClose, socio }) {
 
 export default function EmpresaDetalle() {
   const { id } = useParams();
+  const estructuraLegajo = useEstructuraLegajo();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("datos");
   const [historialOpen, setHistorialOpen] = useState(false);
@@ -2879,7 +2882,7 @@ export default function EmpresaDetalle() {
       descargarLegajoCompletoZip(
         archivosBackend,
         socioArchivoService.obtenerContenido,
-        ESTRUCTURA_LEGAJO,
+        estructuraLegajo,
         socioArchivoService.TIPO_DOCUMENTO_MAP,
         zipName,
       ),
