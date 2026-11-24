@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import AdminNavbar from "../AdminNavbar/AdminNavbar";
 import { useVersionApi } from "../../../../hooks/useSistema";
 import styles from "./AdminLayout.module.css";
@@ -65,6 +65,12 @@ export default function AdminLayout({ children }) {
 
     return () => resizeObserver.disconnect();
   }, [children]);
+
+  useEffect(() => {
+    const raiz = document.documentElement;
+    raiz.classList.add("admin-theme");
+    return () => raiz.classList.remove("admin-theme");
+  }, []);
 
   return (
     <div className={`${styles.adminRoot} admin-theme`}>

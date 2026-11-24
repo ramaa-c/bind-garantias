@@ -8,17 +8,17 @@
 }
 
 :global(::-webkit-scrollbar-thumb) {
-  background-color: var(--yellow, #f5f400);
+  background-color: var(--scrollbar-pagina);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 :global(::-webkit-scrollbar-thumb:hover) {
-  background-color: #ffe600;
+  background-color: var(--scrollbar-pagina-hover);
 }
 
 :global(html) {
   scrollbar-width: thin;
-  scrollbar-color: var(--yellow, #f4f500) transparent;
+  scrollbar-color: var(--scrollbar-pagina) transparent;
 }

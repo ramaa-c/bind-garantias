@@ -189,6 +189,10 @@
   background: rgba(245, 244, 0, 0.25);
 }
 
+:global(.admin-theme) .body::-webkit-scrollbar-thumb:hover {
+  background: rgba(76, 101, 230, 0.55);
+}
+
 /* ── BLUE VARIANT (admin) ───────────────────────────────────────────────────── */
 
 .blueVariant {
