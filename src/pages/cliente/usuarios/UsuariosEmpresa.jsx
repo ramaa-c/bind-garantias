@@ -231,7 +231,7 @@ export default function UsuariosEmpresa() {
               <span className={`${styles.pill} ${CLASE_PILL_ROL[usuario.rol]}`}>
                 {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
                 {usuario.rol === ROL_VENDOR && <FiBriefcase aria-hidden="true" />}
-                {usuario.rol === ROL_VENDOR && !isVendor ? "Asesor" : ETIQUETA_ROL[usuario.rol]}
+                {ETIQUETA_ROL[usuario.rol]}
               </span>
             </span>
           </span>
@@ -373,10 +373,7 @@ export default function UsuariosEmpresa() {
               {[
                 `${admins} ${admins === 1 ? "administrador" : "administradores"}`,
                 `${comunes} ${comunes === 1 ? "usuario" : "usuarios"}`,
-                vendors > 0 &&
-                  (isVendor
-                    ? `${vendors} ${vendors === 1 ? "vendor" : "vendors"}`
-                    : `${vendors} ${vendors === 1 ? "asesor" : "asesores"}`),
+                vendors > 0 && `${vendors} ${vendors === 1 ? "vendor" : "vendors"}`,
               ]
                 .filter(Boolean)
                 .join(" · ")}
