@@ -9,7 +9,7 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const LARGO_MAXIMO_NOMBRE = 75;
 export const LARGO_MAXIMO_EMAIL = 100;
 
-export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin }) {
+export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin, invitacionPendiente }) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [errores, setErrores] = useState({});
@@ -32,7 +32,6 @@ export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin
     const nombreLimpio = nombre.trim();
     const emailLimpio = email.trim();
     const nuevosErrores = {};
-    if (!nombreLimpio) nuevosErrores.nombre = "Ingresá el nombre de la persona.";
     if (!EMAIL_REGEX.test(emailLimpio)) nuevosErrores.email = "Ingresá un correo electrónico válido.";
     if (Object.keys(nuevosErrores).length > 0) {
       setErrores(nuevosErrores);
@@ -40,13 +39,16 @@ export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin
     }
     setEnviando(true);
     try {
-      const resultado = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
+      const { resultado, esAdministradorCuit } = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
+      const rol = esAdministradorCuit ? " como administrador" : "";
       if (resultado === RESULTADO_VINCULADA) {
-        toast.success("Le dimos acceso a la empresa", {
-          description: `${emailLimpio} ya tenía cuenta: le avisamos por mail que ya puede operar con la empresa.`,
+        toast.success("Ya tiene acceso a la empresa", {
+          description: `${emailLimpio} ya tenía cuenta: quedó vinculado${rol} y le avisamos por mail.`,
         });
       } else {
-        toast.success("Invitación enviada", { description: emailLimpio });
+        toast.success("Le enviamos una invitación", {
+          description: `${emailLimpio} va a quedar vinculado${rol} cuando se registre.`,
+        });
       }
       setEnviando(false);
       limpiar();
@@ -78,7 +80,7 @@ export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin
     >
       <form id="form-invitar-usuario" className={styles.formInvitar} onSubmit={enviar} noValidate>
         <label className={styles.campo}>
-          <span className={styles.campoLabel}>Nombre y apellido</span>
+          <span className={styles.campoLabel}>Nombre y apellido (opcional)</span>
           <input
             type="text"
             className={`${styles.campoInput} ${errores.nombre ? styles.campoInputError : ""}`}
@@ -117,9 +119,17 @@ export function InvitarUsuarioModal({ isOpen, onClose, onInvitar, entraComoAdmin
           Si la persona ya tiene una cuenta, le damos acceso y le avisamos por mail. Si no, le enviamos un mail para
           que se registre.{" "}
           {entraComoAdmin
-            ? "Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar."
+            ? "Va a quedar como administrador de la empresa y vos dejás de administrarla. Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar."
             : "Entra como usuario; una vez vinculada, podés hacerla administradora."}
         </p>
+
+        {entraComoAdmin && invitacionPendiente && (
+          <p className={styles.notaInvitar}>
+            <FiInfo aria-hidden="true" />
+            Ya invitaste a {invitacionPendiente}. Si invitás a otro mail, esa invitación deja de valer y solo queda la
+            nueva.
+          </p>
+        )}
       </form>
     </Modal>
   );

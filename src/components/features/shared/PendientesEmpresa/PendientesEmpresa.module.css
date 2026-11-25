@@ -650,14 +650,9 @@ button.boton:hover,
   border-color: rgba(255, 107, 107, 0.6);
 }
 
-.campoError,
-.campoErrorGeneral {
+.campoError {
   color: #ff8a8a;
   font-size: 0.72rem;
-}
-
-.campoErrorGeneral {
-  margin: 0;
 }
 
 .pasoAyuda,
@@ -704,6 +699,35 @@ button.boton:hover,
 
 .pasoEnviar {
   width: 100%;
+}
+
+.pasoReemplazo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  border-radius: 0.65rem;
+  background: rgba(255, 193, 7, 0.07);
+}
+
+.pasoReemplazo p {
+  display: flex;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--white);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.pasoReemplazo p svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--warning);
+}
+
+.pasoReemplazo b {
+  word-break: break-all;
 }
 
 .pasoLista {
@@ -759,22 +783,37 @@ button.boton:hover,
 .verOtros {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  width: 100%;
-  padding: 0.7rem 1rem;
-  border: 0;
-  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
-  background: none;
-  color: var(--text-muted);
+  gap: 0.5rem;
+  width: calc(100% - 1.5rem);
+  margin: 0.6rem 0.75rem 0.35rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--badge-amarillo-border);
+  border-radius: 0.65rem;
+  background: var(--badge-amarillo-bg);
+  color: var(--white);
   font-family: inherit;
-  font-size: 0.76rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   text-align: left;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.verOtros > svg {
+  flex-shrink: 0;
+  color: var(--badge-amarillo-text);
 }
 
 .verOtros:hover {
-  color: var(--white);
+  border-color: rgba(244, 245, 0, 0.45);
+  box-shadow: inset 0 0 0 100vmax rgba(var(--overlay-rgb), 0.04);
+}
+
+.verOtros:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 2px;
 }
 
 .verOtros > svg:last-child {
@@ -787,7 +826,24 @@ button.boton:hover,
 }
 
 .verOtrosBloqueo {
+  border-color: rgba(255, 138, 138, 0.35);
+  background: rgba(255, 138, 138, 0.08);
+}
+
+.verOtrosBloqueo > svg {
   color: #ff8a8a;
+}
+
+.verOtrosBloqueo:hover {
+  border-color: rgba(255, 138, 138, 0.55);
+  background: rgba(255, 138, 138, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verOtros,
+  .verOtros > svg:last-child {
+    transition: none;
+  }
 }
 
 .listaEnPaso {

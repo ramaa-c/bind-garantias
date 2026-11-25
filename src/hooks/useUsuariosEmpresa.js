@@ -2,13 +2,11 @@ import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChannel } from "../context/useChannel";
-import { useCadenaActiva } from "./useCadenaActiva";
-import { useUsuariosVinculadosASocio } from "./useSocios";
-import { useTipoCanalComercializacion } from "./useCatalogos";
-import { useObtenerCadenaPublicaWeb } from "./useCadenaValor";
-import { useAsistenciaInterna, CLAVE_ASISTENCIAS } from "./useAsistenciaInterna";
+import { useSocioWebPorId, useUsuariosVinculadosASocio } from "./useSocios";
+import { useAsistenciaInterna } from "./useAsistenciaInterna";
 import { sociosService } from "../services/sociosService";
 import { usuarioVinculacionService } from "../services/usuarioVinculacionService";
+import { normalizarClaves } from "../utils/normalizarClaves";
 import { mensajeNegocio } from "../utils/mensajesError";
 import { obtenerDatosTokenApi } from "../api/tokenApi";
 
@@ -22,28 +20,29 @@ export const RESULTADO_INVITADA = "invitada";
 export const RESULTADO_VINCULADA = "vinculada";
 
 const MENSAJE_SIN_PERMISO = "Solo los administradores de la empresa pueden hacer esto.";
+const MENSAJE_EMPRESA_CEDIDA =
+  "La empresa ya tiene su propio administrador: desde ahora los accesos los maneja la empresa.";
 const MENSAJE_ULTIMO_ADMIN = "El CUIT debe tener al menos un administrador.";
 const MENSAJE_LIMITE = "Hiciste muchos pedidos seguidos. Probá de nuevo en un rato.";
+const MENSAJE_CUIT_NO_VINCULADO = "No encontramos la empresa entre las que podés administrar.";
 
-const errorAmigable = (error, porDefecto, mensaje409) => {
+const errorAmigable = (error, porDefecto, { mensaje403 = MENSAJE_SIN_PERMISO, mensaje409 } = {}) => {
   const status = error?.response?.status;
-  if (status === 403) return new Error(MENSAJE_SIN_PERMISO);
+  if (status === 403) return new Error(mensaje403);
   if (status === 429) return new Error(MENSAJE_LIMITE);
-  if (status === 409 && mensaje409) return new Error(mensaje409);
+  if (status === 409) return new Error(mensajeNegocio(error, mensaje409 || porDefecto));
   return new Error(mensajeNegocio(error, porDefecto));
 };
 
 const mismoEmail = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
 
-export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor = false }) => {
+export const useUsuariosEmpresa = ({ socioId, cuit, esVendor = false }) => {
   const queryClient = useQueryClient();
   const emailPropio = String(useAuthStore((state) => state.user?.email) || "").toLowerCase();
   const { basePath } = useChannel();
-  const { cadenaId } = useCadenaActiva();
   const miUsuarioWebId = obtenerDatosTokenApi()?.usuarioWebId ?? null;
   const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId);
-  const { data: canales } = useTipoCanalComercializacion();
-  const { data: cadenaWeb } = useObtenerCadenaPublicaWeb(cadenaId);
+  const { data: socioWeb, isPending: cargandoEmpresa } = useSocioWebPorId(esVendor ? socioId : undefined);
   const { asistenciaQueAtiendo, asistenciaPedida } = useAsistenciaInterna();
 
   const vinculados = useMemo(
@@ -56,7 +55,9 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
           email: (esVos && emailPropio) || u.email || `Usuario #${u.usuarioWebId}`,
           // El vendor opera la empresa con su propio rol, nunca como
           // administrador del CUIT (aunque el vínculo diga lo contrario).
-          rol: esVos && esVendor ? ROL_VENDOR : u.esAdministradorCuit ? ROL_ADMIN : ROL_USUARIO,
+          // Para los demás, EsVendorCadena dice si es vendor de la cadena por
+          // la que se ingresó.
+          rol: (esVos ? esVendor : u.esVendorCadena) ? ROL_VENDOR : u.esAdministradorCuit ? ROL_ADMIN : ROL_USUARIO,
           estado: ESTADO_VINCULADO,
           desde: u.momentoCreacion || null,
           esVos,
@@ -67,9 +68,18 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
 
   const yo = vinculados.find((u) => u.esVos);
   const soyAdmin = yo?.rol === ROL_ADMIN;
-  // El vendor invita a la empresa (mail de bienvenida) sin ser administrador;
-  // cambiar roles o quitar accesos sigue siendo solo de los administradores.
-  const puedeInvitar = soyAdmin || esVendor;
+  // "Empresa sin ceder" es la que dio de alta un vendor y todavía no tiene
+  // correo (definición de la API): quien invite el vendor queda como
+  // administrador y, al cederla, la empresa toma su correo. Los usuarios
+  // vinculados no alcanzan para saberlo: un vendor de otra cadena puede
+  // haberla recibido o haberla dado de alta. El rol lo decide la API; esto
+  // es solo para el aviso, el botón de invitar y el paso del panel.
+  const emailEmpresa = String(socioWeb?.email || socioWeb?.Email || "").trim();
+  const empresaSinCeder = esVendor && !!socioId && !cargandoEmpresa && !emailEmpresa;
+  // El vendor invita a la empresa (mail de bienvenida) sin ser administrador,
+  // solo hasta cederla; cambiar roles o quitar accesos sigue siendo solo de
+  // los administradores.
+  const puedeInvitar = soyAdmin || empresaSinCeder;
   const soyAsistente = !!asistenciaQueAtiendo(socioId);
   const cuitLimpio = String(cuit || "").replace(/\D/g, "");
 
@@ -103,51 +113,48 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
   }, [vinculados, invitacionesApi]);
 
   const cantidadAdmins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
-  const primerUsuarioEsAdmin = esVendor && !vinculados.some((u) => !u.esVos);
-
-  const cadena = Array.isArray(cadenaWeb) ? cadenaWeb[0] : cadenaWeb;
-  const canalId = Number(cadena?.tipocanalcomercializacionid) || Number(tipoCanalSocioId) || null;
-  const canal = (canales?.raw || []).find((c) => Number(c.tipocanalcomercializacionid) === canalId);
-  const asistenciaDisponible =
-    !soyAsistente && !!yo && String(canal?.observaciones ?? canal?.Observaciones ?? "").trim() !== "";
 
   const frontUrl = window.location.origin + basePath;
 
   const refrescarVinculados = () =>
     queryClient.invalidateQueries({ queryKey: ["socioUsuario", "listaPorSocio", socioId] });
+  const refrescarEmpresa = () => queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle", socioId] });
   const refrescarInvitaciones = () =>
     queryClient.invalidateQueries({ queryKey: ["usuarioVinculacion", "lista", cuitLimpio] });
+
+  const mensaje403 = esVendor ? MENSAJE_EMPRESA_CEDIDA : MENSAJE_SIN_PERMISO;
 
   const invitar = async ({ email, nombre }) => {
     const normalizado = email.trim().toLowerCase();
     if (vinculados.some((u) => mismoEmail(u.email, normalizado))) {
       throw new Error("Esa persona ya tiene acceso a la empresa.");
     }
+    let respuesta;
     try {
-      await usuarioVinculacionService.invitar({
+      respuesta = await usuarioVinculacionService.invitar({
         cuit: cuitLimpio,
         email: normalizado,
-        denominacion: nombre.trim(),
+        denominacion: String(nombre || "").trim() || undefined,
         fronturl: frontUrl,
       });
-      await refrescarInvitaciones();
-      return RESULTADO_INVITADA;
     } catch (error) {
-      if (error?.response?.status !== 409) {
-        throw errorAmigable(error, "No pudimos enviar la invitación. Probá de nuevo.");
-      }
-    }
-    try {
-      await sociosService.vincularUsuarioPorEmail({
-        socioId,
-        email: normalizado,
-        esAdministradorCuit: primerUsuarioEsAdmin ? "1" : "0",
+      if (error?.response?.status === 404) throw new Error(MENSAJE_CUIT_NO_VINCULADO);
+      throw errorAmigable(error, "No pudimos sumar a esa persona. Probá de nuevo.", {
+        mensaje403,
+        mensaje409: "Ese correo no se puede vincular a la empresa.",
       });
-      await Promise.all([refrescarVinculados(), refrescarInvitaciones()]);
-      return RESULTADO_VINCULADA;
-    } catch (error) {
-      throw errorAmigable(error, "No pudimos darle acceso. Probá de nuevo.", "Esa persona ya tiene acceso a la empresa.");
     }
+    const datos = normalizarClaves(Array.isArray(respuesta) ? respuesta[0] : respuesta);
+    const resultado =
+      String(datos.resultado || "").trim().toLowerCase() === RESULTADO_VINCULADA
+        ? RESULTADO_VINCULADA
+        : RESULTADO_INVITADA;
+    if (resultado === RESULTADO_VINCULADA) {
+      await Promise.all([refrescarVinculados(), refrescarInvitaciones(), refrescarEmpresa()]);
+    } else {
+      await refrescarInvitaciones();
+    }
+    return { resultado, esAdministradorCuit: String(datos.esadministradorcuit ?? "") === "1" };
   };
 
   const reenviar = async (usuario) => {
@@ -160,7 +167,7 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
       });
       await refrescarInvitaciones();
     } catch (error) {
-      throw errorAmigable(error, "No pudimos reenviar la invitación. Probá de nuevo.");
+      throw errorAmigable(error, "No pudimos reenviar la invitación. Probá de nuevo.", { mensaje403 });
     }
   };
 
@@ -173,7 +180,7 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
       });
       await refrescarVinculados();
     } catch (error) {
-      throw errorAmigable(error, "No pudimos cambiar el rol. Probá de nuevo.", MENSAJE_ULTIMO_ADMIN);
+      throw errorAmigable(error, "No pudimos cambiar el rol. Probá de nuevo.", { mensaje409: MENSAJE_ULTIMO_ADMIN });
     }
   };
 
@@ -182,20 +189,7 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
       await sociosService.desvincularSocioUsuario({ socioId, usuarioWebId: usuario.usuarioWebId });
       await Promise.all([refrescarVinculados(), refrescarInvitaciones()]);
     } catch (error) {
-      throw errorAmigable(error, "No pudimos quitarle el acceso. Probá de nuevo.", MENSAJE_ULTIMO_ADMIN);
-    }
-  };
-
-  const solicitarAsistencia = async () => {
-    try {
-      await usuarioVinculacionService.solicitarAsistencia({ cuit: cuitLimpio, fronturl: frontUrl });
-      await queryClient.invalidateQueries({ queryKey: CLAVE_ASISTENCIAS });
-    } catch (error) {
-      throw errorAmigable(
-        error,
-        "No pudimos pedir la asistencia. Probá de nuevo.",
-        mensajeNegocio(error, "Para pedir asistencia, ingresá desde el sitio de tu entidad."),
-      );
+      throw errorAmigable(error, "No pudimos quitarle el acceso. Probá de nuevo.", { mensaje409: MENSAJE_ULTIMO_ADMIN });
     }
   };
 
@@ -206,13 +200,11 @@ export const useUsuariosEmpresa = ({ socioId, cuit, tipoCanalSocioId, esVendor =
     puedeInvitar,
     soyAsistente,
     cantidadAdmins,
-    primerUsuarioEsAdmin,
-    asistenciaDisponible,
+    empresaSinCeder,
     asistencia: asistenciaPedida(socioId),
     invitar,
     reenviar,
     cambiarRol,
     quitarAcceso,
-    solicitarAsistencia,
   };
 };

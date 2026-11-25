@@ -63,7 +63,7 @@ export default function UsuariosEmpresa() {
   const navigate = useNavigate();
   const { basePath } = useChannel();
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
-  const { socioIdActivo, nombreEmpresa, cuitActivo, tipoCanalComercializacionId, isVendor } = useEmpresaActiva();
+  const { socioIdActivo, nombreEmpresa, cuitActivo, isVendor } = useEmpresaActiva();
   const {
     usuarios,
     cargando,
@@ -71,7 +71,7 @@ export default function UsuariosEmpresa() {
     puedeInvitar,
     soyAsistente,
     cantidadAdmins,
-    primerUsuarioEsAdmin,
+    empresaSinCeder,
     invitar,
     reenviar,
     cambiarRol,
@@ -79,7 +79,6 @@ export default function UsuariosEmpresa() {
   } = useUsuariosEmpresa({
     socioId: socioIdActivo,
     cuit: cuitActivo,
-    tipoCanalSocioId: tipoCanalComercializacionId,
     esVendor: isVendor,
   });
 
@@ -232,7 +231,7 @@ export default function UsuariosEmpresa() {
               <span className={`${styles.pill} ${CLASE_PILL_ROL[usuario.rol]}`}>
                 {usuario.rol === ROL_ADMIN && <FiShield aria-hidden="true" />}
                 {usuario.rol === ROL_VENDOR && <FiBriefcase aria-hidden="true" />}
-                {ETIQUETA_ROL[usuario.rol]}
+                {usuario.rol === ROL_VENDOR && !isVendor ? "Asesor" : ETIQUETA_ROL[usuario.rol]}
               </span>
             </span>
           </span>
@@ -357,7 +356,9 @@ export default function UsuariosEmpresa() {
         <p className={styles.avisoComun}>
           <FiInfo aria-hidden="true" />
           {isVendor
-            ? "Como vendor podés invitar personas de la empresa. Los roles los administra la empresa."
+            ? empresaSinCeder
+              ? "Como vendor podés invitar a la persona que va a administrar la empresa. Los roles los administra la empresa."
+              : "La empresa ya tiene su administrador: las invitaciones y los roles los maneja la empresa."
             : "Solo los administradores de la empresa pueden invitar personas o cambiar roles."}
         </p>
       )}
@@ -372,7 +373,10 @@ export default function UsuariosEmpresa() {
               {[
                 `${admins} ${admins === 1 ? "administrador" : "administradores"}`,
                 `${comunes} ${comunes === 1 ? "usuario" : "usuarios"}`,
-                vendors > 0 && `${vendors} ${vendors === 1 ? "vendor" : "vendors"}`,
+                vendors > 0 &&
+                  (isVendor
+                    ? `${vendors} ${vendors === 1 ? "vendor" : "vendors"}`
+                    : `${vendors} ${vendors === 1 ? "asesor" : "asesores"}`),
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -405,7 +409,8 @@ export default function UsuariosEmpresa() {
         isOpen={modalInvitarAbierta}
         onClose={cerrarInvitar}
         onInvitar={invitar}
-        entraComoAdmin={primerUsuarioEsAdmin}
+        entraComoAdmin={empresaSinCeder}
+        invitacionPendiente={invitaciones[0]?.email}
       />
 
       <ConfirmacionModal

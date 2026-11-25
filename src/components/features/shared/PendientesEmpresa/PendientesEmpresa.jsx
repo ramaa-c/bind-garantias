@@ -25,12 +25,10 @@ import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 import {
   useSocioWebPorId,
   useActualizarSocio,
-  useUsuariosVinculadosASocio,
   useTieneCertificadoPyme,
   useBloqueoLegajo,
 } from "../../../../hooks/useSocios";
 import { usuarioVinculacionService } from "../../../../services/usuarioVinculacionService";
-import { obtenerDatosTokenApi } from "../../../../api/tokenApi";
 import { useChannel } from "../../../../context/useChannel";
 import { useUsuariosEmpresa } from "../../../../hooks/useUsuariosEmpresa";
 import { useObtenerLimitesSocio } from "../../../../hooks/useSolicitudes";
@@ -136,7 +134,7 @@ export const PendientesEmpresa = () => {
   const [facturacionAbierta, setFacturacionAbierta] = useState(false);
   const [avisoBloqueoVisto, setAvisoBloqueoVisto] = useState(null);
   const [todoEnOrden, setTodoEnOrden] = useState(false);
-  const [verOtros, setVerOtros] = useState(false);
+  const [verOtros, setVerOtros] = useState(true);
 
   const {
     socioIdActivo,
@@ -146,7 +144,6 @@ export const PendientesEmpresa = () => {
     emailFacturacion,
     esAdminEmpresa,
     isVendor,
-    tipoCanalComercializacionId,
     isLoading,
   } = useEmpresaActiva();
   const { cadenaId } = useCadenaActiva();
@@ -159,10 +156,6 @@ export const PendientesEmpresa = () => {
   });
   const metodosContacto = useForm({ defaultValues: { celular: "", celularVerificado: "" } });
 
-  const miUsuarioWebId = obtenerDatosTokenApi()?.usuarioWebId ?? null;
-  const { usuariosVinculados, isLoading: cargandoUsuarios } = useUsuariosVinculadosASocio(
-    isVendor ? socioIdActivo : null,
-  );
   const cuitLimpio = String(cuitActivo || "").replace(/\D/g, "");
   const { data: invitaciones } = useQuery({
     queryKey: ["usuarioVinculacion", "lista", cuitLimpio],
@@ -170,10 +163,9 @@ export const PendientesEmpresa = () => {
     enabled: isVendor && !!cuitLimpio,
     staleTime: 1000 * 60,
   });
-  const { primerUsuarioEsAdmin, invitar, reenviar } = useUsuariosEmpresa({
+  const { empresaSinCeder, invitar, reenviar } = useUsuariosEmpresa({
     socioId: isVendor ? socioIdActivo : null,
     cuit: isVendor ? cuitActivo : null,
-    tipoCanalSocioId: tipoCanalComercializacionId,
     esVendor: isVendor,
   });
   const { data: tieneCertificadoPyme, isLoading: cargandoCertificadoPyme } = useTieneCertificadoPyme(socioIdActivo);
@@ -185,7 +177,7 @@ export const PendientesEmpresa = () => {
     cargando: cargandoBloqueo,
     motivoSgrCore,
   } = useBloqueoLegajo(socioIdActivo, cadenaId, cuitActivo);
-  const puedeRevisarSolicitudes = esAdminEmpresa && !isVendor;
+  const puedeRevisarSolicitudes = !isVendor;
   const { data: limitesSocio } = useObtenerLimitesSocio(puedeRevisarSolicitudes ? socioIdActivo : null);
   const solicitudesParaRevisar = (Array.isArray(limitesSocio) ? limitesSocio : []).filter((l) =>
     esPorConfirmar(l.tipolimiteestadoid),
@@ -196,8 +188,7 @@ export const PendientesEmpresa = () => {
 
   const faltaTelefono = !telefono && !isVendor;
   const puedeValidarTelefono = esAdminEmpresa && !isVendor;
-  const faltaUsuario =
-    isVendor && !cargandoUsuarios && !usuariosVinculados.some((u) => String(u.usuarioWebId) !== String(miUsuarioWebId));
+  const faltaUsuario = empresaSinCeder;
   const invitacionPendiente = (invitaciones || []).find((inv) => String(inv.vinculado ?? "") !== "1");
   const hayInvitacionPendiente = !!invitacionPendiente;
   // Vendor con la empresa ya validada (CDAs aprobados) y sin usuario propio:
@@ -253,15 +244,15 @@ export const PendientesEmpresa = () => {
         },
         solicitudesParaRevisar.length > 0 && {
           id: "revision",
-          nivel: "bloqueo",
+          nivel: "pendiente",
           icono: <FiUserCheck />,
           titulo:
             solicitudesParaRevisar.length === 1
-              ? "Una solicitud espera tu revisión"
-              : `${solicitudesParaRevisar.length} solicitudes esperan tu revisión`,
-          corto: "Solicitud para revisar",
+              ? "Una solicitud está pendiente de confirmación de la empresa"
+              : `${solicitudesParaRevisar.length} solicitudes están pendientes de confirmación de la empresa`,
+          corto: "Solicitud para confirmar",
           descripcion:
-            "La cargó tu ejecutivo por la empresa. Hasta que la aceptes, BIND Garantías no la evalúa.",
+            "La cargó tu asesor por la empresa. Hasta que la confirmes, BIND Garantías no la evalúa.",
           accion: { texto: "Revisar", onClick: irARevisarSolicitud },
         },
         faltaCertificadoPyme && {
@@ -384,7 +375,7 @@ export const PendientesEmpresa = () => {
 
   const alternar = () => {
     if (hayBloqueo) marcarAvisoBloqueoVisto();
-    setVerOtros(false);
+    setVerOtros(true);
     setAbierto((a) => !a);
   };
 
@@ -572,7 +563,7 @@ export const PendientesEmpresa = () => {
             invitacion={
               invitacionPendiente && { email: invitacionPendiente.email || "", nombre: invitacionPendiente.denominacion || "" }
             }
-            entraComoAdmin={primerUsuarioEsAdmin}
+            entraComoAdmin={empresaSinCeder}
             onInvitar={invitar}
             onReenviar={reenviar}
           />

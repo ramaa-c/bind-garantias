@@ -818,7 +818,7 @@ export function SociosLegajo({
 
                   </div>
                 ) : isUsuarios ? (
-                  <VincularUsuarioSection socioIdActivo={socioIdActivo} />
+                  <VincularUsuarioSection socioIdActivo={socioIdActivo} cuit={cuitActivo} />
                 ) : isAccionistas ? (
                   <AccionistasSection
                     personasLegajo={personasLegajo}

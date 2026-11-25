@@ -322,6 +322,8 @@ export const useUsuariosVinculadosASocio = (socioId) => {
         momentoCreacion: v.momentocreacion ?? v.momentoCreacion ?? v.MomentoCreacion,
         email: v.email ?? v.Email ?? "",
         esAdministradorCuit: String(v.esadministradorcuit ?? v.EsAdministradorCuit ?? "") === "1",
+        esVendor: String(v.esvendor ?? v.EsVendor ?? "") === "1",
+        esVendorCadena: String(v.esvendorcadena ?? v.EsVendorCadena ?? "") === "1",
       };
     })
     .filter(Boolean);

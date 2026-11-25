@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { FiCheck, FiInfo, FiMail, FiRefreshCw, FiUserPlus } from "react-icons/fi";
+import { FiAlertTriangle, FiCheck, FiInfo, FiMail, FiRefreshCw, FiUserPlus } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
 import { RESULTADO_VINCULADA } from "../../../../hooks/useUsuariosEmpresa";
 import {
@@ -22,6 +22,7 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
   const [enviando, setEnviando] = useState(false);
   const [reenviando, setReenviando] = useState(false);
   const [otroMail, setOtroMail] = useState(false);
+  const [confirmandoReemplazo, setConfirmandoReemplazo] = useState(false);
 
   const enEspera = !!invitacion && !otroMail;
   const pasoActual = invitacion ? 2 : 1;
@@ -31,28 +32,36 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
     const nombreLimpio = nombre.trim();
     const emailLimpio = email.trim();
     const nuevosErrores = {};
-    if (!nombreLimpio) nuevosErrores.nombre = "Ingresá el nombre de la persona.";
     if (!EMAIL_REGEX.test(emailLimpio)) nuevosErrores.email = "Ingresá un correo electrónico válido.";
     if (Object.keys(nuevosErrores).length > 0) {
       setErrores(nuevosErrores);
       return;
     }
+    if (otroMail && invitacion && !confirmandoReemplazo) {
+      setConfirmandoReemplazo(true);
+      return;
+    }
     setEnviando(true);
     try {
-      const resultado = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
+      const { resultado, esAdministradorCuit } = await onInvitar({ email: emailLimpio, nombre: nombreLimpio });
+      const rol = esAdministradorCuit ? " como administrador" : "";
       if (resultado === RESULTADO_VINCULADA) {
-        toast.success("Le dimos acceso a la empresa", {
-          description: `${emailLimpio} ya tenía cuenta: le avisamos por mail que ya puede operar con la empresa.`,
+        toast.success("Ya tiene acceso a la empresa", {
+          description: `${emailLimpio} ya tenía cuenta: quedó vinculado${rol} y le avisamos por mail.`,
         });
       } else {
-        toast.success("Mail de bienvenida enviado", { description: emailLimpio });
+        toast.success("Le enviamos una invitación", {
+          description: `${emailLimpio} va a quedar vinculado${rol} cuando se registre.`,
+        });
       }
       setNombre("");
       setEmail("");
       setErrores({});
       setOtroMail(false);
+      setConfirmandoReemplazo(false);
     } catch (err) {
-      setErrores({ general: err.message || "No pudimos enviar el mail. Probá de nuevo." });
+      setConfirmandoReemplazo(false);
+      toast.error(err.message || "No pudimos enviar el mail. Probá de nuevo.");
     } finally {
       setEnviando(false);
     }
@@ -70,7 +79,15 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
     }
   };
 
-  const limpiarError = () => setErrores({});
+  const limpiarError = () => {
+    setErrores({});
+    setConfirmandoReemplazo(false);
+  };
+
+  const cancelarOtroMail = () => {
+    setOtroMail(false);
+    setConfirmandoReemplazo(false);
+  };
 
   return (
     <>
@@ -103,7 +120,7 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
       ) : (
         <form className={styles.pasoCuerpo} onSubmit={enviar} noValidate>
           <label className={styles.campo}>
-            <span className={styles.campoEtiqueta}>Nombre y apellido</span>
+            <span className={styles.campoEtiqueta}>Nombre y apellido (opcional)</span>
             <input
               type="text"
               className={`${styles.campoInput} ${errores.nombre ? styles.campoInputError : ""}`}
@@ -136,20 +153,46 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
           <p className={styles.pasoAyuda}>
             <FiInfo aria-hidden="true" />
             {entraComoAdmin
-              ? "Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar."
+              ? "Va a quedar como administrador de la empresa y vos dejás de administrarla. Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar."
               : "Entra como usuario de la empresa; si ya tiene una cuenta, le damos acceso y le avisamos por mail."}
+            {otroMail && invitacion && !confirmandoReemplazo ? ` La invitación a ${invitacion.email} deja de valer.` : ""}
           </p>
-          {errores.general && <p className={styles.campoErrorGeneral}>{errores.general}</p>}
-          <div className={styles.pasoAcciones}>
-            {otroMail && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setOtroMail(false)} disabled={enviando}>
-                Cancelar
+          {confirmandoReemplazo ? (
+            <div className={styles.pasoReemplazo} role="alert">
+              <p>
+                <FiAlertTriangle aria-hidden="true" />
+                <span>
+                  Ya invitaste a <b>{invitacion.email}</b>. Si enviás esta invitación, la anterior deja de valer y
+                  solo <b>{email.trim()}</b> va a poder quedar como administrador.
+                </span>
+              </p>
+              <div className={styles.pasoAcciones}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmandoReemplazo(false)}
+                  disabled={enviando}
+                >
+                  Volver
+                </Button>
+                <Button type="submit" variant="primary" size="sm" isLoading={enviando}>
+                  Sí, reemplazar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.pasoAcciones}>
+              {otroMail && (
+                <Button type="button" variant="outline" size="sm" onClick={cancelarOtroMail} disabled={enviando}>
+                  Cancelar
+                </Button>
+              )}
+              <Button type="submit" variant="primary" size="sm" className={styles.pasoEnviar} isLoading={enviando}>
+                <FiMail aria-hidden="true" /> Enviar mail de bienvenida
               </Button>
-            )}
-            <Button type="submit" variant="primary" size="sm" className={styles.pasoEnviar} isLoading={enviando}>
-              <FiMail aria-hidden="true" /> Enviar mail de bienvenida
-            </Button>
-          </div>
+            </div>
+          )}
         </form>
       )}
 
