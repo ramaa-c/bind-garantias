@@ -255,6 +255,19 @@ button.boton:hover,
   }
 }
 
+/* Con un bloqueo entre los pendientes, el contador del paso se pone rojo
+   (en vez del punto que late, que contradecía al botón de avanzar). */
+.botonCantidadPaso.botonCantidadBloqueo {
+  color: #ff8a8a;
+}
+
+@media (min-width: 64rem) {
+  .botonCantidadPaso.botonCantidadBloqueo {
+    background: rgba(255, 107, 107, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(255, 107, 107, 0.4);
+  }
+}
+
 /* ── Aviso la primera vez que aparece un bloqueo ── */
 .avisoBloqueo {
   position: absolute;
@@ -701,83 +714,89 @@ button.boton:hover,
   width: 100%;
 }
 
+.pasoReemplazo,
+.pasoConsecuencia {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  color: var(--white);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.pasoReemplazo svg,
+.pasoConsecuencia svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.pasoReemplazo b,
+.pasoConfirmar b {
+  word-break: break-all;
+}
+
 .pasoReemplazo {
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  background: rgba(255, 193, 7, 0.07);
+}
+
+.pasoReemplazo svg {
+  color: var(--warning);
+}
+
+/* La consecuencia de invitar (el vendor deja de administrar la empresa),
+   justo antes del botón y destacada, no como ayuda en gris. */
+.pasoConsecuencia {
+  border: 1px solid rgba(138, 159, 255, 0.35);
+  background: rgba(138, 159, 255, 0.08);
+}
+
+.pasoConsecuencia svg {
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
+.pasoConfirmar {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.6rem;
   padding: 0.7rem 0.75rem;
   border: 1px solid rgba(255, 193, 7, 0.35);
   border-radius: 0.65rem;
   background: rgba(255, 193, 7, 0.07);
 }
 
-.pasoReemplazo p {
-  display: flex;
-  gap: 0.45rem;
+.pasoConfirmar p {
   margin: 0;
   color: var(--white);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
+  font-weight: 600;
   line-height: 1.45;
 }
 
-.pasoReemplazo p svg {
-  flex-shrink: 0;
-  margin-top: 0.15rem;
-  color: var(--warning);
-}
-
-.pasoReemplazo b {
-  word-break: break-all;
-}
-
-.pasoLista {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  margin: 0;
-  padding: 0.7rem 1rem 0.85rem;
-  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
-  background: rgba(0, 0, 0, 0.12);
-  list-style: none;
-}
-
-.pasoLista li {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.2rem 0;
+.campoAyuda {
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
 }
 
-.pasoMarca {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
-  border: 1.5px solid rgba(var(--overlay-rgb), 0.22);
-  border-radius: 999px;
-  font-size: 0.6rem;
+.campoOpcional {
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
-.paso_hecho .pasoMarca {
-  border-color: rgba(61, 220, 132, 0.6);
-  background: rgba(61, 220, 132, 0.18);
-  color: var(--success-green, #3ddc84);
+.campoErrorGeneral {
+  margin: 0;
+  color: #ff8a8a;
+  font-size: 0.74rem;
 }
 
-.paso_actual {
-  font-weight: 700;
-}
-
-.pasoLista .paso_actual {
+/* Acciones secundarias del panel del paso (reenviar, cambiar mail, volver,
+   y las de los pendientes): neutras, para no competir con el botón amarillo. */
+button.botonNeutro {
   color: var(--white);
-}
-
-.paso_actual .pasoMarca {
-  border-color: var(--color-amarillo-bind, #f5f400);
-  background: var(--color-amarillo-bind, #f5f400);
+  border-color: rgba(var(--overlay-rgb), 0.18);
 }
 
 .verOtros {
@@ -801,9 +820,50 @@ button.boton:hover,
     border-color 0.15s ease;
 }
 
-.verOtros > svg {
+.verOtrosCantidad {
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
-  color: var(--badge-amarillo-text);
+  min-width: 1.6rem;
+  height: 1.6rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--badge-amarillo-text);
+  color: #111;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.verOtrosBloqueo .verOtrosCantidad {
+  background: #ff6b6b;
+}
+
+.verOtrosTextos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.verOtrosTextos small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.verOtrosAccion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.verOtrosAccion svg {
+  transition: transform 0.2s ease;
 }
 
 .verOtros:hover {
@@ -816,11 +876,6 @@ button.boton:hover,
   outline-offset: 2px;
 }
 
-.verOtros > svg:last-child {
-  margin-left: auto;
-  transition: transform 0.2s ease;
-}
-
 .verOtrosAbierto {
   transform: rotate(180deg);
 }
@@ -830,10 +885,6 @@ button.boton:hover,
   background: rgba(255, 138, 138, 0.08);
 }
 
-.verOtrosBloqueo > svg {
-  color: #ff8a8a;
-}
-
 .verOtrosBloqueo:hover {
   border-color: rgba(255, 138, 138, 0.55);
   background: rgba(255, 138, 138, 0.14);
@@ -841,7 +892,7 @@ button.boton:hover,
 
 @media (prefers-reduced-motion: reduce) {
   .verOtros,
-  .verOtros > svg:last-child {
+  .verOtrosAccion svg {
     transition: none;
   }
 }

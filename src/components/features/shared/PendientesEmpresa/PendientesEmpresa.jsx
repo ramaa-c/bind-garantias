@@ -134,7 +134,7 @@ export const PendientesEmpresa = () => {
   const [facturacionAbierta, setFacturacionAbierta] = useState(false);
   const [avisoBloqueoVisto, setAvisoBloqueoVisto] = useState(null);
   const [todoEnOrden, setTodoEnOrden] = useState(false);
-  const [verOtros, setVerOtros] = useState(true);
+  const [verOtros, setVerOtros] = useState(false);
 
   const {
     socioIdActivo,
@@ -331,7 +331,8 @@ export const PendientesEmpresa = () => {
       ].filter(Boolean);
 
   const total = items.length;
-  const hayBloqueo = items.some((i) => i.nivel === "bloqueo");
+  const cantidadBloqueos = items.filter((i) => i.nivel === "bloqueo").length;
+  const hayBloqueo = cantidadBloqueos > 0;
 
   const cantidadVisible = visible ? total + (pasoInvitacion ? 1 : 0) : null;
   const [cantidadAnterior, setCantidadAnterior] = useState(cantidadVisible);
@@ -375,7 +376,7 @@ export const PendientesEmpresa = () => {
 
   const alternar = () => {
     if (hayBloqueo) marcarAvisoBloqueoVisto();
-    setVerOtros(true);
+    setVerOtros(false);
     setAbierto((a) => !a);
   };
 
@@ -486,7 +487,7 @@ export const PendientesEmpresa = () => {
   );
   const pasoActualInvitacion = hayInvitacionPendiente ? 2 : 1;
 
-  const renderListaPendientes = (clase) => (
+  const renderListaPendientes = (clase, accionesSecundarias = false) => (
     <div className={clase}>
       {SECCIONES.map((seccion) => {
         const delNivel = items.filter((i) => i.nivel === seccion.nivel);
@@ -508,9 +509,9 @@ export const PendientesEmpresa = () => {
                   <p>{item.descripcion}</p>
                   {item.accion && (
                     <Button
-                      variant={item.accion.secundaria ? "outline" : "primary"}
+                      variant={accionesSecundarias ? "ghost" : item.accion.secundaria ? "outline" : "primary"}
                       size="sm"
-                      className={styles.itemAccion}
+                      className={`${styles.itemAccion} ${accionesSecundarias ? styles.botonNeutro : ""}`}
                       disabled={item.accion.disabled}
                       onClick={cerrarYEjecutar(item.accion.onClick)}
                     >
@@ -575,12 +576,23 @@ export const PendientesEmpresa = () => {
                 onClick={() => setVerOtros((v) => !v)}
                 aria-expanded={verOtros}
               >
-                <FiAlertCircle aria-hidden="true" />
-                {plural(total, "pendiente más", "pendientes más")}
-                {hayBloqueo ? " · uno frena el envío" : ""}
-                <FiChevronDown className={verOtros ? styles.verOtrosAbierto : ""} aria-hidden="true" />
+                <span className={styles.verOtrosCantidad} aria-hidden="true">
+                  {total}
+                </span>
+                <span className={styles.verOtrosTextos}>
+                  <b>{plural(total, "pendiente del legajo", "pendientes del legajo")}</b>
+                  <small>
+                    {cantidadBloqueos > 0
+                      ? `${plural(cantidadBloqueos, "frena", "frenan")} el envío a BIND, no la invitación`
+                      : "No frenan la invitación"}
+                  </small>
+                </span>
+                <span className={styles.verOtrosAccion}>
+                  {verOtros ? "Ocultar" : "Ver"}
+                  <FiChevronDown className={verOtros ? styles.verOtrosAbierto : ""} aria-hidden="true" />
+                </span>
               </button>
-              {verOtros && renderListaPendientes(styles.listaEnPaso)}
+              {verOtros && renderListaPendientes(styles.listaEnPaso, true)}
             </>
           )}
         </div>
@@ -605,7 +617,7 @@ export const PendientesEmpresa = () => {
         aria-haspopup="dialog"
         aria-label={`${etiqueta}: ${texto}. Ver pendientes de la empresa`}
       >
-        {(tono === "bloqueo" || (pasoInvitacion && hayBloqueo)) && <span className={styles.latido} aria-hidden="true" />}
+        {tono === "bloqueo" && <span className={styles.latido} aria-hidden="true" />}
         <span className={styles.botonIcono} aria-hidden="true">
           {iconoTono}
         </span>
@@ -620,7 +632,9 @@ export const PendientesEmpresa = () => {
             ))}
           </span>
         )}
-        <span className={`${styles.botonCantidad} ${pasoInvitacion ? styles.botonCantidadPaso : ""}`} aria-hidden="true">
+        <span className={`${styles.botonCantidad} ${pasoInvitacion ? styles.botonCantidadPaso : ""} ${
+            pasoInvitacion && hayBloqueo ? styles.botonCantidadBloqueo : ""
+          }`} aria-hidden="true">
           {pasoInvitacion ? (total > 0 ? `+${total}` : "") : total}
         </span>
         <FiChevronDown className={styles.botonFlecha} aria-hidden="true" />

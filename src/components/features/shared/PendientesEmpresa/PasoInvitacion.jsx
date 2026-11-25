@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { FiAlertTriangle, FiCheck, FiInfo, FiMail, FiRefreshCw, FiUserPlus } from "react-icons/fi";
+import { FiAlertTriangle, FiInfo, FiKey, FiMail, FiRefreshCw, FiUserPlus } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
 import { RESULTADO_VINCULADA } from "../../../../hooks/useUsuariosEmpresa";
 import {
@@ -11,10 +11,12 @@ import {
 import { PASOS_INVITACION } from "./pasosInvitacion";
 import styles from "./PendientesEmpresa.module.css";
 
+const AYUDA_MAIL = "El mail de la empresa: queda asociado al CUIT y es el que van a usar para operar.";
+
 // Próximo paso del vendor con una empresa recién validada: invitar al
 // cliente (mail de bienvenida). El formulario vive en el panel de
 // pendientes, sin modal intermedio, y una vez enviado queda la espera con
-// la opción de reenviar.
+// la opción de reenviar o de cambiar el mail invitado.
 export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onInvitar, onReenviar }) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -25,19 +27,17 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
   const [confirmandoReemplazo, setConfirmandoReemplazo] = useState(false);
 
   const enEspera = !!invitacion && !otroMail;
-  const pasoActual = invitacion ? 2 : 1;
+  const reemplazando = !!invitacion && otroMail;
 
   const enviar = async (e) => {
     e.preventDefault();
     const nombreLimpio = nombre.trim();
     const emailLimpio = email.trim();
-    const nuevosErrores = {};
-    if (!EMAIL_REGEX.test(emailLimpio)) nuevosErrores.email = "Ingresá un correo electrónico válido.";
-    if (Object.keys(nuevosErrores).length > 0) {
-      setErrores(nuevosErrores);
+    if (!EMAIL_REGEX.test(emailLimpio)) {
+      setErrores({ email: "Ingresá un correo electrónico válido." });
       return;
     }
-    if (otroMail && invitacion && !confirmandoReemplazo) {
+    if (reemplazando && !confirmandoReemplazo) {
       setConfirmandoReemplazo(true);
       return;
     }
@@ -61,7 +61,7 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
       setConfirmandoReemplazo(false);
     } catch (err) {
       setConfirmandoReemplazo(false);
-      toast.error(err.message || "No pudimos enviar el mail. Probá de nuevo.");
+      setErrores({ general: err?.message || "No pudimos enviar el mail. Probá de nuevo." });
     } finally {
       setEnviando(false);
     }
@@ -86,18 +86,24 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
 
   const cancelarOtroMail = () => {
     setOtroMail(false);
+    setEmail("");
+    setNombre("");
+    setErrores({});
     setConfirmandoReemplazo(false);
   };
+
+  const etiqueta = invitacion ? "Esperando al cliente" : `Paso 2 de ${PASOS_INVITACION.length}`;
+  const titulo = enEspera
+    ? `Le enviamos la bienvenida a ${invitacion.nombre || invitacion.email}`
+    : reemplazando
+      ? "Cambiar la invitación"
+      : `Invitá a ${nombreEmpresa} a operar`;
 
   return (
     <>
       <div className={styles.pasoCabecera}>
-        <small className={enEspera ? styles.pasoEtiquetaEspera : styles.pasoEtiqueta}>
-          {enEspera ? "Esperando al cliente" : `Próximo paso · ${pasoActual + 1} de ${PASOS_INVITACION.length}`}
-        </small>
-        <strong>
-          {enEspera ? `Le enviamos la bienvenida a ${invitacion.nombre || invitacion.email}` : `Invitá a ${nombreEmpresa} a operar`}
-        </strong>
+        <small className={invitacion ? styles.pasoEtiquetaEspera : styles.pasoEtiqueta}>{etiqueta}</small>
+        <strong>{titulo}</strong>
       </div>
 
       {enEspera ? (
@@ -105,38 +111,47 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
           <p className={styles.pasoEnviado}>
             <FiMail aria-hidden="true" />
             <span>
-              Enviado a <b>{invitacion.email}</b>. Falta que se registre para operar con la empresa.
+              Enviado a <b>{invitacion.email}</b>.{" "}
+              {entraComoAdmin
+                ? "Cuando se registre, le cedemos la administración de la empresa."
+                : "Falta que se registre para operar con la empresa."}
             </span>
           </p>
           <div className={styles.pasoAcciones}>
-            <Button type="button" variant="outline" size="sm" onClick={reenviar} isLoading={reenviando}>
-              <FiRefreshCw aria-hidden="true" /> Reenviar mail
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={styles.botonNeutro}
+              onClick={reenviar}
+              isLoading={reenviando}
+            >
+              <FiRefreshCw aria-hidden="true" /> Reenviar
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setOtroMail(true)} disabled={reenviando}>
-              <FiUserPlus aria-hidden="true" /> Invitar a otro mail
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={styles.botonNeutro}
+              onClick={() => setOtroMail(true)}
+              disabled={reenviando}
+            >
+              <FiUserPlus aria-hidden="true" /> Cambiar mail
             </Button>
           </div>
         </div>
       ) : (
         <form className={styles.pasoCuerpo} onSubmit={enviar} noValidate>
+          {reemplazando && (
+            <p className={styles.pasoReemplazo}>
+              <FiAlertTriangle aria-hidden="true" />
+              <span>
+                La invitación a <b>{invitacion.email}</b> deja de valer.
+              </span>
+            </p>
+          )}
           <label className={styles.campo}>
-            <span className={styles.campoEtiqueta}>Nombre y apellido (opcional)</span>
-            <input
-              type="text"
-              className={`${styles.campoInput} ${errores.nombre ? styles.campoInputError : ""}`}
-              placeholder="Ana Pérez"
-              value={nombre}
-              maxLength={LARGO_MAXIMO_NOMBRE}
-              onChange={(e) => {
-                setNombre(e.target.value);
-                limpiarError();
-              }}
-              autoFocus
-            />
-            {errores.nombre && <span className={styles.campoError}>{errores.nombre}</span>}
-          </label>
-          <label className={styles.campo}>
-            <span className={styles.campoEtiqueta}>Mail de la empresa</span>
+            <span className={styles.campoEtiqueta}>{reemplazando ? "Mail nuevo" : "Mail de la empresa"}</span>
             <input
               type="email"
               className={`${styles.campoInput} ${errores.email ? styles.campoInputError : ""}`}
@@ -147,30 +162,60 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
                 setEmail(e.target.value);
                 limpiarError();
               }}
+              aria-invalid={!!errores.email}
+              autoFocus
             />
-            {errores.email && <span className={styles.campoError}>{errores.email}</span>}
+            {errores.email ? (
+              <span className={styles.campoError}>{errores.email}</span>
+            ) : (
+              <span className={styles.campoAyuda}>{AYUDA_MAIL}</span>
+            )}
           </label>
-          <p className={styles.pasoAyuda}>
-            <FiInfo aria-hidden="true" />
-            {entraComoAdmin
-              ? "Va a quedar como administrador de la empresa y vos dejás de administrarla. Indicá el mail de la empresa que quedará asociado a ese CUIT y es el que deben utilizar para operar."
-              : "Entra como usuario de la empresa; si ya tiene una cuenta, le damos acceso y le avisamos por mail."}
-            {otroMail && invitacion && !confirmandoReemplazo ? ` La invitación a ${invitacion.email} deja de valer.` : ""}
-          </p>
+          <label className={styles.campo}>
+            <span className={styles.campoEtiqueta}>
+              Nombre de la persona <span className={styles.campoOpcional}>(opcional)</span>
+            </span>
+            <input
+              type="text"
+              className={styles.campoInput}
+              placeholder="Para personalizar el mail"
+              value={nombre}
+              maxLength={LARGO_MAXIMO_NOMBRE}
+              onChange={(e) => {
+                setNombre(e.target.value);
+                limpiarError();
+              }}
+            />
+          </label>
+          {entraComoAdmin ? (
+            <p className={styles.pasoConsecuencia}>
+              <FiKey aria-hidden="true" />
+              <span>
+                Va a quedar como <b>administrador de {nombreEmpresa}</b> y vos dejás de administrarla.
+              </span>
+            </p>
+          ) : (
+            <p className={styles.pasoAyuda}>
+              <FiInfo aria-hidden="true" />
+              Entra como usuario de la empresa; si ya tiene una cuenta, le damos acceso y le avisamos por mail.
+            </p>
+          )}
+          {errores.general && (
+            <p className={styles.campoErrorGeneral} role="alert">
+              {errores.general}
+            </p>
+          )}
           {confirmandoReemplazo ? (
-            <div className={styles.pasoReemplazo} role="alert">
+            <div className={styles.pasoConfirmar} role="alert">
               <p>
-                <FiAlertTriangle aria-hidden="true" />
-                <span>
-                  Ya invitaste a <b>{invitacion.email}</b>. Si enviás esta invitación, la anterior deja de valer y
-                  solo <b>{email.trim()}</b> va a poder quedar como administrador.
-                </span>
+                ¿Reemplazamos la invitación a <b>{invitacion.email}</b> por <b>{email.trim()}</b>?
               </p>
               <div className={styles.pasoAcciones}>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
+                  className={styles.botonNeutro}
                   onClick={() => setConfirmandoReemplazo(false)}
                   disabled={enviando}
                 >
@@ -181,34 +226,29 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
                 </Button>
               </div>
             </div>
-          ) : (
+          ) : reemplazando ? (
             <div className={styles.pasoAcciones}>
-              {otroMail && (
-                <Button type="button" variant="outline" size="sm" onClick={cancelarOtroMail} disabled={enviando}>
-                  Cancelar
-                </Button>
-              )}
-              <Button type="submit" variant="primary" size="sm" className={styles.pasoEnviar} isLoading={enviando}>
-                <FiMail aria-hidden="true" /> Enviar mail de bienvenida
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={styles.botonNeutro}
+                onClick={cancelarOtroMail}
+                disabled={enviando}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" size="sm" isLoading={enviando}>
+                Reemplazar invitación
               </Button>
             </div>
+          ) : (
+            <Button type="submit" variant="primary" size="sm" className={styles.pasoEnviar} isLoading={enviando}>
+              <FiMail aria-hidden="true" /> Enviar mail de bienvenida
+            </Button>
           )}
         </form>
       )}
-
-      <ol className={styles.pasoLista} aria-label="Recorrido con el cliente">
-        {PASOS_INVITACION.map((paso, i) => {
-          const estado = i < pasoActual ? "hecho" : i === pasoActual ? "actual" : "futuro";
-          return (
-            <li key={paso} className={styles[`paso_${estado}`]} aria-current={estado === "actual" ? "step" : undefined}>
-              <span className={styles.pasoMarca} aria-hidden="true">
-                {estado === "hecho" && <FiCheck />}
-              </span>
-              {paso}
-            </li>
-          );
-        })}
-      </ol>
     </>
   );
 }
