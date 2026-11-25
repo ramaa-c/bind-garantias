@@ -42,7 +42,6 @@ import {
   esEstadoEnCurso,
   esPorConfirmar,
   MOTIVO_CANCELACION_SOCIO,
-  MOTIVO_RECHAZO_EMPRESA,
   MENSAJE_SOLICITUD_OTRA_PLATAFORMA,
   procesosVigentes,
   procesosHuerfanosPorRechazoAutomatico,
@@ -171,8 +170,10 @@ export default function Solicitudes() {
     cuitVerificado: cuitNuevaOperacionVerificado,
   } = useVerificarHabilitacionNuevaOperacion();
 
-  const { cuitActivo, nombreEmpresa, socioIdActivo, esAdminEmpresa, isVendor } = useEmpresaActiva();
-  const puedeRevisar = esAdminEmpresa && !isVendor;
+  const { cuitActivo, nombreEmpresa, socioIdActivo, isVendor } = useEmpresaActiva();
+  // Estado 1 (cargada por un vendor): la confirma o la rechaza cualquier
+  // usuario de la empresa que no sea vendor; el vendor solo la puede retirar.
+  const puedeRevisar = !isVendor;
   const socioIdFinal = socioIdActivo || 0;
 
   const { data: solicitudesReal, isLoading: cargandoSolicitudes } =
@@ -377,8 +378,12 @@ export default function Solicitudes() {
     await actualizarLimiteMutation.mutateAsync({
       ...solicitud.raw,
       tipolimiteestadoid: estado,
-      observaciones,
+      ...(observaciones !== undefined && { observaciones }),
     });
+
+    // Confirmar (1 a 2) no toca SolicitudEnProceso: ya se creó en estado 2
+    // al dar de alta la línea.
+    if (estado === ESTADO_PENDIENTE) return;
 
     // Igual que en Dashboard.jsx (admin): todo cambio de estado en
     // TipoLimiteSocio se refleja también en SolicitudEnProceso — ambas
@@ -404,16 +409,24 @@ export default function Solicitudes() {
     }
   };
 
+  const retiraSolicitud = !!solicitudACancelar && esPorConfirmar(solicitudACancelar.tipoLimiteEstadoId);
+
   const handleConfirmarCancelacion = async () => {
     if (!solicitudACancelar?.raw) return;
     try {
-      await cambiarEstadoSolicitud(solicitudACancelar, ESTADO_CANCELADA, MOTIVO_CANCELACION_SOCIO);
-      toast.success(`Solicitud N°${solicitudACancelar.id} cancelada`, {
-        description: "Ya podés iniciar una nueva operación.",
+      await cambiarEstadoSolicitud(
+        solicitudACancelar,
+        ESTADO_CANCELADA,
+        retiraSolicitud ? undefined : MOTIVO_CANCELACION_SOCIO,
+      );
+      toast.success(`Solicitud N°${solicitudACancelar.id} ${retiraSolicitud ? "retirada" : "cancelada"}`, {
+        description: retiraSolicitud ? "La empresa ya no la va a ver para confirmar." : "Ya podés iniciar una nueva operación.",
       });
       setSolicitudACancelar(null);
     } catch (err) {
-      toast.error("No se pudo cancelar la solicitud: " + mensajeNegocio(err, err.message));
+      toast.error(
+        `No se pudo ${retiraSolicitud ? "retirar" : "cancelar"} la solicitud: ` + mensajeNegocio(err, err.message),
+      );
     }
   };
 
@@ -425,22 +438,18 @@ export default function Solicitudes() {
   const handleConfirmarDecision = async () => {
     const { solicitud, accion } = decisionRevision || {};
     if (!solicitud?.raw) return;
-    const acepta = accion === "aceptar";
+    const confirma = accion === "confirmar";
     try {
-      await cambiarEstadoSolicitud(
-        solicitud,
-        acepta ? ESTADO_PENDIENTE : ESTADO_CANCELADA,
-        acepta ? "" : MOTIVO_RECHAZO_EMPRESA,
-      );
-      toast.success(acepta ? `Aceptaste la Solicitud N°${solicitud.id}` : `Rechazaste la Solicitud N°${solicitud.id}`, {
-        description: acepta
+      await cambiarEstadoSolicitud(solicitud, confirma ? ESTADO_PENDIENTE : ESTADO_CANCELADA);
+      toast.success(confirma ? `Confirmaste la Solicitud N°${solicitud.id}` : `Rechazaste la Solicitud N°${solicitud.id}`, {
+        description: confirma
           ? "Pasó a evaluación de BIND Garantías."
           : "Quedó cancelada. Ya podés iniciar una nueva operación.",
       });
       setDecisionRevision(null);
     } catch (err) {
       toast.error(
-        (acepta ? "No se pudo aceptar la solicitud: " : "No se pudo rechazar la solicitud: ") +
+        (confirma ? "No se pudo confirmar la solicitud: " : "No se pudo rechazar la solicitud: ") +
           mensajeNegocio(err, err.message),
       );
     }
@@ -592,25 +601,6 @@ export default function Solicitudes() {
         ) : (
           <LegajoUniversalBar context="solicitudes" />
         )}
-        
-        {puedeRevisar && porConfirmar.length > 0 && (
-          <div className={styles.avisoRevision} role="status">
-            <span className={styles.avisoRevisionIcono} aria-hidden="true">
-              <FiUserCheck />
-            </span>
-            <div className={styles.avisoRevisionTexto}>
-              <strong>
-                {porConfirmar.length === 1
-                  ? "Tenés una solicitud para revisar"
-                  : `Tenés ${porConfirmar.length} solicitudes para revisar`}
-              </strong>
-              <span>Tu ejecutivo la cargó por la empresa. Aceptala para que BIND Garantías la evalúe, o rechazala.</span>
-            </div>
-            <Button variant="primary" size="sm" onClick={() => setSolicitudSeleccionada(porConfirmar[0])}>
-              Revisar
-            </Button>
-          </div>
-        )}
 
         <div className={styles.listContainer}>
           {isLoadingData ? (
@@ -627,32 +617,32 @@ export default function Solicitudes() {
                     En curso
                   </h2>
                   {solicitudesEnCurso.map((item) => {
-                    const paraRevisar = puedeRevisar && esPorConfirmar(item.tipoLimiteEstadoId);
+                    const enEstadoInicial = esPorConfirmar(item.tipoLimiteEstadoId);
+                    const paraRevisar = puedeRevisar && enEstadoInicial;
                     return (
                       <TarjetaSolicitud
                         key={item.id}
                         solicitud={item}
                         onVerDetalle={setSolicitudSeleccionada}
                         destacada={paraRevisar}
+                        etiquetaDetalle={paraRevisar ? "Revisar" : undefined}
                         aviso={
                           paraRevisar
-                            ? "La cargó tu ejecutivo: necesita tu revisión"
-                            : esPorConfirmar(item.tipoLimiteEstadoId)
-                              ? "Espera la confirmación del administrador de la empresa"
+                            ? "La cargó tu asesor: necesita tu confirmación"
+                            : enEstadoInicial
+                              ? "Espera que un usuario de la empresa la confirme"
                               : null
                         }
                         acciones={
-                          !item.raw
+                          !item.raw || paraRevisar || (isVendor && !enEstadoInicial)
                             ? undefined
-                            : paraRevisar
-                              ? [{ label: "Revisar", variant: "primary", onClick: () => setSolicitudSeleccionada(item) }]
-                              : [
-                                  {
-                                    label: "Cancelar",
-                                    variant: "danger",
-                                    onClick: () => setSolicitudACancelar(item),
-                                  },
-                                ]
+                            : [
+                                {
+                                  label: enEstadoInicial ? "Retirar" : "Cancelar",
+                                  variant: "danger",
+                                  onClick: () => setSolicitudACancelar(item),
+                                },
+                              ]
                         }
                       />
                     );
@@ -809,7 +799,7 @@ export default function Solicitudes() {
         revision={
           puedeRevisar && solicitudSeleccionada?.raw && esPorConfirmar(solicitudSeleccionada.tipoLimiteEstadoId)
             ? {
-                onAceptar: () => abrirDecision("aceptar"),
+                onConfirmar: () => abrirDecision("confirmar"),
                 onRechazar: () => abrirDecision("rechazar"),
                 decidiendo: actualizarLimiteMutation.isPending,
               }
@@ -826,15 +816,16 @@ export default function Solicitudes() {
         titulo={
           decisionRevision?.accion === "rechazar"
             ? `¿Rechazar la Solicitud N° ${decisionRevision?.solicitud?.id ?? ""}?`
-            : `¿Aceptar la Solicitud N° ${decisionRevision?.solicitud?.id ?? ""}?`
+            : `¿Confirmar la Solicitud N° ${decisionRevision?.solicitud?.id ?? ""}?`
         }
         mensaje={
           decisionRevision?.accion === "rechazar"
-            ? "La solicitud que cargó tu ejecutivo se cancela y no se puede retomar."
+            ? "La solicitud que cargó tu asesor se cancela y no se puede retomar."
             : `Confirmás que la empresa pide ${decisionRevision?.solicitud?.lineaNombre || decisionRevision?.solicitud?.tipo || "esta línea"} por ${decisionRevision?.solicitud?.moneda ?? "$"} ${decisionRevision?.solicitud?.monto ?? ""}. Pasa a evaluación de BIND Garantías.`
         }
         icono={decisionRevision?.accion === "rechazar" ? <FiXCircle /> : <FiUserCheck />}
-        confirmText={decisionRevision?.accion === "rechazar" ? "Sí, rechazar" : "Sí, aceptar"}
+        confirmText={decisionRevision?.accion === "rechazar" ? "Sí, rechazar" : "Sí, confirmar"}
+        confirmVariant={decisionRevision?.accion === "rechazar" ? "danger" : "success"}
         cancelText="Volver"
       />
 
@@ -844,10 +835,14 @@ export default function Solicitudes() {
         onConfirm={handleConfirmarCancelacion}
         isLoading={actualizarLimiteMutation.isPending}
         tone="danger"
-        titulo={`¿Cancelar la Solicitud N° ${solicitudACancelar?.id ?? ""}?`}
-        mensaje="La solicitud se cierra y no se puede retomar. Una vez cancelada, vas a poder iniciar una nueva operación."
+        titulo={`¿${retiraSolicitud ? "Retirar" : "Cancelar"} la Solicitud N° ${solicitudACancelar?.id ?? ""}?`}
+        mensaje={
+          retiraSolicitud
+            ? "Todavía no la confirmó la empresa. Se cancela y no se puede retomar."
+            : "La solicitud se cierra y no se puede retomar. Una vez cancelada, vas a poder iniciar una nueva operación."
+        }
         icono={<FiXCircle />}
-        confirmText="Sí, cancelar"
+        confirmText={retiraSolicitud ? "Sí, retirar" : "Sí, cancelar"}
         cancelText="Volver"
       />
 

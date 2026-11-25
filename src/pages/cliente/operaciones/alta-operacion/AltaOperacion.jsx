@@ -42,9 +42,9 @@ import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 import {
   esProcesoDeOtraPlataforma,
+  ESTADO_PENDIENTE,
   ESTADO_RECHAZADA,
   ESTADO_CANCELADA,
-  estadoInicialSolicitud,
   esPorConfirmar,
   MOTIVOS_RECHAZO_AUTOMATICO,
   construirMotivoRechazoAutomatico,
@@ -65,7 +65,6 @@ export const AltaOperacion = () => {
   const {
     cuitActivo,
     socioIdActivo,
-    isVendor,
     isLoading: isLoadingEmpresa,
   } = useEmpresaActiva();
 
@@ -568,7 +567,7 @@ export const AltaOperacion = () => {
         : rechazosCdaLinea.map((e) => e.message).join("; ");
       const motivoRechazoAutomatico =
         construirMotivoRechazoAutomatico(motivoRechazoBase);
-      const estadoAlCrear = estadoInicialSolicitud(isVendor);
+      const estadoAlCrear = ESTADO_PENDIENTE;
 
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
@@ -799,7 +798,7 @@ export const AltaOperacion = () => {
         monedaId: Number(cleanData.moneda) || 5000,
         plazo: cleanData.plazo,
         rechazada: quedoRechazada,
-        porConfirmar: !quedoRechazada && esPorConfirmar(estadoAlCrear),
+        porConfirmar: !quedoRechazada && esPorConfirmar(resLimite?.tipolimiteestadoid),
         motivoRechazo: quedoRechazada ? motivoRechazoFinal : "",
       });
 

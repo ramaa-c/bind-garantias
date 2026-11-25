@@ -73,6 +73,8 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_RECHAZADA,
   estadoTextoDesde,
+  esPorConfirmar,
+  ESTADO_TEXTO_POR_CONFIRMAR_ADMIN,
   esRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
 import { importeOriginalDeLimite } from "../../../utils/monedaUtils";
@@ -1288,7 +1290,7 @@ function CdasLineasSection({ socio, descripcionPorCda, reglaGlobalPorCda }) {
           cadena,
           cadenaNombre: (cadena && nombrePorCadena.get(cadena)) || (cadena ? `Cadena #${cadena}` : "Sin cadena"),
           nombre: descripcionPorTipo.get(tipoLimiteId) || `Línea #${tipoLimiteId}`,
-          estadoTexto: estadoTextoDesde(estadoId),
+          estadoTexto: esPorConfirmar(estadoId) ? ESTADO_TEXTO_POR_CONFIRMAR_ADMIN : estadoTextoDesde(estadoId),
           rechazoAutomatico: estadoId === ESTADO_RECHAZADA && esRechazoAutomatico(l.observaciones),
           monto: `${simboloDe(l.monedaid)} ${new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(l))}`,
         };

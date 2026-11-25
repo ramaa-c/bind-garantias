@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
@@ -14,10 +14,11 @@ import {
   FiUsers,
   FiAlertCircle,
   FiActivity,
-  FiServer,
   FiUserCheck,
+  FiChevronDown,
 } from "react-icons/fi";
 import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
+import { ESTADO_TEXTO_POR_CONFIRMAR, esTextoPorConfirmar } from "../../../../utils/estadoLimiteSocio";
 
 const estadoConfig = {
   Cancelada: { color: styles.badgeGrey, label: "Cancelada" },
@@ -26,7 +27,7 @@ const estadoConfig = {
   Aprobada: { color: styles.badgeGreen, label: "Aprobada" },
   Aprobado: { color: styles.badgeGreen, label: "Aprobado" },
   Pendiente: { color: styles.badgeYellow, label: "Pendiente" },
-  "Por confirmar": { color: styles.badgeBlue, label: "Por confirmar" },
+  [ESTADO_TEXTO_POR_CONFIRMAR]: { color: styles.badgeBlue, label: ESTADO_TEXTO_POR_CONFIRMAR },
   Rechazada: { color: styles.badgeRed, label: "Rechazada" },
   Rechazado: { color: styles.badgeRed, label: "Rechazado" },
 };
@@ -50,7 +51,15 @@ export const DetalleSolicitudModal = ({
   // solicitud Cancelada la cancela el propio socio, no hay "motivo" que
   // mostrarle a él mismo.
   const esRechazada = estadoValue === "Rechazada" || estadoValue === "Rechazado";
-  const porConfirmar = estadoValue === "Por confirmar";
+  const porConfirmar = esTextoPorConfirmar(estadoValue);
+
+  const [accionistasAbiertos, setAccionistasAbiertos] = useState(false);
+  const aperturaActual = isOpen ? solicitud?.id ?? "" : null;
+  const [aperturaAnterior, setAperturaAnterior] = useState(aperturaActual);
+  if (aperturaActual !== aperturaAnterior) {
+    setAperturaAnterior(aperturaActual);
+    setAccionistasAbiertos(false);
+  }
 
   const tipoLabel =
     tipoValue === "Cheque"
@@ -234,7 +243,33 @@ export const DetalleSolicitudModal = ({
   if (!solicitud) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="600px">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title=""
+      maxWidth="600px"
+      footer={
+        <div className={styles.footer}>
+          <span className={styles.footerHint}>
+            {solicitud.fecha ? `Operación del ${solicitud.fecha}` : ""}
+          </span>
+          {revision ? (
+            <div className={styles.footerAcciones}>
+              <Button variant="danger" onClick={revision.onRechazar} disabled={revision.decidiendo}>
+                Rechazar
+              </Button>
+              <Button variant="success" onClick={revision.onConfirmar} disabled={revision.decidiendo}>
+                Confirmar solicitud
+              </Button>
+            </div>
+          ) : (
+            <Button variant="primary" className={styles.btnClose} onClick={onClose}>
+              Cerrar
+            </Button>
+          )}
+        </div>
+      }
+    >
       <div className={styles.container}>
         {/* ── HERO ─────────────────────────────────────────────────────── */}
         <div className={`${styles.hero} ${esRechazada ? styles.heroRechazada : ""}`}>
@@ -324,34 +359,28 @@ export const DetalleSolicitudModal = ({
                 </span>
                 <div>
                   <p className={styles.estadoSgrTitulo}>
-                    {revision ? "Necesita tu revisión" : "Falta la confirmación de la empresa"}
+                    {revision ? "Necesita tu confirmación" : ESTADO_TEXTO_POR_CONFIRMAR}
                   </p>
                   <p className={styles.estadoSgrTexto}>
                     {revision
-                      ? "La cargó tu ejecutivo por la empresa. Revisá la línea y el monto: si la aceptás, pasa a evaluación de BIND Garantías; si la rechazás, se cancela."
-                      : "La cargó el ejecutivo. Pasa a evaluación de BIND Garantías cuando el administrador de la empresa la acepte."}
+                      ? "La cargó tu asesor por la empresa. Revisá la línea y el monto: si la confirmás, pasa a evaluación de BIND Garantías; si la rechazás, se cancela."
+                      : "La cargó el asesor. Pasa a evaluación de BIND Garantías cuando un usuario de la empresa la confirme."}
                   </p>
                 </div>
               </div>
             )}
-            <div className={styles.estadoSgr}>
-              <span className={styles.estadoSgrIcono} aria-hidden="true">
-                <FiServer size={14} />
-              </span>
-              <div>
-                <p className={styles.estadoSgrTitulo}>Seguimiento de tu solicitud</p>
-                <p className={styles.estadoSgrTexto}>
-                  Muy pronto vas a ver acá cada etapa de tu solicitud dentro de BIND Garantías: emisión del
-                  certificado, firma del contrato y activación de la línea.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* ── ACCIONISTAS / FIADORES ────────────────────────────────────── */}
         <div className={styles.section}>
-          <div className={styles.sectionHeader}>
+          <button
+            type="button"
+            className={`${styles.sectionHeader} ${styles.sectionToggle}`}
+            onClick={() => setAccionistasAbiertos((abierto) => !abierto)}
+            aria-expanded={accionistasAbiertos}
+            aria-controls="detalle-solicitud-accionistas"
+          >
             <span className={styles.sectionTitle}>
               <FiUsers size={12} />
               Accionistas / Fiadores
@@ -362,97 +391,79 @@ export const DetalleSolicitudModal = ({
               ) : (
                 `${accionistas.length} persona${accionistas.length !== 1 ? "s" : ""}`
               )}
+              <FiChevronDown
+                size={14}
+                className={`${styles.toggleIcono} ${accionistasAbiertos ? styles.toggleIconoAbierto : ""}`}
+                aria-hidden="true"
+              />
             </span>
-          </div>
+          </button>
 
-          <div className={styles.fiadoresGrid}>
-            {cargandoAccionistas ? (
-              Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className={styles.fiadorCard} aria-busy="true">
-                  <Skeleton width="2rem" height="2rem" radius="0.5625rem" />
-                  <div className={styles.fiadorInfo}>
-                    <Skeleton width="70%" height="0.85rem" />
-                    <Skeleton width="50%" height="0.5rem" radius="pill" style={{ marginTop: "0.45rem" }} />
-                  </div>
-                </div>
-              ))
-            ) : accionistas.length > 0 ? (
-              accionistas.map((accionista, i) => {
-                const nombre =
-                  accionista.razonsocial ||
-                  accionista.denominacion ||
-                  accionista.nombre ||
-                  accionista.RazonSocial ||
-                  accionista.Denominacion ||
-                  accionista.Nombre ||
-                  "Sin nombre";
-
-                const iniciales = nombre
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((w) => w[0].toUpperCase())
-                  .join("");
-
-                const participacion = Number(accionista.participacion) || 0;
-                const esFiador = !!accionista.esFiador;
-
-                return (
-                  <div key={accionista.cuit || accionista.nombre || "accionista-" + i} className={styles.fiadorCard}>
-                    <div className={styles.fiadorAvatar}>{iniciales}</div>
+          {accionistasAbiertos && (
+            <div id="detalle-solicitud-accionistas" className={styles.fiadoresGrid}>
+              {cargandoAccionistas ? (
+                Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className={styles.fiadorCard} aria-busy="true">
+                    <Skeleton width="2rem" height="2rem" radius="0.5625rem" />
                     <div className={styles.fiadorInfo}>
-                      <p className={styles.fiadorName}>{nombre}</p>
-                      {esFiador ? (
-                        <div className={styles.fiadorPart}>
-                          <span>Fiador</span>
-                        </div>
-                      ) : (
-                        <div className={styles.fiadorPart}>
-                          <div className={styles.partBar}>
-                            <div
-                              className={styles.partFill}
-                              style={{
-                                width: `${Math.min(participacion, 100)}%`,
-                              }}
-                            />
-                          </div>
-                          <span>{participacion}%</span>
-                        </div>
-                      )}
+                      <Skeleton width="70%" height="0.85rem" />
+                      <Skeleton width="50%" height="0.5rem" radius="pill" style={{ marginTop: "0.45rem" }} />
                     </div>
                   </div>
-                );
-              })
-            ) : (
-              <p className={styles.emptyText}>
-                No se encontraron accionistas ni fiadores vinculados a esta empresa.
-              </p>
-            )}
-          </div>
-        </div>
+                ))
+              ) : accionistas.length > 0 ? (
+                accionistas.map((accionista, i) => {
+                  const nombre =
+                    accionista.razonsocial ||
+                    accionista.denominacion ||
+                    accionista.nombre ||
+                    accionista.RazonSocial ||
+                    accionista.Denominacion ||
+                    accionista.Nombre ||
+                    "Sin nombre";
 
-        {/* ── FOOTER ───────────────────────────────────────────────────── */}
-        <div className={styles.footer}>
-          <span className={styles.footerHint}>
-            {solicitud.fecha ? `Operación del ${solicitud.fecha}` : ""}
-          </span>
-          {revision ? (
-            <div className={styles.footerAcciones}>
-              <Button variant="outline" onClick={revision.onRechazar} disabled={revision.decidiendo}>
-                Rechazar
-              </Button>
-              <Button variant="primary" onClick={revision.onAceptar} disabled={revision.decidiendo}>
-                Aceptar solicitud
-              </Button>
+                  const iniciales = nombre
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((w) => w[0].toUpperCase())
+                    .join("");
+
+                  const participacion = Number(accionista.participacion) || 0;
+                  const esFiador = !!accionista.esFiador;
+
+                  return (
+                    <div key={accionista.cuit || accionista.nombre || "accionista-" + i} className={styles.fiadorCard}>
+                      <div className={styles.fiadorAvatar}>{iniciales}</div>
+                      <div className={styles.fiadorInfo}>
+                        <p className={styles.fiadorName}>{nombre}</p>
+                        {esFiador ? (
+                          <div className={styles.fiadorPart}>
+                            <span>Fiador</span>
+                          </div>
+                        ) : (
+                          <div className={styles.fiadorPart}>
+                            <div className={styles.partBar}>
+                              <div
+                                className={styles.partFill}
+                                style={{
+                                  width: `${Math.min(participacion, 100)}%`,
+                                }}
+                              />
+                            </div>
+                            <span>{participacion}%</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className={styles.emptyText}>
+                  No se encontraron accionistas ni fiadores vinculados a esta empresa.
+                </p>
+              )}
             </div>
-          ) : (
-            <Button
-              variant="primary"
-              className={styles.btnClose}
-              onClick={onClose}
-            >
-              Cerrar
-            </Button>
           )}
         </div>
       </div>

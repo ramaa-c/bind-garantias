@@ -114,16 +114,25 @@ export const quitarPrefijoRechazoAutomatico = (observaciones) =>
 
 export const MOTIVO_CANCELACION_SOCIO = "Cancelada por el socio desde la plataforma.";
 
-export const MOTIVO_RECHAZO_EMPRESA = "La empresa no confirmó la solicitud cargada por su ejecutivo.";
+// Estado 1: la cargó un vendor y espera que la confirme un usuario de la
+// empresa. La API la graba así sola (el front siempre manda 2) y deja su
+// propia observación al rechazarla o retirarla.
+export const ESTADO_TEXTO_POR_CONFIRMAR = "Pendiente de confirmación de la empresa";
 
-export const ESTADO_TEXTO_POR_CONFIRMAR = "Por confirmar";
+export const ESTADO_TEXTO_POR_CONFIRMAR_ADMIN = "Pendiente de confirmación del cliente";
 
 export const esPorConfirmar = (estadoId) => Number(estadoId) === ESTADO_INICIAL;
 
-export const VENDOR_CREA_POR_CONFIRMAR = false;
+const OBSERVACION_RETIRO_VENDOR = "Retirada por el asesor";
+const OBSERVACION_RECHAZO_EMPRESA = "No confirmada por el socio";
 
-export const estadoInicialSolicitud = (esVendor) =>
-  esVendor && VENDOR_CREA_POR_CONFIRMAR ? ESTADO_INICIAL : ESTADO_PENDIENTE;
+export const esRetiroDelVendor = (observaciones) =>
+  sinAcentos(observaciones).toLowerCase().startsWith(sinAcentos(OBSERVACION_RETIRO_VENDOR).toLowerCase());
+
+export const esRechazoDeLaEmpresa = (observaciones) =>
+  sinAcentos(observaciones).toLowerCase().startsWith(sinAcentos(OBSERVACION_RECHAZO_EMPRESA).toLowerCase());
+
+export const esTextoPorConfirmar = (estado) => String(estado || "").toLowerCase().includes("confirmaci");
 
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);

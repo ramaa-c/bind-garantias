@@ -36,7 +36,10 @@ import {
   ESTADO_VENCIDA,
   estadoTextoDesde,
   esPorConfirmar,
+  ESTADO_TEXTO_POR_CONFIRMAR_ADMIN,
   esRechazoAutomatico,
+  esRetiroDelVendor,
+  esRechazoDeLaEmpresa,
 } from "../../../utils/estadoLimiteSocio";
 import styles from "./Dashboard.module.css";
 
@@ -354,7 +357,9 @@ export default function Dashboard() {
       const socio = socioId ? sociosMap.get(socioId) : null;
 
       const tipoLimiteEstadoId = l.tipolimiteestadoid ?? l.TipoLimiteEstadoID ?? ESTADO_PENDIENTE;
-      const estadoText = estadoTextoDesde(tipoLimiteEstadoId);
+      const estadoText = esPorConfirmar(tipoLimiteEstadoId)
+        ? ESTADO_TEXTO_POR_CONFIRMAR_ADMIN
+        : estadoTextoDesde(tipoLimiteEstadoId);
 
       // Dentro de Rechazada hay dos orígenes distintos que comparten
       // el mismo TipoLimiteEstadoID (6): un rechazo automático al crear la
@@ -364,6 +369,10 @@ export default function Dashboard() {
       const fueRechazoAutomatico = esRechazoAutomatico(
         l.observaciones ?? l.Observaciones,
       );
+      // Las cancelaciones desde el estado 1 las distingue la observación que
+      // deja la API: retiro del vendor o rechazo de la empresa.
+      const fueRetiroDelVendor = esRetiroDelVendor(l.observaciones ?? l.Observaciones);
+      const fueRechazoDeLaEmpresa = esRechazoDeLaEmpresa(l.observaciones ?? l.Observaciones);
       const accionText =
         Number(tipoLimiteEstadoId) === ESTADO_APROBADA
           ? "Aprobada por Administrador"
@@ -372,11 +381,15 @@ export default function Dashboard() {
               ? "Rechazada automáticamente por Criterios de Aceptación"
               : "Rechazada por Administrador"
             : Number(tipoLimiteEstadoId) === ESTADO_CANCELADA
-              ? "Cancelada por el cliente"
+              ? fueRetiroDelVendor
+                ? "Retirada por el asesor antes de que la confirme el cliente"
+                : fueRechazoDeLaEmpresa
+                  ? "Rechazada por el cliente: no confirmó la solicitud del asesor"
+                  : "Cancelada por el cliente"
               : Number(tipoLimiteEstadoId) === ESTADO_VENCIDA
                 ? "Vencida"
                 : esPorConfirmar(tipoLimiteEstadoId)
-                  ? "Espera la confirmación de la empresa"
+                  ? "Cargada por el asesor: sin aprobar ni rechazar hasta que la confirme el cliente"
                   : "Espera de validación del Administrador";
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;

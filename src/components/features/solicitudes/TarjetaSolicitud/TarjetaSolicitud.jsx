@@ -1,6 +1,7 @@
 import React from "react";
 import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash, FiUserCheck } from "react-icons/fi";
 import { EstadoSolicitudPasos } from "../EstadoSolicitudPasos/EstadoSolicitudPasos";
+import { ESTADO_TEXTO_POR_CONFIRMAR, esTextoPorConfirmar } from "../../../../utils/estadoLimiteSocio";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import styles from "./TarjetaSolicitud.module.css";
 
@@ -9,7 +10,7 @@ const ESTADOS = {
   statusRejected: { icon: FiXCircle, label: "Rechazada" },
   statusCancelled: { icon: FiSlash, label: "Cancelada" },
   statusWaiting: { icon: FiClock, label: "Pendiente" },
-  statusConfirm: { icon: FiUserCheck, label: "Por confirmar" },
+  statusConfirm: { icon: FiUserCheck, label: ESTADO_TEXTO_POR_CONFIRMAR },
 };
 
 const getStatusKey = (estado) => {
@@ -17,7 +18,7 @@ const getStatusKey = (estado) => {
   if (e?.includes("aprob")) return "statusApproved";
   if (e?.includes("rechaz")) return "statusRejected";
   if (e?.includes("cancel") || e?.includes("venc")) return "statusCancelled";
-  if (e?.includes("confirmar")) return "statusConfirm";
+  if (esTextoPorConfirmar(e)) return "statusConfirm";
   return "statusWaiting";
 };
 
@@ -44,7 +45,7 @@ export const TarjetaSolicitudSkeleton = () => (
   </div>
 );
 
-export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones, aviso, destacada = false }) => {
+export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones, aviso, destacada = false, etiquetaDetalle }) => {
   const statusKey = getStatusKey(solicitud.estado);
   const StatusIcon = ESTADOS[statusKey].icon;
 
@@ -126,9 +127,15 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones, aviso, des
             {accion.label}
           </button>
         ))}
-        <span className={styles.btnDetalle} aria-hidden="true">
-          Ver detalle <FiChevronRight size={13} />
-        </span>
+        {etiquetaDetalle ? (
+          <span className={styles.btnPrimary} aria-hidden="true">
+            {etiquetaDetalle}
+          </span>
+        ) : (
+          <span className={styles.btnDetalle} aria-hidden="true">
+            Ver detalle <FiChevronRight size={13} />
+          </span>
+        )}
       </div>
 
       <FiChevronRight className={styles.chevron} aria-hidden="true" />

@@ -30,6 +30,7 @@ import {
   ESTADO_CANCELADA,
   estadoTextoDesde,
   esEstadoEnCurso,
+  esPorConfirmar,
   MOTIVO_CANCELACION_SOCIO,
 } from "../../../../utils/estadoLimiteSocio";
 import { FilaSolicitudVendor, FilaEmpresaVendor } from "./FilasPanelVendor";
@@ -164,7 +165,9 @@ export const SeleccionarEmpresa = () => {
             monto: new Intl.NumberFormat("es-AR").format(importeOriginalDeLimite(s)),
             moneda: simboloDe(s.monedaid),
             estado: estadoTextoDesde(tipoLimiteEstadoId),
+            tipoLimiteEstadoId,
             enCurso: esEstadoEnCurso(tipoLimiteEstadoId),
+            porConfirmar: esPorConfirmar(tipoLimiteEstadoId),
             fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "-",
             socioid: empresa.socioId,
             cuit: empresa.cuit,
@@ -258,6 +261,9 @@ export const SeleccionarEmpresa = () => {
     entrarAEmpresa(empresa, { destino: "/solicitudes", estado: { iniciarOperacion: true } });
 
   const actualizarLimiteMutation = useActualizarLimiteSocio();
+  // En estado 1 (todavía sin confirmar por la empresa) el vendor la retira:
+  // la API deja su propia observación.
+  const retiraSolicitud = !!solicitudACancelar?.porConfirmar;
   const handleConfirmarCancelacion = async () => {
     const s = solicitudACancelar;
     if (!s?.raw) return;
@@ -265,7 +271,7 @@ export const SeleccionarEmpresa = () => {
       await actualizarLimiteMutation.mutateAsync({
         ...s.raw,
         tipolimiteestadoid: ESTADO_CANCELADA,
-        observaciones: MOTIVO_CANCELACION_SOCIO,
+        ...(!s.porConfirmar && { observaciones: MOTIVO_CANCELACION_SOCIO }),
       });
       // Mismo criterio que Solicitudes.jsx: se refleja también en
       // SolicitudEnProceso, sin bloquear la cancelación si falla.
@@ -284,10 +290,12 @@ export const SeleccionarEmpresa = () => {
             queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
           });
       }
-      toast.success(`Solicitud N°${s.id} cancelada`, { description: s.empresaNombre });
+      toast.success(`Solicitud N°${s.id} ${s.porConfirmar ? "retirada" : "cancelada"}`, { description: s.empresaNombre });
       setSolicitudACancelar(null);
     } catch (err) {
-      toast.error("No se pudo cancelar la solicitud: " + mensajeNegocio(err, err.message));
+      toast.error(
+        `No se pudo ${s.porConfirmar ? "retirar" : "cancelar"} la solicitud: ` + mensajeNegocio(err, err.message),
+      );
     }
   };
 
@@ -304,7 +312,7 @@ export const SeleccionarEmpresa = () => {
       solicitud={s}
       onEntrar={() => entrarAEmpresa(empresaDeSolicitud(s))}
       onVerDetalle={setSolicitudSeleccionada}
-      onCancelar={s.enCurso && s.raw ? setSolicitudACancelar : undefined}
+      onCancelar={s.porConfirmar && s.raw ? setSolicitudACancelar : undefined}
     />
   );
 
@@ -543,8 +551,12 @@ export const SeleccionarEmpresa = () => {
         onConfirm={handleConfirmarCancelacion}
         isLoading={actualizarLimiteMutation.isPending}
         tone="danger"
-        titulo={`¿Cancelar la Solicitud N° ${solicitudACancelar?.id ?? ""}?`}
-        mensaje={`Es de ${solicitudACancelar?.empresaNombre || "la empresa"}. La solicitud se cierra y no se puede retomar.`}
+        titulo={`¿${retiraSolicitud ? "Retirar" : "Cancelar"} la Solicitud N° ${solicitudACancelar?.id ?? ""}?`}
+        mensaje={
+          retiraSolicitud
+            ? `Es de ${solicitudACancelar?.empresaNombre || "la empresa"} y todavía no la confirmó. Se cancela y no se puede retomar.`
+            : `Es de ${solicitudACancelar?.empresaNombre || "la empresa"}. La solicitud se cierra y no se puede retomar.`
+        }
         icono={<FiXCircle />}
         confirmText="Sí, cancelar"
         cancelText="Volver"

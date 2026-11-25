@@ -1,5 +1,6 @@
 import React from "react";
 import { FiCheck, FiX, FiMinus } from "react-icons/fi";
+import { esTextoPorConfirmar } from "../../../../utils/estadoLimiteSocio";
 import styles from "./EstadoSolicitudPasos.module.css";
 
 const normalizarEstado = (estado) => {
@@ -8,7 +9,7 @@ const normalizarEstado = (estado) => {
   if (e.includes("rechaz")) return "rechazada";
   if (e.includes("cancel")) return "cancelada";
   if (e.includes("venc")) return "vencida";
-  if (e.includes("confirmar")) return "porConfirmar";
+  if (esTextoPorConfirmar(e)) return "porConfirmar";
   return "pendiente";
 };
 
@@ -35,11 +36,11 @@ const armarPasosSolicitud = (estado, fecha) => {
 
   if (actual === "porConfirmar") {
     return [
-      { ...enviada, label: "Solicitud cargada", ayuda: fecha ? `El ${fecha}, por el ejecutivo` : "Por el ejecutivo" },
+      { ...enviada, label: "Solicitud cargada", ayuda: fecha ? `El ${fecha}, por el asesor` : "Por el asesor" },
       {
         key: "confirmacion",
         label: "Confirmación de la empresa",
-        ayuda: "El administrador de la empresa la acepta o la rechaza",
+        ayuda: "Un usuario de la empresa la confirma o la rechaza",
         tono: "actual",
       },
       { key: "evaluacion", label: "En evaluación", ayuda: "BIND Garantías la revisa después", tono: "pendiente" },

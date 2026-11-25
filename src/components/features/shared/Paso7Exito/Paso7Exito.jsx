@@ -16,6 +16,7 @@ import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardC
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useCatalogoMonedas } from "../../../../hooks/useCatalogos";
 import { MONEDA_DOLAR, MONEDA_PESOS } from "../../../../utils/monedaUtils";
+import { ESTADO_TEXTO_POR_CONFIRMAR } from "../../../../utils/estadoLimiteSocio";
 import styles from "./Paso7Exito.module.css";
 
 const MONEDAS_CON_NOMBRE_VISIBLE = [MONEDA_PESOS, MONEDA_DOLAR];
@@ -133,7 +134,7 @@ export default function Paso7Exito({
               <span
                 className={`${styles.chip} ${rechazada ? styles.chipRechazada : styles.chipOk}`}
               >
-                {rechazada ? "No aprobada" : porConfirmar ? "Por confirmar" : "Pre-aprobada"}
+                {rechazada ? "No aprobada" : porConfirmar ? ESTADO_TEXTO_POR_CONFIRMAR : "Pre-aprobada"}
               </span>
               {!!resumen?.id && (
                 <span className={styles.chip}>Solicitud N° {resumen.id}</span>
@@ -143,14 +144,14 @@ export default function Paso7Exito({
               {rechazada
                 ? "Tu solicitud fue registrada"
                 : porConfirmar
-                  ? "Solicitud cargada: falta que la empresa la confirme"
+                  ? "Solicitud cargada: pendiente de confirmación de la empresa"
                   : "¡Felicitaciones! Tu solicitud está pre-aprobada"}
             </h1>
             <p className={styles.subtitulo}>
               {rechazada
                 ? "No superó la evaluación automática de la línea. Podés realizar una nueva solicitud cuando quieras."
                 : porConfirmar
-                  ? "El administrador de la empresa la va a ver para aceptarla o rechazarla apenas ingrese. Recién cuando la acepte pasa a evaluación de BIND Garantías."
+                  ? "Cualquier usuario de la empresa la puede confirmar o rechazar apenas ingrese. Recién cuando la confirme pasa a evaluación de BIND Garantías. Mientras tanto la podés retirar desde tus solicitudes."
                   : "Restan 2 pasos para activar tu línea de crédito."}
             </p>
           </div>

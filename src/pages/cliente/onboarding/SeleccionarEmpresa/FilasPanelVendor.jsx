@@ -1,6 +1,7 @@
 import React from "react";
-import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash, FiPlus } from "react-icons/fi";
+import { FiChevronRight, FiCheckCircle, FiClock, FiXCircle, FiSlash, FiPlus, FiUserCheck } from "react-icons/fi";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
+import { esTextoPorConfirmar } from "../../../../utils/estadoLimiteSocio";
 import styles from "./SeleccionarEmpresa.module.css";
 
 const tonoDesde = (estado) => {
@@ -8,6 +9,7 @@ const tonoDesde = (estado) => {
   if (e.includes("aprob")) return { tono: styles.tonoAprobada, Icono: FiCheckCircle };
   if (e.includes("rechaz")) return { tono: styles.tonoRechazada, Icono: FiXCircle };
   if (e.includes("cancel") || e.includes("venc")) return { tono: styles.tonoCancelada, Icono: FiSlash };
+  if (esTextoPorConfirmar(e)) return { tono: styles.tonoEnCurso, Icono: FiUserCheck };
   return { tono: styles.tonoEnCurso, Icono: FiClock };
 };
 
@@ -25,7 +27,8 @@ const sinPropagar = (accion) => (e) => {
 };
 
 // Solicitud de cualquiera de las empresas del vendor. Toda la fila entra a la
-// empresa; "Ver detalle" y "Cancelar" (solo en curso) no lo disparan.
+// empresa; "Ver detalle" y "Retirar" (solo mientras la empresa no la
+// confirmó: una vez en proceso, la cancela la empresa) no lo disparan.
 export function FilaSolicitudVendor({ solicitud, onEntrar, onVerDetalle, onCancelar }) {
   const { tono, Icono } = tonoDesde(solicitud.estado);
   const entrar = () => onEntrar(solicitud);
@@ -70,7 +73,7 @@ export function FilaSolicitudVendor({ solicitud, onEntrar, onVerDetalle, onCance
       <div className={styles.filaAcciones}>
         {onCancelar && (
           <button type="button" className={styles.btnCancelar} onClick={sinPropagar(() => onCancelar(solicitud))}>
-            Cancelar
+            Retirar
           </button>
         )}
         <button

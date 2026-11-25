@@ -584,7 +584,7 @@ export const SolicitudPanel = ({
               <span className={styles.pieEspacio}>
                 {esperaEmpresa && (
                   <span className={styles.pieAviso}>
-                    La cargó el vendor: se puede decidir cuando la empresa la confirme.
+                    Pendiente de confirmación del cliente: se puede aprobar o rechazar cuando la confirme.
                   </span>
                 )}
               </span>
