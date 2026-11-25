@@ -112,6 +112,7 @@ export default function AdminNavbar() {
       items: [
         { label: "Usuarios", path: "/admin/usuarios" },
         { label: "Relaciones de Terceros", path: "/admin/tipos-relacion-socio" },
+        { label: "Tipos de Documento", path: "/admin/tipos-documento-archivo" },
         { label: "Variables Parametrizables", path: "/admin/variables-parametrizacion" },
         { label: "Modo Offline", path: "/admin/modo-offline" },
         { label: "Términos y Condiciones", path: "/admin/terminos" },

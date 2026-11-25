@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { catalogosService } from "../services/catalogosService";
-import { socioArchivoService } from "../services/socioArchivoService";
 
 const mapAndSort = (data, idField, descField = "descripcion") => {
   if (!data) return { raw: [], opciones: [] };
@@ -193,14 +192,19 @@ export const useTipoDocumentoArchivo = () =>
     },
   });
 
-export const useTituloDocumento = () => {
-  const { data: descripcionPorTipoDocumento } = useTipoDocumentoArchivo();
-  return useMemo(
-    () => (clave) =>
-      descripcionPorTipoDocumento?.get(Number(socioArchivoService.TIPO_DOCUMENTO_MAP[clave])) || "",
-    [descripcionPorTipoDocumento],
-  );
-};
+export const useTipoDocumentoArchivoReal = () =>
+  useQuery({
+    queryKey: ["catalogos", "tipoDocumentoArchivo"],
+    queryFn: catalogosService.obtenerTipoDocumentoArchivo,
+    staleTime: STALE_TIME,
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal.filter(
+        (item) => item && Number(item.tipodocumentoarchivoid) && String(item.descripcion || "").trim(),
+      );
+      return mapAndSort(arrayLimpio, "tipodocumentoarchivoid");
+    },
+  });
 
 // TextoModeloDocumento/HTMLModeloDocumento (el contrato completo en base64)
 // se descartan acá: son varios cientos de KB por modelo y no se usan para

@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDocumentMetadata } from "./useTipoDocumentoArchivo";
 import {
   requisitosService,
   DEFAULT_PHYSICAL_CONFIG,
@@ -7,6 +9,7 @@ import {
   DEFAULT_SH_CONFIG,
   DEFAULT_OTRAS_CONFIG,
   getFallbackConfig,
+  ocultarDocumentosNoHabilitados,
 } from "../services/requisitosService";
 
 const DEFAULT_REQUISITOS_FALLBACK = {
@@ -27,6 +30,7 @@ export const useRequisitos = (cadenaId, tipoPersonaId = undefined, sociedad = nu
   const queryClient = useQueryClient();
   const idNum = Number(cadenaId);
   const isClientMode = tipoPersonaId !== undefined;
+  const { idsHabilitados, isLoading: isLoadingHabilitados } = useDocumentMetadata();
 
   // Consulta asíncrona con clave reactiva que incluye tipoPersonaId y sociedad
   const query = useQuery({
@@ -38,7 +42,7 @@ export const useRequisitos = (cadenaId, tipoPersonaId = undefined, sociedad = nu
 
   // Mutación para actualizar (usada principalmente en el panel de admin)
   const mutation = useMutation({
-    mutationFn: (nuevaConfig) => requisitosService.guardarRequisitos(idNum, nuevaConfig),
+    mutationFn: (nuevaConfig) => requisitosService.guardarRequisitos(idNum, nuevaConfig, idsHabilitados),
     onSuccess: () => {
       // Invalidar todos los queries de requisitos para esta cadena
       queryClient.invalidateQueries({ queryKey: ["requisitos", idNum] });
@@ -50,11 +54,15 @@ export const useRequisitos = (cadenaId, tipoPersonaId = undefined, sociedad = nu
     ? getFallbackConfig(tipoPersonaId, sociedad)
     : DEFAULT_REQUISITOS_FALLBACK;
 
-  const requisitos = query.data || fallback;
+  const requisitosBase = query.data || fallback;
+  const requisitos = useMemo(
+    () => (isClientMode ? ocultarDocumentosNoHabilitados(requisitosBase, idsHabilitados) : requisitosBase),
+    [isClientMode, requisitosBase, idsHabilitados],
+  );
 
   return {
     requisitos,
-    isLoading: query.isLoading,
+    isLoading: query.isLoading || (isClientMode && isLoadingHabilitados),
     refetch: query.refetch,
     updateRequisitos: mutation.mutate,
     isUpdating: mutation.isPending,

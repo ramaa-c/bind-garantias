@@ -90,6 +90,7 @@ const ModoOffline = lazy(
 const TiposRelacionSocio = lazy(
   () => import("./pages/admin/configuracion/TiposRelacionSocio"),
 );
+const TiposDocumentoArchivo = lazy(() => import("./pages/admin/configuracion/TiposDocumentoArchivo"));
 const VariablesParametrizacion = lazy(
   () => import("./pages/admin/configuracion/VariablesParametrizacion"),
 );
@@ -411,6 +412,16 @@ const rutasAdmin = (
         <AdminGuard>
           <AdminLayout>
             <TiposRelacionSocio />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/tipos-documento-archivo"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <TiposDocumentoArchivo />
           </AdminLayout>
         </AdminGuard>
       }

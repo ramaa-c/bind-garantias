@@ -35,7 +35,7 @@ import { validarArchivo } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
-import { useTituloDocumento } from "../../../../hooks/useCatalogos";
+import { useTituloDocumento } from "../../../../hooks/useTipoDocumentoArchivo";
 
 
 const DOC_ITEMS = [

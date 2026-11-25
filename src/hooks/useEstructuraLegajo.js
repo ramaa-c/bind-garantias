@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTituloDocumento } from "./useCatalogos";
+import { useTituloDocumento } from "./useTipoDocumentoArchivo";
 import { ESTRUCTURA_LEGAJO } from "../components/features/shared/DocumentosLegajo/DocumentosLegajo.constants";
 
 export const useEstructuraLegajo = () => {

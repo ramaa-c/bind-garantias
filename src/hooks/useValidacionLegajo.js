@@ -6,7 +6,7 @@ import { useObtenerDatosSocioLegajo, useEstadoCdaTerceros } from "./useTerceros"
 import { useTiposRelacionSocioActivos } from "./useTipoRelacionSocio";
 import { socioArchivoService } from "../services/socioArchivoService";
 import { useCadenaActiva } from "./useCadenaActiva";
-import { useTituloDocumento } from "./useCatalogos";
+import { useTituloDocumento } from "./useTipoDocumentoArchivo";
 import {
   RELACION_APODERADO_ID,
   RELACION_REPRESENTANTE_LEGAL_ID,

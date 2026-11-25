@@ -1,6 +1,7 @@
 import { socioArchivoAdapter } from "../adapters/socioArchivoAdapter";
 import api from "../api/axios";
 import { esContenidoArchivoPermitido } from "../utils/fileUtils";
+import { TIPOS_DOCUMENTO_ARCHIVO } from "../constants/tiposDocumentoArchivo";
 
 /**   Convierte un File del navegador a string base64   */
 const fileToBase64 = (file) =>
@@ -34,28 +35,7 @@ const formatFechaArchivo = (date = new Date()) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-const TIPO_DOCUMENTO_MAP = {
-  // Documentos de empresa (Paso5 / DocumentosEmpresaModal)
-  estatuto: 1,
-  balance: 2,
-  ddjjIva: 3,
-  cartasDocumento: 4,
-  poderes: 5,
-  // Documentos del legajo (DocumentosLegajo)
-  certificadoPyme: 6,
-  otrosDocumentos: 7,
-  // Documentos de socios (DNI frente/dorso)
-  "socio-frente": 8,
-  "socio-dorso": 9,
-  // Nuevos documentos del legajo (adicionados según requerimiento y Excel)
-  eecc: 10,
-  actaDesignacion: 11,
-  actaSocios: 12,
-  f1272: 13,
-  ddjjGanancias: 14,
-  manifestacionBienes: 15,
-  constanciaMonotributo: 16,
-};
+const TIPO_DOCUMENTO_MAP = TIPOS_DOCUMENTO_ARCHIVO;
 
 /**   Obtiene el tipodocumentoarchivoid para una clave dada.   */
 const getTipoDocumentoId = (key) => {

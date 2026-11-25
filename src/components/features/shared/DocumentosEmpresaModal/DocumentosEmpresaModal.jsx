@@ -12,7 +12,7 @@ import { CargaArchivos } from "../../../ui/CargaArchivos/CargaArchivos";
 import { FORMATOS_ARCHIVO } from "../../../../utils/fileUtils";
 import styles from "./DocumentosEmpresaModal.module.css";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { useTituloDocumento } from "../../../../hooks/useCatalogos";
+import { useTituloDocumento } from "../../../../hooks/useTipoDocumentoArchivo";
 import { toast } from "sonner";
 
 export const DocumentosEmpresaModal = ({
