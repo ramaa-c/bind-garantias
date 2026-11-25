@@ -714,7 +714,6 @@ button.boton:hover,
   width: 100%;
 }
 
-.pasoReemplazo,
 .pasoConsecuencia {
   display: flex;
   gap: 0.5rem;
@@ -726,24 +725,13 @@ button.boton:hover,
   line-height: 1.45;
 }
 
-.pasoReemplazo svg,
 .pasoConsecuencia svg {
   flex-shrink: 0;
   margin-top: 0.15rem;
 }
 
-.pasoReemplazo b,
 .pasoConfirmar b {
   word-break: break-all;
-}
-
-.pasoReemplazo {
-  border: 1px solid rgba(255, 193, 7, 0.35);
-  background: rgba(255, 193, 7, 0.07);
-}
-
-.pasoReemplazo svg {
-  color: var(--warning);
 }
 
 /* La consecuencia de invitar (el vendor deja de administrar la empresa),
@@ -768,6 +756,8 @@ button.boton:hover,
 }
 
 .pasoConfirmar p {
+  display: flex;
+  gap: 0.5rem;
   margin: 0;
   color: var(--white);
   font-size: 0.76rem;
@@ -790,6 +780,12 @@ button.boton:hover,
   margin: 0;
   color: #ff8a8a;
   font-size: 0.74rem;
+}
+
+.pasoConfirmar svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--warning);
 }
 
 /* Acciones secundarias del panel del paso (reenviar, cambiar mail, volver,

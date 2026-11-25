@@ -142,14 +142,6 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
         </div>
       ) : (
         <form className={styles.pasoCuerpo} onSubmit={enviar} noValidate>
-          {reemplazando && (
-            <p className={styles.pasoReemplazo}>
-              <FiAlertTriangle aria-hidden="true" />
-              <span>
-                La invitación a <b>{invitacion.email}</b> deja de valer.
-              </span>
-            </p>
-          )}
           <label className={styles.campo}>
             <span className={styles.campoEtiqueta}>{reemplazando ? "Mail nuevo" : "Mail de la empresa"}</span>
             <input
@@ -187,7 +179,8 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
               }}
             />
           </label>
-          {entraComoAdmin ? (
+          {/* Al cambiar el mail no se repite: ya lo vio al enviar la primera invitación. */}
+          {reemplazando ? null : entraComoAdmin ? (
             <p className={styles.pasoConsecuencia}>
               <FiKey aria-hidden="true" />
               <span>
@@ -208,7 +201,11 @@ export function PasoInvitacion({ nombreEmpresa, invitacion, entraComoAdmin, onIn
           {confirmandoReemplazo ? (
             <div className={styles.pasoConfirmar} role="alert">
               <p>
-                ¿Reemplazamos la invitación a <b>{invitacion.email}</b> por <b>{email.trim()}</b>?
+                <FiAlertTriangle aria-hidden="true" />
+                <span>
+                  La invitación a <b>{invitacion.email}</b> deja de valer y le enviamos una nueva a{" "}
+                  <b>{email.trim()}</b>. ¿Confirmás el cambio?
+                </span>
               </p>
               <div className={styles.pasoAcciones}>
                 <Button
