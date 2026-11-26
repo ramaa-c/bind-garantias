@@ -1,0 +1,219 @@
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.avance {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.avance b {
+  color: var(--white);
+}
+
+.avanceBarra {
+  flex: 1;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: rgba(var(--overlay-rgb), 0.1);
+  overflow: hidden;
+}
+
+.avanceBarra i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success-green, #3ddc84);
+  transition: width 0.3s ease;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.seccionSeparada {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
+}
+
+/* En mobile no entra junto a los dos botones: ahí alcanza con la cuenta en
+   amarillo de la pestaña Documentación. */
+.avisoPie {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-amarillo-bind);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.avisoPie:focus-visible {
+  outline: 2px solid var(--color-azul-bind-300);
+  outline-offset: 2px;
+}
+
+@media (min-width: 40rem) {
+  .avisoPie {
+    display: inline-flex;
+  }
+}
+
+:global([data-theme="light"]) .avisoPie {
+  color: #6b6a00;
+}
+
+.seccionTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  color: var(--white);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.seccionNum {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 0.4375rem;
+  background: rgba(var(--overlay-rgb), 0.07);
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.seccionNumOk {
+  background: rgba(61, 220, 132, 0.15);
+  color: var(--success-green, #3ddc84);
+}
+
+.seccionNumOk svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  stroke-width: 3.2;
+}
+
+.seccionEstado {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.lista,
+.gridDni {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+@media (min-width: 40rem) {
+  .gridDni {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fila {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fila > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Pestañas de la cabecera de la modal (Datos | Documentación). */
+.pestanas {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.pestana {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: 2.1rem;
+  padding: 0 0.875rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.pestana:hover {
+  color: var(--white);
+}
+
+.pestana:focus-visible {
+  outline: 2px solid var(--color-azul-bind-300);
+  outline-offset: 2px;
+}
+
+.pestanaActiva {
+  background: rgba(var(--overlay-rgb), 0.1);
+  color: var(--white);
+}
+
+.pestanaCuenta {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(var(--overlay-rgb), 0.1);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.pestanaCuentaPendiente {
+  background: rgba(245, 244, 0, 0.18);
+  color: var(--color-amarillo-bind);
+}
+
+.pestanaCuentaOk {
+  background: rgba(61, 220, 132, 0.15);
+  color: var(--success-green, #3ddc84);
+}
+
+:global([data-theme="light"]) .pestanaCuentaPendiente {
+  color: #6b6a00;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avanceBarra i,
+  .pestana {
+    transition: none;
+  }
+}

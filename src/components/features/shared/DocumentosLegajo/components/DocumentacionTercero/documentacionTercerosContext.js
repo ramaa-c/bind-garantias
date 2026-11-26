@@ -5,26 +5,28 @@ import {
 } from "../../../../../../utils/documentacionTerceros";
 
 // Lo provee SociosLegajo: la parametrización de la cadena, los archivos del
-// socio y cómo abrir la modal de documentación. Las secciones de terceros
-// lo leen con useDocumentacionTerceros para pintar el botón de cada tarjeta.
+// socio y cómo refrescarlos. Las secciones lo usan para sumar al chip
+// "Falta:" la documentación pendiente de cada tercero, y las modales de
+// terceros (useDocumentosEnModal) para mostrar y cargar esa documentación.
+// Fuera del legajo (ej. el alta, Paso4Socios) no hay provider y todo sigue
+// como antes.
 export const DocumentacionTercerosContext = createContext(null);
 
-const SIN_DOCUMENTACION = { resumenDe: () => null, abrir: () => {} };
+const SIN_DOCUMENTACION = { resumenDe: () => null };
 
-export const useDocumentacionTerceros = (tipoRelacionSocioId, etiqueta) => {
+export const useDocumentacionTerceros = (tipoRelacionSocioId) => {
   const ctx = useContext(DocumentacionTercerosContext);
   return useMemo(() => {
     if (!ctx || !tipoRelacionSocioId) return SIN_DOCUMENTACION;
     const requeridos = documentosRequeridosDeTercero(ctx.requisitos, tipoRelacionSocioId);
     if (requeridos.length === 0) return SIN_DOCUMENTACION;
     return {
-      // null mientras cargan los archivos: el botón no muestra un "0 de N"
-      // que todavía no es cierto.
+      // null mientras cargan los archivos: no se marca como faltante algo
+      // que todavía no se sabe si está.
       resumenDe: (persona) =>
         ctx.cargandoArchivos
           ? null
           : estadoDocumentacionTercero({ requeridos, archivos: ctx.archivos, persona, tituloDe: ctx.tituloDe }),
-      abrir: (persona) => ctx.abrir({ persona, tipoRelacionSocioId, etiqueta }),
     };
-  }, [ctx, tipoRelacionSocioId, etiqueta]);
+  }, [ctx, tipoRelacionSocioId]);
 };

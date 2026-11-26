@@ -57,13 +57,12 @@ export function TerceroRelacionSection({
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(items.map((r) => r.id), cadenaValorId);
 
-  const documentacion = useDocumentacionTerceros(tipoRelacionSocioId, titulo);
+  const documentacion = useDocumentacionTerceros(tipoRelacionSocioId);
   const entradas = ordenarPendientesPrimero(
     items.map((item) => {
       const docs = documentacion.resumenDe(item);
       return {
       item,
-      docs,
       faltantes: [...calcularFaltantes(item), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(item.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(item.id)) === "pendiente",
@@ -107,7 +106,7 @@ export function TerceroRelacionSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ item, docs, faltantes, cdaRechazado, cdaPendiente }) => (
+              {entradas.map(({ item, faltantes, cdaRechazado, cdaPendiente }) => (
                 <TerceroCard
                   key={item.id}
                   nombre={item.nombre}
@@ -122,8 +121,6 @@ export function TerceroRelacionSection({
                   }
                   onEdit={() => abrirModal(item)}
                   onDelete={() => handleEliminarRelacion(item)}
-                  documentacion={docs}
-                  onDocumentacion={() => documentacion.abrir(item)}
                   editTitle={`Editar ${titulo}`}
                   deleteTitle={`Eliminar ${titulo}`}
                 >

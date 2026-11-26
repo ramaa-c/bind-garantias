@@ -52,13 +52,12 @@ export function RepresentantesSection({
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(representantes.map((r) => r.id), cadenaValorId);
 
-  const documentacion = useDocumentacionTerceros(RELACION_REPRESENTANTE_LEGAL_ID, "Representante legal");
+  const documentacion = useDocumentacionTerceros(RELACION_REPRESENTANTE_LEGAL_ID);
   const entradas = ordenarPendientesPrimero(
     representantes.map((rep) => {
       const docs = documentacion.resumenDe(rep);
       return {
       rep,
-      docs,
       faltantes: [...calcularFaltantes(rep), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(rep.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(rep.id)) === "pendiente",
@@ -100,7 +99,7 @@ export function RepresentantesSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ rep, docs, faltantes, cdaRechazado, cdaPendiente }) => (
+              {entradas.map(({ rep, faltantes, cdaRechazado, cdaPendiente }) => (
                 <TerceroCard
                   key={rep.id}
                   nombre={rep.nombre}
@@ -115,8 +114,6 @@ export function RepresentantesSection({
                   }
                   onEdit={() => abrirModal(rep)}
                   onDelete={() => handleEliminarRelacion(rep)}
-                  documentacion={docs}
-                  onDocumentacion={() => documentacion.abrir(rep)}
                   editTitle="Editar Representante Legal"
                   deleteTitle="Eliminar Representante Legal"
                 >

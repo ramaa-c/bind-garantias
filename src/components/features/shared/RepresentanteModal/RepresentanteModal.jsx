@@ -25,6 +25,17 @@ import { parseAddress, armarDireccion } from "../../../../utils/direccionParser"
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { RELACION_FIADOR_ID } from "../../../../constants/tiposRelacionSocio";
 import { buscarRelacionVigente } from "../../../../utils/relacionesTercerosUtils";
+import {
+  useDocumentosEnModal,
+  MODO_PESTANAS,
+  MODO_SOLO_DNI,
+} from "../DocumentosLegajo/components/DocumentacionTercero/useDocumentosEnModal";
+import {
+  AvisoDocumentacionPie,
+  DocumentosTerceroPanel,
+  PestanasTercero,
+} from "../DocumentosLegajo/components/DocumentacionTercero/DocumentosTerceroPanel";
+import { propsConfirmacionSinDocumentacion } from "../DocumentosLegajo/components/DocumentacionTercero/confirmacionDocumentacion";
 
 import styles from "./RepresentanteModal.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
@@ -195,6 +206,29 @@ export function RepresentanteModal({
   const nombreValue = useWatch({ control, name: "nombre" });
   const emailValue = useWatch({ control, name: "email" });
   const currentProvincia = useWatch({ control, name: "provinciaid" });
+
+  // Documentación del tercero (ver useDocumentosEnModal): solo DNI va como
+  // sección 4 del formulario; con más documentos, pestañas en la cabecera.
+  const documentos = useDocumentosEnModal({
+    tipoRelacionSocioId,
+    persona: { cuit: cuitValue, nombre: nombreValue },
+    isOpen,
+  });
+  const conPestanas = documentos.modo === MODO_PESTANAS;
+  const [pestana, setPestana] = useState("datos");
+  const [erroresDocumentos, setErroresDocumentos] = useState([]);
+  const [prevAbiertaDocumentos, setPrevAbiertaDocumentos] = useState(isOpen);
+  if (isOpen !== prevAbiertaDocumentos) {
+    setPrevAbiertaDocumentos(isOpen);
+    if (isOpen) {
+      setPestana("datos");
+      setErroresDocumentos([]);
+    }
+  }
+  const elegirDocumento = (clave, archivo) => {
+    documentos.elegir(clave, archivo);
+    setErroresDocumentos((prev) => prev.filter((c) => c !== clave));
+  };
 
   const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
@@ -750,7 +784,24 @@ export function RepresentanteModal({
 
     const isValid = await trigger();
     const domicilioValido = validarDomicilio();
-    if (!isValid || !domicilioValido) return;
+    if (!isValid || !domicilioValido) {
+      // Los errores están en Datos: si estaba en Documentación, no los vería.
+      setPestana("datos");
+      return;
+    }
+
+    // Solo DNI: mismo criterio que Accionistas, el DNI es parte del
+    // formulario y se pide para guardar. Con pestañas no se bloquea: el
+    // aviso va en la confirmación (ver ConfirmacionModal más abajo).
+    if (documentos.modo === MODO_SOLO_DNI) {
+      const dniFaltante = documentos.items
+        .filter((i) => i.requerimiento === 1 && !i.archivo && !i.local)
+        .map((i) => i.clave);
+      if (dniFaltante.length > 0) {
+        setErroresDocumentos(dniFaltante);
+        return;
+      }
+    }
 
     // Fiador con accionista único (SGRPLUSPLA-137): no puede ser la misma
     // persona que ya está cargada como accionista - se compara CUIT y email
@@ -798,7 +849,7 @@ export function RepresentanteModal({
       }
     }
 
-    if (!isDirty) {
+    if (!isDirty && !documentos.hayCambios) {
       await handleCerrar();
       return;
     }
@@ -1084,6 +1135,24 @@ export function RepresentanteModal({
         await validarCdaTerceroExistente(idConocido);
       }
 
+      // La documentación se sube después de guardar al tercero (el vínculo
+      // es su CUIT). Si falla, los datos ya quedaron: se avisa y se puede
+      // reintentar desde Editar.
+      if (documentos.hayCambios && socioIdActivo) {
+        try {
+          await documentos.subirPendientes({
+            socioIdActivo,
+            persona: { cuit: cuitLimpio, nombre: formData.nombre },
+          });
+        } catch (docErr) {
+          toast.error("Los datos se guardaron, pero no se pudo subir la documentación.", {
+            description: docErr?.esValidacionArchivo
+              ? docErr.message
+              : mensajeNegocio(docErr, "Volvé a intentarlo desde Editar."),
+          });
+        }
+      }
+
       // No se espera a onSuccess (cargarSocios en SociosLegajo.jsx puede
       // tardar unos segundos en refetchear todo de verdad) — la modal se
       // cierra ya mismo y la sección de representantes/apoderados queda en
@@ -1117,9 +1186,26 @@ export function RepresentanteModal({
         maxWidth={!afipValidado && !representante && !representanteInicial ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
+        headerExtra={
+          conPestanas && (afipValidado || representante || representanteInicial) ? (
+            <PestanasTercero
+              activa={pestana}
+              onCambiar={setPestana}
+              cargados={documentos.cargados}
+              total={documentos.total}
+              faltan={documentos.faltantes.length > 0}
+            />
+          ) : null
+        }
         footer={
           (afipValidado || representante || representanteInicial) && (
             <>
+              {conPestanas && pestana === "datos" && documentos.faltantes.length > 0 && (
+                <AvisoDocumentacionPie
+                  cantidad={documentos.faltantes.length}
+                  onClick={() => setPestana("documentacion")}
+                />
+              )}
               <Button type="button" variant={isAdmin ? "outlineBlue" : "outline"} onClick={handleCerrar} disabled={validando}>
                 Cancelar
               </Button>
@@ -1171,6 +1257,9 @@ export function RepresentanteModal({
             </div>
           ) : (
             <>
+              {/* Con pestañas, los datos quedan montados (react-hook-form los
+                  sigue validando) pero ocultos mientras se ve Documentación. */}
+              <div style={{ display: conPestanas && pestana !== "datos" ? "none" : "contents" }}>
               <h4 className={styles.sectionTitle}>
                 <span className={`${styles.sectionNum} ${styles.sectionNumOk}`} aria-hidden="true"><FiCheck /></span>
                 {etiquetaRol}
@@ -1410,6 +1499,27 @@ export function RepresentanteModal({
                   )}
                 />
               </div>
+              {documentos.modo === MODO_SOLO_DNI && (
+                <DocumentosTerceroPanel
+                  items={documentos.items}
+                  onElegir={elegirDocumento}
+                  errores={erroresDocumentos}
+                  numeroInicial={4}
+                  conSeparador
+                  isAdmin={isAdmin}
+                  idBase="doc-tercero"
+                />
+              )}
+              </div>
+              {conPestanas && pestana === "documentacion" && (
+                <DocumentosTerceroPanel
+                  items={documentos.items}
+                  onElegir={elegirDocumento}
+                  conAvance
+                  isAdmin={isAdmin}
+                  idBase="doc-tercero"
+                />
+              )}
             </>
           )}
         </form>
@@ -1419,9 +1529,19 @@ export function RepresentanteModal({
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
-        titulo={representante || representanteInicial ? `Actualizar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
         variant={isAdmin ? "blue" : "default"}
-        mensaje={representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : `¿Estás seguro de que deseas agregar este ${etiquetaRol.toLowerCase()}?`}
+        {...(conPestanas && documentos.faltantes.length > 0
+          ? propsConfirmacionSinDocumentacion({
+              faltantes: documentos.faltantes,
+              onCargarAhora: () => {
+                setShowConfirm(false);
+                setPestana("documentacion");
+              },
+            })
+          : {
+              titulo: representante || representanteInicial ? `Actualizar ${etiquetaRol}` : `Agregar ${etiquetaRol}`,
+              mensaje: representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : `¿Estás seguro de que deseas agregar este ${etiquetaRol.toLowerCase()}?`,
+            })}
       />
 
       <ProcesamientoModal

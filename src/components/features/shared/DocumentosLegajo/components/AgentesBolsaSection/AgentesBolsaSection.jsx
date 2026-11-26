@@ -21,7 +21,7 @@ export function AgentesBolsaSection({
   const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
-  const documentacion = useDocumentacionTerceros(RELACION_AGENTE_BOLSA_ID, "Agente de bolsa");
+  const documentacion = useDocumentacionTerceros(RELACION_AGENTE_BOLSA_ID);
 
   return (
     <div className={styles.sociosContainer}>
@@ -53,7 +53,8 @@ export function AgentesBolsaSection({
             <div className={s.lista}>
               {/* Sin validación de datos propia: tarjeta neutra, sin chip de
                   estado ni detalle desplegable (como antes). Si la cadena le
-                  pide documentación, el chip pasa a reflejar solo eso. */}
+                  pide documentación, el chip pasa a reflejar solo eso (se carga desde
+                  "Editar"). */}
               {agentesBolsa.map((bolsa) => {
                 const docs = documentacion.resumenDe(bolsa);
                 return (
@@ -70,8 +71,6 @@ export function AgentesBolsaSection({
                   }
                   validado={!!docs}
                   faltantes={docs?.faltantes}
-                  documentacion={docs}
-                  onDocumentacion={() => documentacion.abrir(bolsa)}
                   isAdmin={isAdmin}
                   onEdit={() => {
                     setEditBolsa(bolsa);

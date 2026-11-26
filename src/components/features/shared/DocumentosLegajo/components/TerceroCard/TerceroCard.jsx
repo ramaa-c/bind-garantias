@@ -1,5 +1,5 @@
 import React, { useId } from "react";
-import { FiCheck, FiChevronDown, FiEdit2, FiFileText, FiTrash2 } from "react-icons/fi";
+import { FiCheck, FiChevronDown, FiEdit2, FiTrash2 } from "react-icons/fi";
 import s from "./TerceroCard.module.css";
 import { inicialesDe } from "./terceroCardUtils";
 import { EstadoRevisionChip } from "../EstadoRevisionChip/EstadoRevisionChip";
@@ -25,10 +25,9 @@ const textoFaltantes = (faltantes) => {
  *   tarjeta neutra, sin chip de estado.
  * - `children` es el detalle desplegable; sin children la tarjeta no se expande.
  * - `participacion` + `colorParticipacion` solo los pasa Accionistas.
- * - `documentacion` ({ total, cargados, faltantes }) muestra el botón
- *   "Documentación" con el avance; sin documentos configurados para ese tipo
- *   de tercero llega null y el botón no aparece. Lo que falta se suma solo
- *   al chip "Falta:" (lo agrega cada sección a sus `faltantes`).
+ * - La documentación pendiente del tercero (ver useDocumentacionTerceros)
+ *   llega sumada a `faltantes`: se completa desde "Editar", en la pestaña
+ *   Documentación de su modal.
  */
 export function TerceroCard({
   nombre,
@@ -46,18 +45,11 @@ export function TerceroCard({
   onDelete,
   editTitle,
   deleteTitle,
-  documentacion = null,
-  onDocumentacion,
   children,
 }) {
   const detalleId = useId();
   const expandible = Boolean(children);
   const tieneFaltantes = faltantes.length > 0;
-  // "Editar" se marca solo por datos: lo que falta de documentación se
-  // resuelve desde su propio botón.
-  const faltanDatos = documentacion
-    ? faltantes.some((f) => !documentacion.faltantes.includes(f))
-    : tieneFaltantes;
 
   // El CDA rechazado manda sobre faltantes/completo (mismo criterio que la
   // tarjeta anterior). El cliente lo ve como "en revisión" en azul: no es
@@ -133,29 +125,7 @@ export function TerceroCard({
         )}
 
         <div className={s.actions}>
-          {documentacion && (
-            <button
-              type="button"
-              className={`${s.btnDocs} ${
-                documentacion.faltantes.length > 0
-                  ? s.btnDocsPendiente
-                  : documentacion.cargados === documentacion.total
-                    ? s.btnDocsCompleto
-                    : ""
-              }`}
-              onClick={onDocumentacion}
-              title={`Documentación de ${nombre}`}
-              aria-label={`Documentación de ${nombre}: ${documentacion.cargados} de ${documentacion.total} cargados`}
-            >
-              <FiFileText size={13} aria-hidden="true" />
-              <span className={s.btnDocsTexto}>Documentación</span>
-              <span className={s.btnDocsCuenta} aria-hidden="true">
-                {documentacion.cargados}/{documentacion.total}
-              </span>
-              {documentacion.faltantes.length > 0 && <span className={s.btnEditarDot} aria-hidden="true" />}
-            </button>
-          )}
-          {faltanDatos ? (
+          {tieneFaltantes ? (
             <button type="button" className={s.btnEditarPendiente} onClick={onEdit} title={editTitle}>
               <FiEdit2 size={13} aria-hidden="true" /> Editar
               <span className={s.btnEditarDot} aria-hidden="true" />

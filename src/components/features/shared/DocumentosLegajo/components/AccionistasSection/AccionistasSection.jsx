@@ -111,13 +111,12 @@ export function AccionistasSection({
   const accionistasPorParticipacion = [...accionistas].sort(
     (a, b) => (Number(b.participacion) || 0) - (Number(a.participacion) || 0),
   );
-  const documentacion = useDocumentacionTerceros(RELACION_ACCIONISTA_ID, "Accionista");
+  const documentacion = useDocumentacionTerceros(RELACION_ACCIONISTA_ID);
   const entradas = ordenarPendientesPrimero(
     accionistasPorParticipacion.map((socio, i) => {
       const docs = documentacion.resumenDe(socio);
       return {
       socio,
-      docs,
       faltantes: [...calcularFaltantes(socio), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(socio.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(socio.id)) === "pendiente",
@@ -160,7 +159,7 @@ export function AccionistasSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ socio, docs, faltantes, cdaRechazado, cdaPendiente, color }) => (
+              {entradas.map(({ socio, faltantes, cdaRechazado, cdaPendiente, color }) => (
                 <TerceroCard
                   key={socio.id}
                   nombre={socio.nombre}
@@ -180,8 +179,6 @@ export function AccionistasSection({
                     setModalAccionistaOpen(true);
                   }}
                   onDelete={() => handleEliminarRelacion(socio)}
-                  documentacion={docs}
-                  onDocumentacion={() => documentacion.abrir(socio)}
                   editTitle="Editar Accionista"
                   deleteTitle="Eliminar Accionista"
                 >
