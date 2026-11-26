@@ -97,6 +97,7 @@ export function RepresentanteModal({
   // más abajo — `stubTerceroId` (ver más abajo) vive dentro de un try{} que
   // sale de scope antes de llegar a ejecutarValidaciones.
   const stubTerceroIdRef = useRef(null);
+  const [terceroIdStub, setTerceroIdStub] = useState(null);
   // Relación creada por ESTA sesión del modal y todavía sin confirmar. El
   // vínculo tiene que existir antes de validar el CDA (si no, el backend
   // responde 500), pero si el usuario cierra sin aceptar no corresponde que
@@ -209,11 +210,13 @@ export function RepresentanteModal({
   const emailValue = useWatch({ control, name: "email" });
   const currentProvincia = useWatch({ control, name: "provinciaid" });
 
-  // Documentación del tercero (ver useDocumentosEnModal): solo DNI va como
-  // sección 4 del formulario; con más documentos, pestañas en la cabecera.
+  const terceroIdDocumentos =
+    representante?.id ||
+    (representanteInicial?.preloadedFromDb ? representanteInicial?.id : null) ||
+    terceroIdStub;
   const documentos = useDocumentosEnModal({
     tipoRelacionSocioId,
-    persona: { cuit: cuitValue, nombre: nombreValue },
+    persona: { id: terceroIdDocumentos, cuit: cuitValue, nombre: nombreValue },
     isOpen,
   });
   const conPestanas = documentos.modo === MODO_PESTANAS;
@@ -368,6 +371,7 @@ export function RepresentanteModal({
     // falta guardar el ID acá: la va a encontrar sola.
     if (necesitaVinculo) {
       stubTerceroIdRef.current = null;
+      setTerceroIdStub(null);
       try {
         // Denominacion y descripcionreducida van VACÍAS a propósito para el
         // caso de que haya que crearlo: la precarga de más abajo hace
@@ -404,6 +408,7 @@ export function RepresentanteModal({
           terceroResuelto.TerceroRelacionadoID ||
           terceroResuelto.id;
         stubTerceroIdRef.current = stubTerceroId;
+        setTerceroIdStub(stubTerceroId);
 
         const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
@@ -1138,14 +1143,11 @@ export function RepresentanteModal({
         await validarCdaTerceroExistente(idConocido);
       }
 
-      // La documentación se sube después de guardar al tercero (el vínculo
-      // es su CUIT). Si falla, los datos ya quedaron: se avisa y se puede
-      // reintentar desde Editar.
-      if (documentos.hayCambios && socioIdActivo) {
+      if (documentos.hayCambios && socioIdActivo && terceroId) {
         try {
           await documentos.subirPendientes({
             socioIdActivo,
-            persona: { cuit: cuitLimpio, nombre: formData.nombre },
+            persona: { id: terceroId, cuit: cuitLimpio, nombre: formData.nombre },
           });
         } catch (docErr) {
           toast.error("Los datos se guardaron, pero no se pudo subir la documentación.", {

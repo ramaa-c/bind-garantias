@@ -3,32 +3,27 @@ import {
   DOCUMENTO_DNI_FRENTE_ID,
   DOCUMENTO_DNI_DORSO_ID,
 } from "../constants/tiposDocumentoArchivo";
-import { RELACION_ACCIONISTA_ID } from "../constants/tiposRelacionSocio";
-
-// Documentación por tipo de tercero (parametrización de terceros).
-//
-// La configuración viaja en la misma parametrización de la cadena
-// (api/CadenaValorParametrizacion): una fila con TipoRelacionSocioID Y
-// TipoDocumentoArchivoID a la vez significa "ese documento para ese tipo de
-// tercero", con el mismo Requerimiento de siempre (1 obligatorio, 2
-// opcional, 0 no se pide). requisitosService la deja en
-// `requisitos.documentosTerceros[tipoRelacionSocioId][claveDocumento]`.
-//
-// Accionista pide DNI frente y dorso por defecto (como hasta ahora), aunque
-// la cadena no tenga filas propias para eso; una fila explícita lo pisa.
-export const DOCUMENTOS_TERCERO_POR_DEFECTO = {
-  [RELACION_ACCIONISTA_ID]: { "socio-frente": 1, "socio-dorso": 1 },
-};
+import { RELACION_ACCIONISTA_ID, RELACION_AGENTE_BOLSA_ID } from "../constants/tiposRelacionSocio";
 
 export const REQUERIMIENTO_OBLIGATORIO = 1;
 export const REQUERIMIENTO_OPCIONAL = 2;
 
+export const CONFIGURACION_DOCUMENTOS_POR_DEFECTO = {
+  [RELACION_ACCIONISTA_ID]: {
+    [DOCUMENTO_DNI_FRENTE_ID]: REQUERIMIENTO_OBLIGATORIO,
+    [DOCUMENTO_DNI_DORSO_ID]: REQUERIMIENTO_OBLIGATORIO,
+  },
+};
+
 const IDS_DNI = new Set([DOCUMENTO_DNI_FRENTE_ID, DOCUMENTO_DNI_DORSO_ID]);
 export const esDocumentoDni = (tipoDocumentoId) => IDS_DNI.has(Number(tipoDocumentoId));
 
-// El DNI siempre con este nombre (el catálogo lo llama distinto según el
-// ambiente); el resto sale del catálogo (tituloDe) y esto es solo el
-// respaldo si no respondió, para no mostrar la clave interna.
+const CLAVE_POR_ID_DOCUMENTO = Object.fromEntries(
+  Object.entries(TIPOS_DOCUMENTO_ARCHIVO).map(([clave, id]) => [Number(id), clave]),
+);
+const claveDeDocumento = (tipoDocumentoId) =>
+  CLAVE_POR_ID_DOCUMENTO[Number(tipoDocumentoId)] || `doc-${Number(tipoDocumentoId)}`;
+
 const TITULOS_DNI = {
   "socio-frente": "DNI frente",
   "socio-dorso": "DNI dorso",
@@ -50,42 +45,80 @@ const TITULOS_RESPALDO = {
   constanciaMonotributo: "Constancia de monotributo",
 };
 
-// Orden: el DNI primero (frente, dorso), después los obligatorios y al final
-// los opcionales, cada grupo en el orden del catálogo - así la modal y el
-// chip "Falta:" se leen siempre igual.
 const ORDEN_CLAVES = ["socio-frente", "socio-dorso", ...Object.keys(TIPOS_DOCUMENTO_ARCHIVO)];
 const ordenDe = (clave) => {
   const i = ORDEN_CLAVES.indexOf(clave);
   return i === -1 ? ORDEN_CLAVES.length : i;
 };
 
-/**
- * Documentos que se le piden a un tipo de tercero, ya ordenados.
- * @returns {{clave: string, tipoDocumentoId: number, requerimiento: number}[]}
- */
-export const documentosRequeridosDeTercero = (requisitos, tipoRelacionSocioId) => {
-  const id = Number(tipoRelacionSocioId);
-  const config = {
-    ...(DOCUMENTOS_TERCERO_POR_DEFECTO[id] || {}),
-    ...(requisitos?.documentosTerceros?.[id] || {}),
-  };
-  return Object.entries(config)
-    .filter(([clave, req]) => TIPOS_DOCUMENTO_ARCHIVO[clave] && (req === 1 || req === 2))
-    .map(([clave, req]) => ({
-      clave,
-      tipoDocumentoId: Number(TIPOS_DOCUMENTO_ARCHIVO[clave]),
+const esPedido = (req) => req === REQUERIMIENTO_OBLIGATORIO || req === REQUERIMIENTO_OPCIONAL;
+const exigencia = (req) => (req === REQUERIMIENTO_OBLIGATORIO ? 2 : req === REQUERIMIENTO_OPCIONAL ? 1 : 0);
+
+export const armarConfiguracionDocumentos = (filas) =>
+  (Array.isArray(filas) ? filas : []).reduce((config, fila) => {
+    const relId = Number(fila?.tiporelacionsocioid);
+    const docId = Number(fila?.tipodocumentoarchivoid);
+    if (!relId || !docId) return config;
+    config[relId] = { ...config[relId], [docId]: Number(fila?.requerimiento) || 0 };
+    return config;
+  }, {});
+
+const comoListaDeRelaciones = (tiposRelacion) =>
+  [...new Set((Array.isArray(tiposRelacion) ? tiposRelacion : [tiposRelacion]).map(Number))].filter(Boolean);
+
+export const documentosRequeridosDeTercero = (configuracion, tiposRelacion) => {
+  const porDocumento = {};
+  comoListaDeRelaciones(tiposRelacion).forEach((relId) => {
+    Object.entries(configuracion?.[relId] || {}).forEach(([docId, req]) => {
+      if (exigencia(req) > exigencia(porDocumento[docId])) porDocumento[docId] = req;
+    });
+  });
+  return Object.entries(porDocumento)
+    .filter(([, req]) => esPedido(req))
+    .map(([docId, req]) => ({
+      clave: claveDeDocumento(docId),
+      tipoDocumentoId: Number(docId),
       requerimiento: req,
     }))
     .sort(
       (a, b) =>
         Number(!esDocumentoDni(a.tipoDocumentoId)) - Number(!esDocumentoDni(b.tipoDocumentoId)) ||
         a.requerimiento - b.requerimiento ||
-        ordenDe(a.clave) - ordenDe(b.clave),
+        ordenDe(a.clave) - ordenDe(b.clave) ||
+        a.tipoDocumentoId - b.tipoDocumentoId,
     );
 };
 
-export const tituloDocumentoTercero = (clave, tituloDe) =>
-  TITULOS_DNI[clave] || (tituloDe && tituloDe(clave)) || TITULOS_RESPALDO[clave] || clave;
+export const requerimientoDe = (requeridos, clave) =>
+  requeridos.find((r) => r.clave === clave)?.requerimiento ?? 0;
+
+export const relacionesPorTercero = (legajo) => {
+  const mapa = new Map();
+  const sumar = (persona, relId) => {
+    const id = Number(persona?.id);
+    if (!id || !Number(relId)) return;
+    if (!mapa.has(id)) mapa.set(id, new Set());
+    mapa.get(id).add(Number(relId));
+  };
+  (legajo?.accionistas || []).forEach((p) => sumar(p, RELACION_ACCIONISTA_ID));
+  (legajo?.representantes || []).forEach((p) => sumar(p, p.rolId));
+  (legajo?.agentesBolsa || []).forEach((p) => sumar(p, RELACION_AGENTE_BOLSA_ID));
+  Object.entries(legajo?.porTipoRelacion || {}).forEach(([relId, personas]) =>
+    (personas || []).forEach((p) => sumar(p, relId)),
+  );
+  return mapa;
+};
+
+export const tiposRelacionDeTercero = (mapa, terceroId, tipoRelacionSocioId) => [
+  Number(tipoRelacionSocioId),
+  ...(mapa?.get(Number(terceroId)) || []),
+];
+
+export const tituloDocumentoTercero = (clave, tituloDe, tipoDocumentoId) =>
+  TITULOS_DNI[clave] ||
+  (tituloDe && tipoDocumentoId && tituloDe(Number(tipoDocumentoId))) ||
+  TITULOS_RESPALDO[clave] ||
+  `Documento #${tipoDocumentoId}`;
 
 const normalizar = (str) =>
   String(str || "")
@@ -96,15 +129,13 @@ const normalizar = (str) =>
 
 const soloDigitos = (valor) => String(valor || "").replace(/\D/g, "");
 
-// Hasta que el backend sume el ID del tercero al archivo, el vínculo es la
-// descripción. Los documentos que no son DNI llevan este prefijo para no
-// confundirse con los de la empresa: un tipo como "DDJJ de Ganancias" puede
-// ser de la empresa o de un fiador, y DocumentosLegajo/useValidacionLegajo
-// los reconocen solo por el tipo. El DNI conserva su formato de siempre
-// ("DNI Frente - <CUIT> - <NOMBRE>"): no es un documento de la empresa.
 const PREFIJO_TERCERO = "TERCERO ";
 
-export const esArchivoDeTercero = (archivo) => normalizar(archivo?.descripcion).startsWith(PREFIJO_TERCERO);
+const terceroIdDeArchivo = (archivo) => Number(archivo?.terceroid) || 0;
+const sinColumnaTercero = (archivo) => !!archivo && !("terceroid" in archivo);
+
+export const esArchivoDeTercero = (archivo) =>
+  terceroIdDeArchivo(archivo) > 0 || normalizar(archivo?.descripcion).startsWith(PREFIJO_TERCERO);
 
 /** Archivos que son de la empresa (sin los documentos cargados a terceros). */
 export const soloArchivosEmpresa = (archivos) =>
@@ -118,32 +149,36 @@ export const descripcionArchivoTercero = ({ clave, titulo, cuit, nombre }) => {
   return `Tercero ${cuitLimpio} - ${titulo} - ${nombreMayus}`;
 };
 
-/** El archivo de un documento de una persona, o null. */
-export const archivoDeTercero = (archivos, tipoDocumentoId, persona) => {
+const coincidePorDescripcion = (archivo, tipoDocumentoId, persona) => {
   const cuitLimpio = soloDigitos(persona?.cuit);
   const nombreNorm = normalizar(persona?.nombre);
+  const desc = normalizar(archivo.descripcion);
+  if (esDocumentoDni(tipoDocumentoId)) {
+    return (!!cuitLimpio && desc.includes(cuitLimpio)) || (!!nombreNorm && desc.includes(nombreNorm));
+  }
+  return desc.startsWith(PREFIJO_TERCERO) && !!cuitLimpio && desc.includes(cuitLimpio);
+};
+
+export const archivoDeTercero = (archivos, tipoDocumentoId, persona) => {
   const id = Number(tipoDocumentoId);
+  const terceroId = Number(persona?.id) || 0;
   return (
     (Array.isArray(archivos) ? archivos : []).find((a) => {
       if (Number(a.tipodocumentoarchivoid) !== id) return false;
-      const desc = normalizar(a.descripcion);
-      if (esDocumentoDni(id)) {
-        // Mismo criterio que tenía el DNI de accionistas: CUIT o nombre.
-        return (cuitLimpio && desc.includes(cuitLimpio)) || (nombreNorm && desc.includes(nombreNorm));
-      }
-      return desc.startsWith(PREFIJO_TERCERO) && !!cuitLimpio && desc.includes(cuitLimpio);
+      if (sinColumnaTercero(a)) return coincidePorDescripcion(a, id, persona);
+      return terceroId > 0 && terceroIdDeArchivo(a) === terceroId;
     }) || null
   );
 };
 
 /**
- * Estado de la documentación de una persona para su tipo de relación.
- * `faltantes` son los títulos de los obligatorios sin cargar.
+ * Estado de la documentación de una persona. `faltantes` son los títulos de
+ * los obligatorios sin cargar.
  */
 export const estadoDocumentacionTercero = ({ requeridos, archivos, persona, tituloDe }) => {
   const items = requeridos.map((req) => ({
     ...req,
-    titulo: tituloDocumentoTercero(req.clave, tituloDe),
+    titulo: tituloDocumentoTercero(req.clave, tituloDe, req.tipoDocumentoId),
     archivo: archivoDeTercero(archivos, req.tipoDocumentoId, persona),
   }));
   const cargados = items.filter((i) => i.archivo).length;
@@ -152,3 +187,5 @@ export const estadoDocumentacionTercero = ({ requeridos, archivos, persona, titu
     .map((i) => i.titulo);
   return { items, total: items.length, cargados, faltantes };
 };
+
+export const mensajeFaltaDocumento = (documento, nombre) => `Falta ${documento} de ${nombre}`;

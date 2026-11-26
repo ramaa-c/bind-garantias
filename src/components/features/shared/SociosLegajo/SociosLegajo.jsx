@@ -39,6 +39,7 @@ import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSe
 import { RepresentantesSection } from "../DocumentosLegajo/components/RepresentantesSection/RepresentantesSection";
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
 import { DocumentacionTercerosContext } from "../DocumentosLegajo/components/DocumentacionTercero/documentacionTercerosContext";
+import { relacionesPorTercero } from "../../../../utils/documentacionTerceros";
 import { useTituloDocumento } from "../../../../hooks/useTipoDocumentoArchivo";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
@@ -462,7 +463,6 @@ export function SociosLegajo({
 
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [cargandoArchivos, setCargandoArchivos] = useState(false);
-  const [dniTerceros] = useState({});
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
@@ -509,25 +509,22 @@ export function SociosLegajo({
     cargarArchivosExistentes();
   }, [socioIdActivo]);
 
-  // Documentación de terceros: la parametrización y los archivos que leen
-  // las secciones (chip "Falta:") y las modales de cada tercero (pestaña
-  // Documentación), y cómo refrescar los archivos después de subir.
   const tituloDocumento = useTituloDocumento();
+  const relacionesDeTerceros = useMemo(() => relacionesPorTercero(socioLegajoData), [socioLegajoData]);
   const documentacionTerceros = useMemo(
     () => ({
-      requisitos,
       archivos: archivosBackend,
       cargandoArchivos,
       tituloDe: tituloDocumento,
+      relacionesDeTerceros,
       refrescar: () =>
         Promise.all([
           cargarArchivosExistentes(),
           queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] }),
         ]),
     }),
-    // cargarArchivosExistentes se recrea en cada render pero solo usa socioIdActivo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [requisitos, archivosBackend, cargandoArchivos, tituloDocumento, socioIdActivo, queryClient],
+    [archivosBackend, cargandoArchivos, tituloDocumento, relacionesDeTerceros, socioIdActivo, queryClient],
   );
 
   useEffect(() => {
@@ -854,7 +851,6 @@ export function SociosLegajo({
                     socioIdActivo={socioIdActivo}
                     archivosBackend={archivosBackend}
                     cargandoArchivos={cargandoArchivos}
-                    dniTerceros={dniTerceros}
                     cadenaValorId={cadenaId}
                   />
                 ) : isRepresentantes ? (

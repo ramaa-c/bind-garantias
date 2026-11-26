@@ -16,6 +16,7 @@ export const socioArchivoAdapter = {
       ViaLufe: d.vialufe,
       fchReferencia: d.fchreferencia,
       Referencia: d.referencia,
+      ...(Number(d.terceroid) > 0 ? { TerceroID: Number(d.terceroid) } : {}),
     };
   },
   adaptarPayload2: (data) => {
@@ -33,6 +34,7 @@ export const socioArchivoAdapter = {
       ViaLufe: d.vialufe,
       fchReferencia: d.fchreferencia,
       Referencia: d.referencia,
+      ...(Number(d.terceroid) > 0 ? { TerceroID: Number(d.terceroid) } : {}),
     };
   },
 };

@@ -28,7 +28,9 @@ import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresa
 import { SugerenciasTerceros } from "../TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import { DibujoDniDorso, DibujoDniFrente } from "../DocumentacionTercero/DibujosDni";
-import { useDocumentosEnModal, useIrASeccionDocumentos, MODO_PESTANAS } from "../DocumentacionTercero/useDocumentosEnModal";
+import { useDocumentosEnModal, useIrASeccionDocumentos, MODO_PESTANAS, MODO_SOLO_DNI } from "../DocumentacionTercero/useDocumentosEnModal";
+import { archivoDeTercero, descripcionArchivoTercero, requerimientoDe, REQUERIMIENTO_OBLIGATORIO } from "../../../../../../utils/documentacionTerceros";
+import { DOCUMENTO_DNI_FRENTE_ID, DOCUMENTO_DNI_DORSO_ID } from "../../../../../../constants/tiposDocumentoArchivo";
 import {
   AvisoDocumentacionPie,
   DocumentosTerceroPanel,
@@ -48,12 +50,6 @@ import { useDescargaConFeedback } from "../../../../../../hooks/useDescargaConFe
 const ACCIONISTA_FORM_ID = "accionista-modal-form";
 
 
-const normalizarTexto = (str) =>
-  String(str || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
 
 const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -151,12 +147,11 @@ const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, fase
   );
 };
 
-const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
 const DEFAULT_SUGERENCIAS = [];
 
-export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS, sugerencias = DEFAULT_SUGERENCIAS, pestanaInicial = "datos" }) {
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, sugerencias = DEFAULT_SUGERENCIAS, pestanaInicial = "datos" }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaLegajo = useContext(CadenaLegajoContext);
   const cadenaValorIdParam = Number(cadenaLegajo ?? cadenaSlug) || 0;
@@ -167,6 +162,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [afipValidado, setAfipValidado] = useState(false);
   const [cargaManual, setCargaManual] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
+  const [terceroIdDocs, setTerceroIdDocs] = useState(socio?.id || null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   // Feedback del botón de descarga del DNI (SGRPLUSPLA-199) - ver
   // useDescargaConFeedback.
@@ -259,16 +255,16 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const cuitValue = useWatch({ control, name: "cuit" });
   const nombreValue = useWatch({ control, name: "nombre" });
 
-  // Documentación del accionista (ver useDocumentosEnModal). Con solo DNI
-  // (lo de siempre) la modal no cambia. Si la cadena le pide más, la
-  // cabecera suma las pestañas Datos | Documentación: el DNI sigue con su
-  // estado de acá (dniFrenteFile/dniDorsoFile) y el resto lo maneja el hook.
   const documentos = useDocumentosEnModal({
     tipoRelacionSocioId: RELACION_ACCIONISTA_ID,
-    persona: { cuit: cuitValue, nombre: nombreValue },
+    persona: { id: terceroIdDocs, cuit: cuitValue, nombre: nombreValue },
     isOpen,
+    archivos: archivosBackend,
   });
   const conPestanas = documentos.modo === MODO_PESTANAS;
+  const soloDni = documentos.modo === MODO_SOLO_DNI;
+  const reqDniFrente = requerimientoDe(documentos.items, "socio-frente");
+  const reqDniDorso = requerimientoDe(documentos.items, "socio-dorso");
   const [pestana, setPestana] = useState("datos");
   const [prevAbiertaDocumentos, setPrevAbiertaDocumentos] = useState(isOpen);
   if (isOpen !== prevAbiertaDocumentos) {
@@ -337,19 +333,19 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
   };
 
-  const [prevDeps, setPrevDeps] = useState({ isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio });
+  const [prevDeps, setPrevDeps] = useState({ isOpen, cuitValue, nombreValue, archivosBackend, terceroIdDocs, socio });
 
   if (
     isOpen !== prevDeps.isOpen ||
     cuitValue !== prevDeps.cuitValue ||
     nombreValue !== prevDeps.nombreValue ||
     archivosBackend !== prevDeps.archivosBackend ||
-    dniTerceros !== prevDeps.dniTerceros ||
+    terceroIdDocs !== prevDeps.terceroIdDocs ||
     socio !== prevDeps.socio
   ) {
     const wasOpen = prevDeps.isOpen;
     const socioCambio = socio !== prevDeps.socio;
-    setPrevDeps({ isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio });
+    setPrevDeps({ isOpen, cuitValue, nombreValue, archivosBackend, terceroIdDocs, socio });
 
     if (isOpen && !wasOpen) {
       setDniFrenteFile(null);
@@ -359,6 +355,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniDorso(false);
       setShowConfirm(false);
       stubIdsRef.current = { terceroId: null, relacionId: null };
+      setTerceroIdDocs(socio?.id || null);
       stubRelacionRef.current = null;
       cdaNoAprobadoRef.current = false;
       setCargaManual(false);
@@ -418,59 +415,30 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     const frenteLocal = recienAbierto ? null : dniFrenteFile;
     const dorsoLocal = recienAbierto ? null : dniDorsoFile;
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
-    const nombreLimpio = normalizarTexto(nombreValue || socio?.nombre);
+    const personaDni = {
+      id: recienAbierto ? socio?.id || null : terceroIdDocs,
+      cuit: cuitLimpio,
+      nombre: nombreValue || socio?.nombre,
+    };
+    const comoArchivoDni = (archivo, tipoId) => ({
+      name: archivo.nombrearchivo,
+      size: "Disponible",
+      _uploaded: true,
+      _backendId: archivo.socioarchivoid,
+      _tipodocumentoarchivoid: tipoId,
+      vialufe: archivo.vialufe || archivo.Vialufe || "0",
+    });
 
     if (isOpen && cuitLimpio.length === 11) {
-      const memoryFiles = dniTerceros?.[cuitLimpio];
-
-      if (memoryFiles?.dniFrente) {
-        setDniFrenteFile(memoryFiles.dniFrente);
-        setErrorDniFrente(false);
-      } else if (!(frenteLocal instanceof File)) {
-        const frente = archivosBackend?.find((a) => {
-          if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
-          const descNorm = normalizarTexto(a.descripcion);
-          return descNorm.includes(cuitLimpio) || (nombreLimpio && descNorm.includes(nombreLimpio));
-        });
-
-        if (frente) {
-          setDniFrenteFile({
-            name: frente.nombrearchivo,
-            size: "Disponible",
-            _uploaded: true,
-            _backendId: frente.socioarchivoid,
-            _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"],
-            vialufe: frente.vialufe || frente.Vialufe || "0",
-          });
-          setErrorDniFrente(false);
-        } else {
-          setDniFrenteFile(null);
-        }
+      if (!(frenteLocal instanceof File)) {
+        const frente = archivoDeTercero(archivosBackend, DOCUMENTO_DNI_FRENTE_ID, personaDni);
+        setDniFrenteFile(frente ? comoArchivoDni(frente, DOCUMENTO_DNI_FRENTE_ID) : null);
+        if (frente) setErrorDniFrente(false);
       }
-
-      if (memoryFiles?.dniDorso) {
-        setDniDorsoFile(memoryFiles.dniDorso);
-        setErrorDniDorso(false);
-      } else if (!(dorsoLocal instanceof File)) {
-        const dorso = archivosBackend?.find((a) => {
-          if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"]) return false;
-          const descNorm = normalizarTexto(a.descripcion);
-          return descNorm.includes(cuitLimpio) || (nombreLimpio && descNorm.includes(nombreLimpio));
-        });
-
-        if (dorso) {
-          setDniDorsoFile({
-            name: dorso.nombrearchivo,
-            size: "Disponible",
-            _uploaded: true,
-            _backendId: dorso.socioarchivoid,
-            _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"],
-            vialufe: dorso.vialufe || dorso.Vialufe || "0",
-          });
-          setErrorDniDorso(false);
-        } else {
-          setDniDorsoFile(null);
-        }
+      if (!(dorsoLocal instanceof File)) {
+        const dorso = archivoDeTercero(archivosBackend, DOCUMENTO_DNI_DORSO_ID, personaDni);
+        setDniDorsoFile(dorso ? comoArchivoDni(dorso, DOCUMENTO_DNI_DORSO_ID) : null);
+        if (dorso) setErrorDniDorso(false);
       }
     } else if (isOpen && !cuitLimpio) {
       setDniFrenteFile(null);
@@ -608,6 +576,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         }
 
         stubIdsRef.current = { terceroId: stubTerceroId, relacionId: stubRelacionId };
+        setTerceroIdDocs(stubTerceroId);
         // No se avisa con onSuccess acá: mientras la participación siga en
         // 0% (todavía no se completó el alta), la lista de accionistas lo
         // sigue ocultando a propósito (ver useObtenerDatosSocioLegajo) —
@@ -958,7 +927,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     e.preventDefault();
     e.stopPropagation();
 
-    if (cargandoArchivos && (!dniFrenteFile || !dniDorsoFile)) {
+    if (cargandoArchivos && ((reqDniFrente && !dniFrenteFile) || (reqDniDorso && !dniDorsoFile))) {
       toast.info("Esperá a que terminen de cargar las imágenes del DNI.");
       return;
     }
@@ -985,14 +954,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       }
     }
 
-    // Con pestañas el DNI no bloquea el guardado: lo que falte se avisa en
-    // la confirmación (ver ConfirmacionModal más abajo).
     let hasDropzoneErrors = false;
-    if (!conPestanas && !dniFrenteFile) {
+    if (soloDni && reqDniFrente === REQUERIMIENTO_OBLIGATORIO && !dniFrenteFile) {
       setErrorDniFrente(true);
       hasDropzoneErrors = true;
     }
-    if (!conPestanas && !dniDorsoFile) {
+    if (soloDni && reqDniDorso === REQUERIMIENTO_OBLIGATORIO && !dniDorsoFile) {
       setErrorDniDorso(true);
       hasDropzoneErrors = true;
     }
@@ -1220,38 +1187,21 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         toast.loading("Subiendo documentos de identidad del accionista...", { id: mainToastId });
         try {
           const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo, true);
-          if (dniFrenteFile instanceof File) {
-            const existenteFrente = archivosExistentes?.find((a) => {
-              if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
-              const descNorm = normalizarTexto(a.descripcion);
-              return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
+          const personaDni = { id: terceroId, cuit: cuitLimpio, nombre: formData.nombre };
+          const subirDni = (file, clave, tipoId) =>
+            socioArchivoService.guardarArchivoTercero({
+              socioId: socioIdActivo,
+              existente: archivoDeTercero(archivosExistentes, tipoId, personaDni),
+              file,
+              tipoDocumentoId: tipoId,
+              terceroId,
+              descripcion: descripcionArchivoTercero({ clave, cuit: cuitLimpio, nombre: formData.nombre }),
             });
-            // El CUIT viaja en la descripción a propósito: es el único
-            // vínculo real entre este archivo y el accionista (no hay
-            // columna que lo relacione), y a diferencia del nombre, no
-            // cambia si el mismo tercero se actualiza después (ej. al
-            // guardarlo también como representante) — evita que ese cambio
-            // de nombre haga que useValidacionLegajo deje de encontrar el
-            // DNI y el requisito vuelva a "pendiente".
-            const descFrente = `DNI Frente - ${cuitLimpio} - ${formData.nombre.toUpperCase()}`;
-            if (existenteFrente) {
-              await socioArchivoService.actualizarArchivo(existenteFrente, dniFrenteFile, "socio-frente", descFrente);
-            } else {
-              await socioArchivoService.subirArchivo(socioIdActivo, dniFrenteFile, "socio-frente", descFrente);
-            }
+          if (dniFrenteFile instanceof File) {
+            await subirDni(dniFrenteFile, "socio-frente", DOCUMENTO_DNI_FRENTE_ID);
           }
           if (dniDorsoFile instanceof File) {
-            const existenteDorso = archivosExistentes?.find((a) => {
-              if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"]) return false;
-              const descNorm = normalizarTexto(a.descripcion);
-              return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
-            });
-            const descDorso = `DNI Dorso - ${cuitLimpio} - ${formData.nombre.toUpperCase()}`;
-            if (existenteDorso) {
-              await socioArchivoService.actualizarArchivo(existenteDorso, dniDorsoFile, "socio-dorso", descDorso);
-            } else {
-              await socioArchivoService.subirArchivo(socioIdActivo, dniDorsoFile, "socio-dorso", descDorso);
-            }
+            await subirDni(dniDorsoFile, "socio-dorso", DOCUMENTO_DNI_DORSO_ID);
           }
         } catch (uploadErr) {
           console.error("[MODAL - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
@@ -1269,7 +1219,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         try {
           await documentos.subirPendientes({
             socioIdActivo,
-            persona: { cuit: cuitLimpio, nombre: formData.nombre },
+            persona: { id: terceroId, cuit: cuitLimpio, nombre: formData.nombre },
           });
         } catch (docErr) {
           docErr.mensajeParaUsuario = `Los datos del accionista se guardaron, pero no se pudo subir la documentación. ${
@@ -1698,16 +1648,17 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               </div>
 
               </div>
-              {!conPestanas && (
+              {soloDni && (
               <>
               <h4 id="accionista-seccion-dni" className={styles.sectionTitle}>
                 <span className={styles.sectionNum} aria-hidden="true">4</span>
                 DNI
               </h4>
               <div className={styles.dropzoneGrid}>
+                {reqDniFrente > 0 && (
                 <DropzoneField
                   file={dniFrenteFile}
-                  title="DNI Frente"
+                  title={reqDniFrente === REQUERIMIENTO_OBLIGATORIO ? "DNI Frente" : "DNI Frente (opcional)"}
                   fileKey="frente"
                   isLoading={cargandoArchivos && !dniFrenteFile}
                   hasError={errorDniFrente}
@@ -1721,9 +1672,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   }
                   faseDescarga={faseDe('frente')}
                 />
+                )}
+                {reqDniDorso > 0 && (
                 <DropzoneField
                   file={dniDorsoFile}
-                  title="DNI Dorso"
+                  title={reqDniDorso === REQUERIMIENTO_OBLIGATORIO ? "DNI Dorso" : "DNI Dorso (opcional)"}
                   fileKey="dorso"
                   isLoading={cargandoArchivos && !dniDorsoFile}
                   hasError={errorDniDorso}
@@ -1737,6 +1690,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   }
                   faseDescarga={faseDe('dorso')}
                 />
+                )}
               </div>
               </>
               )}

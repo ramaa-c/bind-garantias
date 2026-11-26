@@ -13,9 +13,8 @@ import { AvisoRevisionTercero } from "../EstadoRevisionChip/EstadoRevisionChip";
 import { useDocumentacionTerceros } from "../DocumentacionTercero/documentacionTercerosContext";
 import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
 
-// Contacto + domicilio + CUIT. La documentación (DNI frente y dorso por
-// defecto, más lo que la cadena configure para accionistas) se suma aparte
-// con useDocumentacionTerceros.
+// Contacto + domicilio + CUIT. La documentación configurada para el tipo de
+// relación se suma aparte con useDocumentacionTerceros.
 const calcularFaltantes = (socio) => {
   const faltantes = [];
   const sEmail = socio.email || socio.mail || socio.Mail || "";
@@ -91,7 +90,6 @@ export function AccionistasSection({
   socioIdActivo,
   archivosBackend,
   cargandoArchivos = false,
-  dniTerceros,
   cadenaValorId,
   personasLegajo = [],
 }) {
@@ -256,7 +254,6 @@ export function AccionistasSection({
         archivosBackend={archivosBackend}
         cargandoArchivos={cargandoArchivos}
         accionistas={accionistas}
-        dniTerceros={dniTerceros}
       />
     </div>
   );

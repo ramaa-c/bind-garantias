@@ -54,14 +54,13 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
     }
   });
 
-  // Documentación del agente (ver useDocumentosEnModal): la persona es la
-  // sociedad de bolsa elegida, identificada por su CUIT.
   const rawAgentes = agentesData?.items || agentesData?.data || agentesData || [];
   const sociedadElegida = useWatch({ control, name: "sociedadBolsa" });
   const agenteElegido = Array.isArray(rawAgentes)
     ? rawAgentes.find((a) => String(a.tercerorelacionadoid || a.id) === String(sociedadElegida))
     : null;
   const personaDocumentos = {
+    id: agenteBolsa?.id || Number(sociedadElegida) || null,
     cuit: agenteBolsa?.cuit || agenteElegido?.cuit || "",
     nombre: agenteBolsa?.nombre || agenteElegido?.denominacion || "",
   };

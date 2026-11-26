@@ -39,6 +39,7 @@ const TIPO_DOCUMENTO_MAP = TIPOS_DOCUMENTO_ARCHIVO;
 
 /**   Obtiene el tipodocumentoarchivoid para una clave dada.   */
 const getTipoDocumentoId = (key) => {
+  if (typeof key === "number") return key;
   if (TIPO_DOCUMENTO_MAP[key]) return TIPO_DOCUMENTO_MAP[key];
   if (key.includes("frente")) return TIPO_DOCUMENTO_MAP["socio-frente"];
   if (key.includes("dorso")) return TIPO_DOCUMENTO_MAP["socio-dorso"];
@@ -227,6 +228,41 @@ export const socioArchivoService = {
         descripcion,
         vialufe
       );
+    }
+  },
+
+  guardarArchivoTercero: async ({ socioId, existente, file, tipoDocumentoId, terceroId, descripcion }) => {
+    const tipoId = Number(tipoDocumentoId);
+    const terceroid = Number(terceroId) || 0;
+    if (existente) {
+      return socioArchivoService.actualizarArchivo({ ...existente, terceroid }, file, tipoId, descripcion);
+    }
+
+    socioArchivoService.clearCache(socioId);
+    const contenidoBase64 = await leerArchivoValidado(file);
+    const payload = {
+      socioarchivoid: 0,
+      socioid: socioId,
+      fcharchivo: formatFechaArchivo(),
+      descripcion: descripcion || file.name,
+      contenido: contenidoBase64,
+      nombrearchivo: file.name,
+      tipodocumentoarchivoid: tipoId,
+      azureid: 0,
+      vialufe: "0",
+      fchreferencia: null,
+      referencia: "",
+      terceroid,
+    };
+    try {
+      const response = await api.post(
+        "api/SocioArchivo",
+        socioArchivoAdapter.adaptarPayload1(payload),
+        { timeout: TIMEOUT_ARCHIVO_MS },
+      );
+      return response.data;
+    } finally {
+      socioArchivoService.clearCache(socioId);
     }
   },
 

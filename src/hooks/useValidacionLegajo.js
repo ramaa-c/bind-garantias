@@ -7,6 +7,7 @@ import { useTiposRelacionSocioActivos } from "./useTipoRelacionSocio";
 import { socioArchivoService } from "../services/socioArchivoService";
 import { useCadenaActiva } from "./useCadenaActiva";
 import { useTituloDocumento } from "./useTipoDocumentoArchivo";
+import { useDocumentosPorRelacion } from "./useDocumentosPorRelacion";
 import {
   RELACION_ACCIONISTA_ID,
   RELACION_AGENTE_BOLSA_ID,
@@ -18,7 +19,10 @@ import {
 import {
   documentosRequeridosDeTercero,
   estadoDocumentacionTercero,
+  mensajeFaltaDocumento,
+  relacionesPorTercero,
   soloArchivosEmpresa,
+  tiposRelacionDeTercero,
 } from "../utils/documentacionTerceros";
 import {
   normalizarCatalogoActivo,
@@ -26,13 +30,13 @@ import {
 } from "../utils/relacionesTercerosUtils";
 
 
-// Criterio de contacto + domicilio + CUIT valido, compartido por todas las
-// personas del legajo. `etiqueta` solo cambia el texto del error. La
-// documentación es la que la cadena le pide a ese tipo de tercero (ver
-// utils/documentacionTerceros.js): Accionista pide DNI frente y dorso por
-// defecto, y cualquier tercero puede tener documentos configurados que se
-// cargan desde el botón "Documentación" de su tarjeta.
-const validarContactoDomicilioYDocumentacion = (persona, archivosBackend, etiqueta, { requeridos = [], tituloDe } = {}) => {
+const erroresDocumentacion = (persona, archivosBackend, { requeridos = [], tituloDe } = {}) => {
+  if (requeridos.length === 0) return [];
+  const { faltantes } = estadoDocumentacionTercero({ requeridos, archivos: archivosBackend, persona, tituloDe });
+  return faltantes.map((documento) => `${mensajeFaltaDocumento(documento, persona.nombre)}.`);
+};
+
+const validarContactoDomicilioYDocumentacion = (persona, archivosBackend, etiqueta, documentacion) => {
   const errores = [];
   const sEmail = persona.email || persona.mail || persona.Mail || "";
   const sCel = persona.celular || persona.telefono || persona.Telefono || "";
@@ -46,16 +50,8 @@ const validarContactoDomicilioYDocumentacion = (persona, archivosBackend, etique
   const cuitLimpio = String(persona.cuit || "").replace(/\D/g, "");
   if (!cuitLimpio) {
     errores.push(`El ${etiqueta} ${persona.nombre} no posee CUIT válido.`);
-  } else if (requeridos.length > 0) {
-    const { faltantes } = estadoDocumentacionTercero({ requeridos, archivos: archivosBackend, persona, tituloDe });
-    if (faltantes.length > 0) {
-      const lista =
-        faltantes.length === 1
-          ? faltantes[0]
-          : `${faltantes.slice(0, -1).join(", ")} y ${faltantes[faltantes.length - 1]}`;
-      errores.push(`El ${etiqueta} ${persona.nombre} no tiene cargado: ${lista}.`);
-    }
   }
+  errores.push(...erroresDocumentacion(persona, archivosBackend, documentacion));
 
   return errores;
 };
@@ -115,6 +111,7 @@ export const useValidacionLegajo = ({
   ], cadenaId);
 
   const tituloDe = useTituloDocumento();
+  const { configuracion: configuracionDocumentos, isLoading: loadingDocumentosTerceros } = useDocumentosPorRelacion();
 
   const { data: archivosBackend = [], isLoading: loadingArchivos } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
@@ -130,7 +127,13 @@ export const useValidacionLegajo = ({
   // todavía no se sabe nada de él) — eso alcanzó a disparar la migración
   // automática de LegajoUniversalBar antes de que la card se pintara de
   // rojo. Confirmado en vivo (2026-08-07).
-  const isLoading = loadingRequisitos || loadingLegajo || loadingArchivos || loadingEstadoCda || loadingCatalogoActivo;
+  const isLoading =
+    loadingRequisitos ||
+    loadingLegajo ||
+    loadingArchivos ||
+    loadingEstadoCda ||
+    loadingCatalogoActivo ||
+    loadingDocumentosTerceros;
 
   if (isLoading || !requisitos) {
     return {
@@ -144,11 +147,13 @@ export const useValidacionLegajo = ({
     };
   }
 
-  // Los documentos cargados a un tercero (ej. la DDJJ de un fiador) no
-  // cuentan como documentos de la empresa aunque compartan el tipo.
   const archivosEmpresa = soloArchivosEmpresa(archivosBackend);
-  const requeridosDe = (tipoRelacionSocioId) => ({
-    requeridos: documentosRequeridosDeTercero(requisitos, tipoRelacionSocioId),
+  const relacionesDeTerceros = relacionesPorTercero(socioLegajoData);
+  const requeridosDe = (persona, tipoRelacionSocioId) => ({
+    requeridos: documentosRequeridosDeTercero(
+      configuracionDocumentos,
+      tiposRelacionDeTercero(relacionesDeTerceros, persona?.id, tipoRelacionSocioId),
+    ),
     tituloDe,
   });
 
@@ -252,7 +257,7 @@ export const useValidacionLegajo = ({
             socio,
             archivosBackend,
             "accionista",
-            requeridosDe(RELACION_ACCIONISTA_ID),
+            requeridosDe(socio, RELACION_ACCIONISTA_ID),
           );
           if (erroresSocio.length > 0) {
             accionistasValidos = false;
@@ -291,7 +296,7 @@ export const useValidacionLegajo = ({
             rep,
             archivosBackend,
             "apoderado",
-            requeridosDe(RELACION_APODERADO_ID),
+            requeridosDe(rep, RELACION_APODERADO_ID),
           );
           if (erroresRep.length > 0) {
             apoderadosValidos = false;
@@ -335,7 +340,7 @@ export const useValidacionLegajo = ({
             rep,
             archivosBackend,
             "representante legal",
-            requeridosDe(RELACION_REPRESENTANTE_LEGAL_ID),
+            requeridosDe(rep, RELACION_REPRESENTANTE_LEGAL_ID),
           );
           if (erroresRep.length > 0) {
             repLegalValidos = false;
@@ -377,16 +382,14 @@ export const useValidacionLegajo = ({
               `El agente de bolsa ${agente.nombre} no tiene cargada la Cuenta Comitente (Nro Subcuenta Caja).`
             );
           }
-          const { faltantes: docsFaltantes } = estadoDocumentacionTercero({
-            ...requeridosDe(RELACION_AGENTE_BOLSA_ID),
-            archivos: archivosBackend,
-            persona: agente,
-          });
+          const docsFaltantes = erroresDocumentacion(
+            agente,
+            archivosBackend,
+            requeridosDe(agente, RELACION_AGENTE_BOLSA_ID),
+          );
           if (docsFaltantes.length > 0) {
             agentesBolsaValidos = false;
-            erroresAgentes.push(
-              `El agente de bolsa ${agente.nombre} no tiene cargado: ${docsFaltantes.join(", ")}.`
-            );
+            erroresAgentes.push(...docsFaltantes);
           }
         });
       }
@@ -410,7 +413,7 @@ export const useValidacionLegajo = ({
 
     // Relaciones activadas dinámicamente desde /admin/tipos-relacion-socio
     // (ver TerceroRelacionSection) - misma lógica de validación que
-    // Apoderado/Representante Legal: contacto + domicilio + CUIT, sin DNI, y
+    // Apoderado/Representante Legal: contacto + domicilio + CUIT, documentación y
     // CDA no rechazado.
     catalogoExtra.forEach((item) => {
       const etiqueta = item.descripcion || `relación #${item.id}`;
@@ -441,7 +444,7 @@ export const useValidacionLegajo = ({
             persona,
             archivosBackend,
             etiqueta,
-            requeridosDe(item.id),
+            requeridosDe(persona, item.id),
           );
           if (erroresPersona.length > 0) {
             extraValidos = false;
@@ -484,11 +487,12 @@ export const useValidacionLegajo = ({
     });
   }
 
-  const isValid = errores.length === 0;
+  const erroresUnicos = [...new Set(errores)];
+  const isValid = erroresUnicos.length === 0;
 
   return {
     isValid,
-    errores,
+    errores: erroresUnicos,
     totalRequisitos,
     totalDocumentosObligatorios,
     totalLegajoObligatorios,

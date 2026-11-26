@@ -36,7 +36,7 @@ export const useDocumentMetadata = () => {
       ? new Set([...descripcionWeb.keys(), ...IDS_DOCUMENTO_SIEMPRE_ACTIVOS])
       : null;
 
-    const idDe = (clave) => Number(TIPOS_DOCUMENTO_ARCHIVO[clave]);
+    const idDe = (clave) => (typeof clave === "number" ? clave : Number(TIPOS_DOCUMENTO_ARCHIVO[clave]));
 
     return {
       idsHabilitados,

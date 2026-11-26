@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { DocumentacionTercerosContext } from "./documentacionTercerosContext";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
+import { useDocumentosPorRelacion } from "../../../../../../hooks/useDocumentosPorRelacion";
+import { useTituloDocumento } from "../../../../../../hooks/useTipoDocumentoArchivo";
 import {
   REQUERIMIENTO_OBLIGATORIO,
   archivoDeTercero,
@@ -8,6 +10,7 @@ import {
   documentosRequeridosDeTercero,
   esDocumentoDni,
   estadoDocumentacionTercero,
+  tiposRelacionDeTercero,
 } from "../../../../../../utils/documentacionTerceros";
 
 export const MODO_SIN_DOCUMENTOS = "ninguno";
@@ -15,19 +18,23 @@ export const MODO_SOLO_DNI = "soloDni";
 export const MODO_PESTANAS = "pestanas";
 
 /**
- * Documentación de un tercero dentro de su modal de alta/edición.
+ * Documentación de un tercero dentro de su modal de alta/edición, según lo
+ * configurado en api/TipoRelacionSocioTipoDocumento para su tipo de relación
+ * (y las demás relaciones que ya tenga en el legajo).
  *
- * - modo "ninguno": el tipo de tercero no tiene documentación configurada.
- * - modo "soloDni": solo DNI frente/dorso - va como una sección más al
- *   final del formulario, como en Accionistas.
- * - modo "pestanas": DNI y/o otros documentos - la modal suma las pestañas
- *   Datos | Documentación en la cabecera.
+ * - "ninguno": no se le pide documentación.
+ * - "soloDni": solo DNI frente y/o dorso, como una sección más del formulario.
+ * - "pestanas": hay otros documentos, la modal suma Datos | Documentación.
  *
- * Los archivos elegidos quedan en memoria (`locales`) y se suben recién al
- * guardar, junto con los datos (subirPendientes): un solo botón para todo.
+ * Los archivos elegidos quedan en memoria y se suben al guardar
+ * (subirPendientes) con el TerceroID de la persona.
  */
-export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen }) => {
+export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen, archivos: archivosPropios }) => {
   const ctx = useContext(DocumentacionTercerosContext);
+  const { configuracion } = useDocumentosPorRelacion();
+  const tituloPropio = useTituloDocumento();
+  const tituloDe = ctx?.tituloDe || tituloPropio;
+  const archivos = ctx?.archivos ?? archivosPropios;
   const [locales, setLocales] = useState({});
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -35,9 +42,15 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen }) =
     if (isOpen) setLocales({});
   }
 
+  const terceroId = Number(persona?.id) || 0;
+  const relaciones = ctx?.relacionesDeTerceros;
   const requeridos = useMemo(
-    () => (ctx ? documentosRequeridosDeTercero(ctx.requisitos, tipoRelacionSocioId) : []),
-    [ctx, tipoRelacionSocioId],
+    () =>
+      documentosRequeridosDeTercero(
+        configuracion,
+        tiposRelacionDeTercero(relaciones, terceroId, tipoRelacionSocioId),
+      ),
+    [configuracion, relaciones, terceroId, tipoRelacionSocioId],
   );
   const modo =
     requeridos.length === 0
@@ -52,12 +65,12 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen }) =
     if (requeridos.length === 0) return [];
     const { items: base } = estadoDocumentacionTercero({
       requeridos,
-      archivos: ctx?.archivos,
-      persona: { cuit, nombre },
-      tituloDe: ctx?.tituloDe,
+      archivos,
+      persona: { id: terceroId, cuit, nombre },
+      tituloDe,
     });
     return base.map((item) => ({ ...item, local: locales[item.clave] || null }));
-  }, [requeridos, ctx, cuit, nombre, locales]);
+  }, [requeridos, archivos, tituloDe, terceroId, cuit, nombre, locales]);
 
   const faltantes = items
     .filter((i) => i.requerimiento === REQUERIMIENTO_OBLIGATORIO && !i.archivo && !i.local)
@@ -66,9 +79,6 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen }) =
 
   const elegir = (clave, archivo) => setLocales((prev) => ({ ...prev, [clave]: archivo }));
 
-  // Sube lo elegido en esta sesión de la modal. Se busca el archivo vigente
-  // contra el backend (no contra lo que había al abrir) para reemplazarlo
-  // en vez de duplicarlo.
   const subirPendientes = async ({ socioIdActivo, persona: personaFinal, excluir = [] }) => {
     const pendientes = Object.entries(locales).filter(([clave, f]) => f instanceof File && !excluir.includes(clave));
     if (!socioIdActivo || pendientes.length === 0) return;
@@ -76,18 +86,19 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen }) =
     for (const [clave, archivo] of pendientes) {
       const item = items.find((i) => i.clave === clave);
       if (!item) continue;
-      const descripcion = descripcionArchivoTercero({
-        clave,
-        titulo: item.titulo,
-        cuit: personaFinal.cuit,
-        nombre: personaFinal.nombre,
+      await socioArchivoService.guardarArchivoTercero({
+        socioId: socioIdActivo,
+        existente: archivoDeTercero(existentes, item.tipoDocumentoId, personaFinal),
+        file: archivo,
+        tipoDocumentoId: item.tipoDocumentoId,
+        terceroId: personaFinal.id,
+        descripcion: descripcionArchivoTercero({
+          clave,
+          titulo: item.titulo,
+          cuit: personaFinal.cuit,
+          nombre: personaFinal.nombre,
+        }),
       });
-      const existente = archivoDeTercero(existentes, item.tipoDocumentoId, personaFinal);
-      if (existente) {
-        await socioArchivoService.actualizarArchivo(existente, archivo, clave, descripcion);
-      } else {
-        await socioArchivoService.subirArchivo(socioIdActivo, archivo, clave, descripcion);
-      }
     }
     setLocales({});
     await ctx?.refrescar?.();
