@@ -10,7 +10,6 @@ import {
   documentosRequeridosDeTercero,
   esDocumentoDni,
   estadoDocumentacionTercero,
-  tiposRelacionDeTercero,
 } from "../../../../../../utils/documentacionTerceros";
 
 export const MODO_SIN_DOCUMENTOS = "ninguno";
@@ -19,8 +18,7 @@ export const MODO_PESTANAS = "pestanas";
 
 /**
  * Documentación de un tercero dentro de su modal de alta/edición, según lo
- * configurado en api/TipoRelacionSocioTipoDocumento para su tipo de relación
- * (y las demás relaciones que ya tenga en el legajo).
+ * configurado en api/TipoRelacionSocioTipoDocumento para su tipo de relación.
  *
  * - "ninguno": no se le pide documentación.
  * - "soloDni": solo DNI frente y/o dorso, como una sección más del formulario.
@@ -43,14 +41,9 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen, arc
   }
 
   const terceroId = Number(persona?.id) || 0;
-  const relaciones = ctx?.relacionesDeTerceros;
   const requeridos = useMemo(
-    () =>
-      documentosRequeridosDeTercero(
-        configuracion,
-        tiposRelacionDeTercero(relaciones, terceroId, tipoRelacionSocioId),
-      ),
-    [configuracion, relaciones, terceroId, tipoRelacionSocioId],
+    () => documentosRequeridosDeTercero(configuracion, tipoRelacionSocioId),
+    [configuracion, tipoRelacionSocioId],
   );
   const modo =
     requeridos.length === 0

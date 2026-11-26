@@ -298,9 +298,6 @@
   box-shadow: 0 0 0 2px var(--bg-elevado);
 }
 
-/* Botón de documentación del tercero: solo con documentación obligatoria
-   pendiente, amarillo con punto como "Editar" pendiente. En pantallas chicas
-   queda el ícono con la cuenta. */
 .btnDocs {
   position: relative;
   display: inline-flex;

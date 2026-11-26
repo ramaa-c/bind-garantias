@@ -284,8 +284,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const currentCalle = useWatch({ control, name: "calle" });
   const emailWatch = useWatch({ control, name: "email" });
   const celularWatch = useWatch({ control, name: "celular" });
-  // Para el tilde de la pestaña Datos (mismos obligatorios que valida el form).
-  const datosCompletos = Boolean(emailWatch && celularWatch && currentCalle && currentProvincia && currentCiudadId);
+  const participacionWatch = useWatch({ control, name: "participacion" });
+  const participacionOk =
+    participacionWatch !== "" &&
+    participacionWatch != null &&
+    (admiteParticipacionCero ? Number(participacionWatch) >= 0 : Number(participacionWatch) > 0);
+  const datosCompletos = Boolean(
+    emailWatch && celularWatch && currentCalle && currentProvincia && currentCiudadId && participacionOk,
+  );
 
   // Ciudad se filtra por la provincia elegida (useCiudades recibe
   // currentProvincia) - ver useSincronizarCatalogoPorTexto para el detalle

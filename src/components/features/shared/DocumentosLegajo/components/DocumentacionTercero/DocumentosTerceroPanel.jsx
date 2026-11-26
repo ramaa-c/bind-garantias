@@ -236,12 +236,6 @@ export function AvisoDocumentacionPie({ cantidad, onClick }) {
   );
 }
 
-/**
- * Pestañas de la cabecera: Datos | Documentación. Con ícono y estado en cada
- * una (tilde si los datos están completos; cuenta en amarillo con punto si
- * falta documentación obligatoria, en verde si está todo) para que se vean
- * de un vistazo, y la activa resaltada (en verde si lo suyo está completo).
- */
 export function PestanasTercero({ activa, onCambiar, cargados, total, faltan, datosCompletos, admin = false }) {
   const docCompleta = !faltan && cargados === total;
   return (

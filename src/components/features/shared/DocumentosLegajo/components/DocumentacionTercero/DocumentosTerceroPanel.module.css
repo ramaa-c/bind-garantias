@@ -159,8 +159,6 @@
   --acento-rgb: 138, 159, 255;
 }
 
-/* Mobile first: cada pestaña toma el ancho de su contenido y se reparten
-   lo que sobra de la fila (Documentación es la más larga). */
 .pestana {
   position: relative;
   display: inline-flex;
@@ -221,7 +219,6 @@
   color: var(--acento);
 }
 
-/* Activa y completa: el resaltado pasa a verde. */
 .pestanaActivaOk,
 .pestanaActivaOk:hover {
   border-color: rgba(61, 220, 132, 0.45);
@@ -277,8 +274,6 @@
   color: var(--success-green, #3ddc84);
 }
 
-/* Falta documentación obligatoria: punto que late sobre la pestaña, para
-   que se note aunque se esté en Datos. */
 .pestanaPunto {
   position: absolute;
   top: 0.3rem;

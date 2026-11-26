@@ -3,7 +3,6 @@ import { useDocumentosPorRelacion } from "../../../../../../hooks/useDocumentosP
 import {
   documentosRequeridosDeTercero,
   estadoDocumentacionTercero,
-  tiposRelacionDeTercero,
 } from "../../../../../../utils/documentacionTerceros";
 
 export const DocumentacionTercerosContext = createContext(null);
@@ -18,10 +17,7 @@ export const useDocumentacionTerceros = (tipoRelacionSocioId) => {
     return {
       resumenDe: (persona) => {
         if (ctx.cargandoArchivos || isLoading) return null;
-        const requeridos = documentosRequeridosDeTercero(
-          configuracion,
-          tiposRelacionDeTercero(ctx.relacionesDeTerceros, persona?.id, tipoRelacionSocioId),
-        );
+        const requeridos = documentosRequeridosDeTercero(configuracion, tipoRelacionSocioId);
         if (requeridos.length === 0) return null;
         return estadoDocumentacionTercero({ requeridos, archivos: ctx.archivos, persona, tituloDe: ctx.tituloDe });
       },

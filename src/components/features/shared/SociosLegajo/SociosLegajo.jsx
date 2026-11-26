@@ -39,7 +39,6 @@ import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSe
 import { RepresentantesSection } from "../DocumentosLegajo/components/RepresentantesSection/RepresentantesSection";
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
 import { DocumentacionTercerosContext } from "../DocumentosLegajo/components/DocumentacionTercero/documentacionTercerosContext";
-import { relacionesPorTercero } from "../../../../utils/documentacionTerceros";
 import { useTituloDocumento } from "../../../../hooks/useTipoDocumentoArchivo";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
@@ -510,13 +509,11 @@ export function SociosLegajo({
   }, [socioIdActivo]);
 
   const tituloDocumento = useTituloDocumento();
-  const relacionesDeTerceros = useMemo(() => relacionesPorTercero(socioLegajoData), [socioLegajoData]);
   const documentacionTerceros = useMemo(
     () => ({
       archivos: archivosBackend,
       cargandoArchivos,
       tituloDe: tituloDocumento,
-      relacionesDeTerceros,
       refrescar: () =>
         Promise.all([
           cargarArchivosExistentes(),
@@ -524,7 +521,7 @@ export function SociosLegajo({
         ]),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [archivosBackend, cargandoArchivos, tituloDocumento, relacionesDeTerceros, socioIdActivo, queryClient],
+    [archivosBackend, cargandoArchivos, tituloDocumento, socioIdActivo, queryClient],
   );
 
   useEffect(() => {

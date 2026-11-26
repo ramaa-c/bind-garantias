@@ -20,9 +20,7 @@ import {
   documentosRequeridosDeTercero,
   estadoDocumentacionTercero,
   mensajeFaltaDocumento,
-  relacionesPorTercero,
   soloArchivosEmpresa,
-  tiposRelacionDeTercero,
 } from "../utils/documentacionTerceros";
 import {
   normalizarCatalogoActivo,
@@ -148,12 +146,8 @@ export const useValidacionLegajo = ({
   }
 
   const archivosEmpresa = soloArchivosEmpresa(archivosBackend);
-  const relacionesDeTerceros = relacionesPorTercero(socioLegajoData);
   const requeridosDe = (persona, tipoRelacionSocioId) => ({
-    requeridos: documentosRequeridosDeTercero(
-      configuracionDocumentos,
-      tiposRelacionDeTercero(relacionesDeTerceros, persona?.id, tipoRelacionSocioId),
-    ),
+    requeridos: documentosRequeridosDeTercero(configuracionDocumentos, tipoRelacionSocioId),
     tituloDe,
   });
 

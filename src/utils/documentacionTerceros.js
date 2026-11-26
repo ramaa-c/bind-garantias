@@ -3,7 +3,7 @@ import {
   DOCUMENTO_DNI_FRENTE_ID,
   DOCUMENTO_DNI_DORSO_ID,
 } from "../constants/tiposDocumentoArchivo";
-import { RELACION_ACCIONISTA_ID, RELACION_AGENTE_BOLSA_ID } from "../constants/tiposRelacionSocio";
+import { RELACION_ACCIONISTA_ID } from "../constants/tiposRelacionSocio";
 
 export const REQUERIMIENTO_OBLIGATORIO = 1;
 export const REQUERIMIENTO_OPCIONAL = 2;
@@ -52,7 +52,6 @@ const ordenDe = (clave) => {
 };
 
 const esPedido = (req) => req === REQUERIMIENTO_OBLIGATORIO || req === REQUERIMIENTO_OPCIONAL;
-const exigencia = (req) => (req === REQUERIMIENTO_OBLIGATORIO ? 2 : req === REQUERIMIENTO_OPCIONAL ? 1 : 0);
 
 export const armarConfiguracionDocumentos = (filas) =>
   (Array.isArray(filas) ? filas : []).reduce((config, fila) => {
@@ -63,17 +62,8 @@ export const armarConfiguracionDocumentos = (filas) =>
     return config;
   }, {});
 
-const comoListaDeRelaciones = (tiposRelacion) =>
-  [...new Set((Array.isArray(tiposRelacion) ? tiposRelacion : [tiposRelacion]).map(Number))].filter(Boolean);
-
-export const documentosRequeridosDeTercero = (configuracion, tiposRelacion) => {
-  const porDocumento = {};
-  comoListaDeRelaciones(tiposRelacion).forEach((relId) => {
-    Object.entries(configuracion?.[relId] || {}).forEach(([docId, req]) => {
-      if (exigencia(req) > exigencia(porDocumento[docId])) porDocumento[docId] = req;
-    });
-  });
-  return Object.entries(porDocumento)
+export const documentosRequeridosDeTercero = (configuracion, tipoRelacionSocioId) =>
+  Object.entries(configuracion?.[Number(tipoRelacionSocioId)] || {})
     .filter(([, req]) => esPedido(req))
     .map(([docId, req]) => ({
       clave: claveDeDocumento(docId),
@@ -87,32 +77,9 @@ export const documentosRequeridosDeTercero = (configuracion, tiposRelacion) => {
         ordenDe(a.clave) - ordenDe(b.clave) ||
         a.tipoDocumentoId - b.tipoDocumentoId,
     );
-};
 
 export const requerimientoDe = (requeridos, clave) =>
   requeridos.find((r) => r.clave === clave)?.requerimiento ?? 0;
-
-export const relacionesPorTercero = (legajo) => {
-  const mapa = new Map();
-  const sumar = (persona, relId) => {
-    const id = Number(persona?.id);
-    if (!id || !Number(relId)) return;
-    if (!mapa.has(id)) mapa.set(id, new Set());
-    mapa.get(id).add(Number(relId));
-  };
-  (legajo?.accionistas || []).forEach((p) => sumar(p, RELACION_ACCIONISTA_ID));
-  (legajo?.representantes || []).forEach((p) => sumar(p, p.rolId));
-  (legajo?.agentesBolsa || []).forEach((p) => sumar(p, RELACION_AGENTE_BOLSA_ID));
-  Object.entries(legajo?.porTipoRelacion || {}).forEach(([relId, personas]) =>
-    (personas || []).forEach((p) => sumar(p, relId)),
-  );
-  return mapa;
-};
-
-export const tiposRelacionDeTercero = (mapa, terceroId, tipoRelacionSocioId) => [
-  Number(tipoRelacionSocioId),
-  ...(mapa?.get(Number(terceroId)) || []),
-];
 
 export const tituloDocumentoTercero = (clave, tituloDe, tipoDocumentoId) =>
   TITULOS_DNI[clave] ||
