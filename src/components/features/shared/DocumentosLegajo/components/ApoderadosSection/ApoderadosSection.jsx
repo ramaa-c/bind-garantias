@@ -4,6 +4,8 @@ import { FiUser, FiPlus, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
 import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
+import { useDocumentacionTerceros } from "../DocumentacionTercero/documentacionTercerosContext";
+import { RELACION_APODERADO_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { ordenarPendientesPrimero, sugerenciasPara } from "../TerceroCard/terceroCardUtils";
 import { ApoderadoModal } from "../../../ApoderadoModal/ApoderadoModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
@@ -30,8 +32,8 @@ const calcularFaltantes = (t) => {
 
 // Solo Apoderado (TipoRelacionSocioID 210) - aplica tanto a persona física
 // como jurídica. Representante Legal tiene su propia pestaña/sección (ver
-// RepresentantesSection). No pide DNI frente/dorso (a diferencia de
-// Accionistas): este modal no tiene forma de cargarlo, ver useValidacionLegajo.
+// RepresentantesSection). Su documentación (si la cadena le pide alguna) se
+// carga desde el botón "Documentación" de la tarjeta.
 export function ApoderadosSection({
   loadingSocios,
   apoderados,
@@ -50,13 +52,17 @@ export function ApoderadosSection({
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(apoderados.map((r) => r.id), cadenaValorId);
 
+  const documentacion = useDocumentacionTerceros(RELACION_APODERADO_ID);
   const entradas = ordenarPendientesPrimero(
-    apoderados.map((rep) => ({
+    apoderados.map((rep) => {
+      const docs = documentacion.resumenDe(rep);
+      return {
       rep,
-      faltantes: calcularFaltantes(rep),
+      faltantes: [...calcularFaltantes(rep), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(rep.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(rep.id)) === "pendiente",
-    })),
+      };
+    }),
   );
 
   const abrirModal = (rep = null) => {

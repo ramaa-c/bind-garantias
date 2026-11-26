@@ -43,6 +43,10 @@ export const Modal = ({
   icono,
   tono = "azul",
   headerActions,
+  // Contenido extra de la cabecera, entre el título y la X (ej. las
+  // pestañas Datos | Documentación de las modales de terceros). En
+  // pantallas chicas baja a una segunda fila a todo el ancho.
+  headerExtra,
 }) => {
   const handleClose = () => {
     if (preventClose) return;
@@ -93,6 +97,7 @@ export const Modal = ({
               )}
               {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
             </div>
+            {headerExtra && <div className={styles.headerExtra}>{headerExtra}</div>}
             {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
             {!hideCloseButton && (
               <button

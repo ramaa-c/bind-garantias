@@ -4,6 +4,7 @@ import { FiUser, FiPlus, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
 import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
+import { useDocumentacionTerceros } from "../DocumentacionTercero/documentacionTercerosContext";
 import { ordenarPendientesPrimero, sugerenciasPara } from "../TerceroCard/terceroCardUtils";
 import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
@@ -56,13 +57,17 @@ export function TerceroRelacionSection({
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(items.map((r) => r.id), cadenaValorId);
 
+  const documentacion = useDocumentacionTerceros(tipoRelacionSocioId);
   const entradas = ordenarPendientesPrimero(
-    items.map((item) => ({
+    items.map((item) => {
+      const docs = documentacion.resumenDe(item);
+      return {
       item,
-      faltantes: calcularFaltantes(item),
+      faltantes: [...calcularFaltantes(item), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(item.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(item.id)) === "pendiente",
-    })),
+      };
+    }),
   );
 
   const abrirModal = (item = null) => {

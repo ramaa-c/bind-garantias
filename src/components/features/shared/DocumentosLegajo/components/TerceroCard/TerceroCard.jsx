@@ -25,6 +25,9 @@ const textoFaltantes = (faltantes) => {
  *   tarjeta neutra, sin chip de estado.
  * - `children` es el detalle desplegable; sin children la tarjeta no se expande.
  * - `participacion` + `colorParticipacion` solo los pasa Accionistas.
+ * - La documentación pendiente del tercero (ver useDocumentacionTerceros)
+ *   llega sumada a `faltantes`: se completa desde "Editar", en la pestaña
+ *   Documentación de su modal.
  */
 export function TerceroCard({
   nombre,

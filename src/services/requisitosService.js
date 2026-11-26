@@ -1,7 +1,7 @@
 import { requisitosAdapter } from "../adapters/requisitosAdapter";
 import api from "../api/axios";
 import { RELACIONES_TERCEROS_BASE, RELACION_USUARIOS_ID } from "../constants/tiposRelacionSocio";
-import { TIPOS_DOCUMENTO_LEGAJO } from "../constants/tiposDocumentoArchivo";
+import { TIPOS_DOCUMENTO_LEGAJO, TIPOS_DOCUMENTO_ARCHIVO } from "../constants/tiposDocumentoArchivo";
 
 // Configuración por defecto para Persona Física (Individual)
 export const DEFAULT_PHYSICAL_CONFIG = {
@@ -125,8 +125,27 @@ export const ocultarDocumentosNoHabilitados = (config, idsHabilitados) => {
   Object.keys(documentos).forEach((key) => {
     if (!idsHabilitados.has(TIPO_DOCUMENTO_MAP[key])) documentos[key] = 0;
   });
-  return { ...config, documentos };
+  // Mismo filtro para la documentación de terceros (el DNI siempre está
+  // habilitado: ver IDS_DOCUMENTO_SIEMPRE_ACTIVOS).
+  const documentosTerceros = Object.fromEntries(
+    Object.entries(config.documentosTerceros || {}).map(([relId, docs]) => [
+      relId,
+      Object.fromEntries(
+        Object.entries(docs).map(([key, val]) => [
+          key,
+          idsHabilitados.has(TIPOS_DOCUMENTO_ARCHIVO[key]) ? val : 0,
+        ]),
+      ),
+    ]),
+  );
+  return { ...config, documentos, documentosTerceros };
 };
+
+// Fila de documentación de un tipo de tercero (ver utils/documentacionTerceros.js):
+// trae TipoRelacionSocioID y TipoDocumentoArchivoID a la vez. Devuelve la
+// clave del documento (incluido el DNI, que no es un documento de la empresa).
+const claveDocumentoTercero = (docIdVal) =>
+  Object.keys(TIPOS_DOCUMENTO_ARCHIVO).find((k) => TIPOS_DOCUMENTO_ARCHIVO[k] === docIdVal);
 
 // Antes era un objeto fijo a mano acá mismo - ahora se arma desde la única
 // fuente de verdad (ver constants/tiposRelacionSocio.js) para no repetir los
@@ -215,6 +234,7 @@ export const requisitosService = {
         const config = {
           documentos: { ...fallback.documentos },
           relaciones: { ...fallback.relaciones },
+          documentosTerceros: {},
         };
 
         sortedData.forEach((item) => {
@@ -233,7 +253,15 @@ export const requisitosService = {
           if (matches) {
             const docIdVal = Number(item.tipodocumentoarchivoid || 0);
             const relIdVal = Number(item.tiporelacionsocioid || 0);
-            if (docIdVal > 0) {
+            if (docIdVal > 0 && relIdVal > 0) {
+              const docKey = claveDocumentoTercero(docIdVal);
+              if (docKey) {
+                config.documentosTerceros[relIdVal] = {
+                  ...config.documentosTerceros[relIdVal],
+                  [docKey]: reqVal,
+                };
+              }
+            } else if (docIdVal > 0) {
               const docKey = Object.keys(TIPO_DOCUMENTO_MAP).find(
                 (k) => TIPO_DOCUMENTO_MAP[k] === docIdVal
               );
@@ -296,6 +324,9 @@ export const requisitosService = {
         targetTabs.forEach((tab) => {
           const docIdVal = Number(item.tipodocumentoarchivoid || 0);
           const relIdVal = Number(item.tiporelacionsocioid || 0);
+          // Documentación de terceros: no es un documento de la empresa ni
+          // una relación, así que esta pantalla no la toca.
+          if (docIdVal > 0 && relIdVal > 0) return;
           if (docIdVal > 0) {
             const docKey = Object.keys(TIPO_DOCUMENTO_MAP).find(
               (k) => TIPO_DOCUMENTO_MAP[k] === docIdVal

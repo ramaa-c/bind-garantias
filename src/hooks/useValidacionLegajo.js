@@ -8,32 +8,31 @@ import { socioArchivoService } from "../services/socioArchivoService";
 import { useCadenaActiva } from "./useCadenaActiva";
 import { useTituloDocumento } from "./useTipoDocumentoArchivo";
 import {
+  RELACION_ACCIONISTA_ID,
+  RELACION_AGENTE_BOLSA_ID,
   RELACION_APODERADO_ID,
   RELACION_REPRESENTANTE_LEGAL_ID,
   RELACION_FIADOR_ID,
   IDS_RELACIONES_TERCEROS_BASE,
 } from "../constants/tiposRelacionSocio";
 import {
+  documentosRequeridosDeTercero,
+  estadoDocumentacionTercero,
+  soloArchivosEmpresa,
+} from "../utils/documentacionTerceros";
+import {
   normalizarCatalogoActivo,
   resolverRelacionesBaseActivas,
 } from "../utils/relacionesTercerosUtils";
 
 
-const normalizarTexto = (str) =>
-  String(str || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
-
-// Criterio de contacto + domicilio + CUIT valido, compartido por las 3
-// personas del legajo (accionista, representante legal, apoderado).
-// `etiqueta` solo cambia el texto del error. El DNI frente/dorso queda
-// aparte (ver requiereDni): solo Accionista lo pide, porque es el unico de
-// los tres cuyo modal (SocioAccionistaModal) tiene forma de cargarlo -
-// Representante Legal y Apoderado no tienen esa seccion, asi que pedirselo
-// era un requisito imposible de cumplir.
-const validarContactoDomicilioYDni = (persona, archivosBackend, etiqueta, { requiereDni = true } = {}) => {
+// Criterio de contacto + domicilio + CUIT valido, compartido por todas las
+// personas del legajo. `etiqueta` solo cambia el texto del error. La
+// documentación es la que la cadena le pide a ese tipo de tercero (ver
+// utils/documentacionTerceros.js): Accionista pide DNI frente y dorso por
+// defecto, y cualquier tercero puede tener documentos configurados que se
+// cargan desde el botón "Documentación" de su tarjeta.
+const validarContactoDomicilioYDocumentacion = (persona, archivosBackend, etiqueta, { requeridos = [], tituloDe } = {}) => {
   const errores = [];
   const sEmail = persona.email || persona.mail || persona.Mail || "";
   const sCel = persona.celular || persona.telefono || persona.Telefono || "";
@@ -47,26 +46,14 @@ const validarContactoDomicilioYDni = (persona, archivosBackend, etiqueta, { requ
   const cuitLimpio = String(persona.cuit || "").replace(/\D/g, "");
   if (!cuitLimpio) {
     errores.push(`El ${etiqueta} ${persona.nombre} no posee CUIT válido.`);
-  } else if (requiereDni) {
-    const nombreNorm = normalizarTexto(persona.nombre);
-
-    const tieneDniFrente = archivosBackend.some((a) => {
-      if (a.tipodocumentoarchivoid !== 8) return false;
-      const descNorm = normalizarTexto(a.descripcion);
-      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
-    });
-
-    const tieneDniDorso = archivosBackend.some((a) => {
-      if (a.tipodocumentoarchivoid !== 9) return false;
-      const descNorm = normalizarTexto(a.descripcion);
-      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
-    });
-
-    if (!tieneDniFrente || !tieneDniDorso) {
-      const faltantes = [];
-      if (!tieneDniFrente) faltantes.push("DNI Frente");
-      if (!tieneDniDorso) faltantes.push("DNI Dorso");
-      errores.push(`El ${etiqueta} ${persona.nombre} no tiene cargado: ${faltantes.join(" y ")}.`);
+  } else if (requeridos.length > 0) {
+    const { faltantes } = estadoDocumentacionTercero({ requeridos, archivos: archivosBackend, persona, tituloDe });
+    if (faltantes.length > 0) {
+      const lista =
+        faltantes.length === 1
+          ? faltantes[0]
+          : `${faltantes.slice(0, -1).join(", ")} y ${faltantes[faltantes.length - 1]}`;
+      errores.push(`El ${etiqueta} ${persona.nombre} no tiene cargado: ${lista}.`);
     }
   }
 
@@ -157,6 +144,14 @@ export const useValidacionLegajo = ({
     };
   }
 
+  // Los documentos cargados a un tercero (ej. la DDJJ de un fiador) no
+  // cuentan como documentos de la empresa aunque compartan el tipo.
+  const archivosEmpresa = soloArchivosEmpresa(archivosBackend);
+  const requeridosDe = (tipoRelacionSocioId) => ({
+    requeridos: documentosRequeridosDeTercero(requisitos, tipoRelacionSocioId),
+    tituloDe,
+  });
+
   const errores = [];
   const erroresDocumentos = [];
   const erroresLegajo = [];
@@ -172,7 +167,7 @@ export const useValidacionLegajo = ({
         totalRequisitos++;
         totalDocumentosObligatorios++;
         const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[key];
-        const tieneDoc = archivosBackend.some(
+        const tieneDoc = archivosEmpresa.some(
           (a) => a.tipodocumentoarchivoid === tipoId
         );
 
@@ -253,7 +248,12 @@ export const useValidacionLegajo = ({
 
         // Validar datos de contacto, domicilio, CUIT y DNI para cada accionista
         accionistas.forEach((socio) => {
-          const erroresSocio = validarContactoDomicilioYDni(socio, archivosBackend, "accionista");
+          const erroresSocio = validarContactoDomicilioYDocumentacion(
+            socio,
+            archivosBackend,
+            "accionista",
+            requeridosDe(RELACION_ACCIONISTA_ID),
+          );
           if (erroresSocio.length > 0) {
             accionistasValidos = false;
             erroresAccionistas.push(...erroresSocio);
@@ -287,7 +287,12 @@ export const useValidacionLegajo = ({
         erroresApoderados.push("Debe registrar al menos un Apoderado.");
       } else {
         apoderados.forEach((rep) => {
-          const erroresRep = validarContactoDomicilioYDni(rep, archivosBackend, "apoderado", { requiereDni: false });
+          const erroresRep = validarContactoDomicilioYDocumentacion(
+            rep,
+            archivosBackend,
+            "apoderado",
+            requeridosDe(RELACION_APODERADO_ID),
+          );
           if (erroresRep.length > 0) {
             apoderadosValidos = false;
             erroresApoderados.push(...erroresRep);
@@ -326,7 +331,12 @@ export const useValidacionLegajo = ({
         erroresRepLegal.push("Debe registrar al menos un Representante Legal.");
       } else {
         representantesLegales.forEach((rep) => {
-          const erroresRep = validarContactoDomicilioYDni(rep, archivosBackend, "representante legal", { requiereDni: false });
+          const erroresRep = validarContactoDomicilioYDocumentacion(
+            rep,
+            archivosBackend,
+            "representante legal",
+            requeridosDe(RELACION_REPRESENTANTE_LEGAL_ID),
+          );
           if (erroresRep.length > 0) {
             repLegalValidos = false;
             erroresRepLegal.push(...erroresRep);
@@ -365,6 +375,17 @@ export const useValidacionLegajo = ({
             agentesBolsaValidos = false;
             erroresAgentes.push(
               `El agente de bolsa ${agente.nombre} no tiene cargada la Cuenta Comitente (Nro Subcuenta Caja).`
+            );
+          }
+          const { faltantes: docsFaltantes } = estadoDocumentacionTercero({
+            ...requeridosDe(RELACION_AGENTE_BOLSA_ID),
+            archivos: archivosBackend,
+            persona: agente,
+          });
+          if (docsFaltantes.length > 0) {
+            agentesBolsaValidos = false;
+            erroresAgentes.push(
+              `El agente de bolsa ${agente.nombre} no tiene cargado: ${docsFaltantes.join(", ")}.`
             );
           }
         });
@@ -416,7 +437,12 @@ export const useValidacionLegajo = ({
         erroresExtra.push(`Debe registrar al menos un/a ${etiqueta}.`);
       } else {
         personas.forEach((persona) => {
-          const erroresPersona = validarContactoDomicilioYDni(persona, archivosBackend, etiqueta, { requiereDni: false });
+          const erroresPersona = validarContactoDomicilioYDocumentacion(
+            persona,
+            archivosBackend,
+            etiqueta,
+            requeridosDe(item.id),
+          );
           if (erroresPersona.length > 0) {
             extraValidos = false;
             erroresExtra.push(...erroresPersona);

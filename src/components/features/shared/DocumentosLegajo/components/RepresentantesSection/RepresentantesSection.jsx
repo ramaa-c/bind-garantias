@@ -4,6 +4,8 @@ import { FiUser, FiPlus, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
 import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
+import { useDocumentacionTerceros } from "../DocumentacionTercero/documentacionTercerosContext";
+import { RELACION_REPRESENTANTE_LEGAL_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { ordenarPendientesPrimero, sugerenciasPara } from "../TerceroCard/terceroCardUtils";
 import { RepresentanteLegalModal } from "../../../RepresentanteLegalModal/RepresentanteLegalModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
@@ -30,8 +32,8 @@ const calcularFaltantes = (t) => {
 
 // Solo Representante Legal (TipoRelacionSocioID 230, persona jurídica) -
 // Apoderado tiene su propia pestaña/sección (ver ApoderadosSection), no
-// aparece más acá. No pide DNI frente/dorso (a diferencia de Accionistas):
-// este modal no tiene forma de cargarlo, ver useValidacionLegajo.
+// aparece más acá. Su documentación (si la cadena le pide alguna) se carga
+// desde el botón "Documentación" de la tarjeta.
 export function RepresentantesSection({
   loadingSocios,
   representantes,
@@ -50,13 +52,17 @@ export function RepresentantesSection({
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(representantes.map((r) => r.id), cadenaValorId);
 
+  const documentacion = useDocumentacionTerceros(RELACION_REPRESENTANTE_LEGAL_ID);
   const entradas = ordenarPendientesPrimero(
-    representantes.map((rep) => ({
+    representantes.map((rep) => {
+      const docs = documentacion.resumenDe(rep);
+      return {
       rep,
-      faltantes: calcularFaltantes(rep),
+      faltantes: [...calcularFaltantes(rep), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(rep.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(rep.id)) === "pendiente",
-    })),
+      };
+    }),
   );
 
   const abrirModal = (rep = null) => {

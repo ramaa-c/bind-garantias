@@ -38,6 +38,8 @@ import FacturacionModal from "../FacturacionModal/FacturacionModal";
 import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSection/AccionistasSection";
 import { RepresentantesSection } from "../DocumentosLegajo/components/RepresentantesSection/RepresentantesSection";
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
+import { DocumentacionTercerosContext } from "../DocumentosLegajo/components/DocumentacionTercero/documentacionTercerosContext";
+import { useTituloDocumento } from "../../../../hooks/useTipoDocumentoArchivo";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
 import { CadenaLegajoContext } from "../../../../context/cadenaLegajoContextObject";
@@ -507,6 +509,27 @@ export function SociosLegajo({
     cargarArchivosExistentes();
   }, [socioIdActivo]);
 
+  // Documentación de terceros: la parametrización y los archivos que leen
+  // las secciones (chip "Falta:") y las modales de cada tercero (pestaña
+  // Documentación), y cómo refrescar los archivos después de subir.
+  const tituloDocumento = useTituloDocumento();
+  const documentacionTerceros = useMemo(
+    () => ({
+      requisitos,
+      archivos: archivosBackend,
+      cargandoArchivos,
+      tituloDe: tituloDocumento,
+      refrescar: () =>
+        Promise.all([
+          cargarArchivosExistentes(),
+          queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] }),
+        ]),
+    }),
+    // cargarArchivosExistentes se recrea en cada render pero solo usa socioIdActivo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [requisitos, archivosBackend, cargandoArchivos, tituloDocumento, socioIdActivo, queryClient],
+  );
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 768 && !activeTab && tabsDisponibles.length > 0) {
@@ -621,6 +644,7 @@ export function SociosLegajo({
 
   return (
     <CadenaLegajoContext.Provider value={adminMode ? cadenaId : null}>
+    <DocumentacionTercerosContext.Provider value={documentacionTerceros}>
     <div className={`${styles.workspace} ${adminMode ? "legajoAdmin" : styles.workspaceCliente}`}>
       <div className={styles.sidebarBg} />
       {/* Columna de navegación propia de escritorio (ver .sidebarNav en el
@@ -935,6 +959,7 @@ export function SociosLegajo({
         />
       </FormProvider>
     </div>
+    </DocumentacionTercerosContext.Provider>
     </CadenaLegajoContext.Provider>
   );
 }

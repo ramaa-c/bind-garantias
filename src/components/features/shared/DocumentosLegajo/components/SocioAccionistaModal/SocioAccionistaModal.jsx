@@ -27,6 +27,14 @@ import { parseAddress, armarDireccion } from "../../../../../../utils/direccionP
 import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresaPorCuit";
 import { SugerenciasTerceros } from "../TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
+import { DibujoDniDorso, DibujoDniFrente } from "../DocumentacionTercero/DibujosDni";
+import { useDocumentosEnModal, MODO_PESTANAS } from "../DocumentacionTercero/useDocumentosEnModal";
+import {
+  AvisoDocumentacionPie,
+  DocumentosTerceroPanel,
+  PestanasTercero,
+} from "../DocumentacionTercero/DocumentosTerceroPanel";
+import { propsConfirmacionSinDocumentacion } from "../DocumentacionTercero/confirmacionDocumentacion";
 
 import styles from "./SocioAccionistaModal.module.css";
 import { obtenerInicialesEmpresa } from "../../../../../../utils/empresaAvatar";
@@ -46,27 +54,6 @@ const normalizarTexto = (str) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toUpperCase();
-
-// Dibujos chicos (32×24) para la fila de DNI: el frente con la foto de la
-// persona, el dorso con las líneas de texto y la banda del código - así se
-// distinguen de un vistazo sin leer el título. Usan currentColor para tomar
-// el color del estado (azul, amarillo al arrastrar, rojo con error).
-const DibujoDniFrente = () => (
-  <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-    <rect x="1" y="1" width="30" height="22" rx="4" />
-    <circle cx="9.5" cy="9.5" r="3" />
-    <path d="M4.5 18.5c.8-2.4 2.8-3.6 5-3.6s4.2 1.2 5 3.6" />
-    <path d="M18 8h9M18 12h7M18 16h5" />
-  </svg>
-);
-
-const DibujoDniDorso = () => (
-  <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-    <rect x="1" y="1" width="30" height="22" rx="4" />
-    <path d="M5 8h22M5 12h18M5 15h14" />
-    <rect x="5" y="18" width="22" height="3" rx="1" strokeWidth="1.2" />
-  </svg>
-);
 
 const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -271,6 +258,23 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
   const cuitValue = useWatch({ control, name: "cuit" });
   const nombreValue = useWatch({ control, name: "nombre" });
+
+  // Documentación del accionista (ver useDocumentosEnModal). Con solo DNI
+  // (lo de siempre) la modal no cambia. Si la cadena le pide más, la
+  // cabecera suma las pestañas Datos | Documentación: el DNI sigue con su
+  // estado de acá (dniFrenteFile/dniDorsoFile) y el resto lo maneja el hook.
+  const documentos = useDocumentosEnModal({
+    tipoRelacionSocioId: RELACION_ACCIONISTA_ID,
+    persona: { cuit: cuitValue, nombre: nombreValue },
+    isOpen,
+  });
+  const conPestanas = documentos.modo === MODO_PESTANAS;
+  const [pestana, setPestana] = useState("datos");
+  const [prevAbiertaDocumentos, setPrevAbiertaDocumentos] = useState(isOpen);
+  if (isOpen !== prevAbiertaDocumentos) {
+    setPrevAbiertaDocumentos(isOpen);
+    if (isOpen) setPestana("datos");
+  }
 
   const currentProvincia = useWatch({ control, name: "provinciaid" });
 
@@ -980,12 +984,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       }
     }
 
+    // Con pestañas el DNI no bloquea el guardado: lo que falte se avisa en
+    // la confirmación (ver ConfirmacionModal más abajo).
     let hasDropzoneErrors = false;
-    if (!dniFrenteFile) {
+    if (!conPestanas && !dniFrenteFile) {
       setErrorDniFrente(true);
       hasDropzoneErrors = true;
     }
-    if (!dniDorsoFile) {
+    if (!conPestanas && !dniDorsoFile) {
       setErrorDniDorso(true);
       hasDropzoneErrors = true;
     }
@@ -993,6 +999,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     const isValid = await trigger();
     const domicilioValido = validarDomicilio();
 
+    if (!isValid || !domicilioValido) setPestana("datos");
     if (!isValid || hasDropzoneErrors || !domicilioValido) return;
 
     // No puede repetirse el email entre accionistas (SGRPLUSPLA-137) -
@@ -1010,7 +1017,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       return;
     }
 
-    if (!isDirty && !filesChanged) {
+    if (!isDirty && !filesChanged && !documentos.hayCambios) {
       await handleCerrar();
       return;
     }
@@ -1255,6 +1262,22 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         }
       }
 
+      // El resto de la documentación (con pestañas), con el mismo criterio
+      // que el DNI de arriba: los datos ya se guardaron.
+      if (documentos.hayCambios) {
+        try {
+          await documentos.subirPendientes({
+            socioIdActivo,
+            persona: { cuit: cuitLimpio, nombre: formData.nombre },
+          });
+        } catch (docErr) {
+          docErr.mensajeParaUsuario = `Los datos del accionista se guardaron, pero no se pudo subir la documentación. ${
+            docErr.esValidacionArchivo ? docErr.message : mensajeNegocio(docErr, "Reintentá en unos minutos.")
+          }`;
+          throw docErr;
+        }
+      }
+
       toast.success(relacionId ? "Accionista actualizado correctamente." : "Accionista guardado correctamente.", { id: mainToastId });
 
       // El alta quedó confirmada: la relación ya no es un stub pendiente y
@@ -1295,6 +1318,30 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
   };
 
+  // Pestaña Documentación: el DNI muestra lo que tiene esta modal (elegido
+  // o ya cargado), el resto sale del hook.
+  const dniLocal = { "socio-frente": dniFrenteFile, "socio-dorso": dniDorsoFile };
+  const itemsPanel = documentos.items.map((item) =>
+    item.clave in dniLocal ? { ...item, archivo: null, local: dniLocal[item.clave] || null } : item,
+  );
+  const faltantesPanel = itemsPanel
+    .filter((i) => i.requerimiento === 1 && !i.archivo && !i.local)
+    .map((i) => i.titulo);
+  const cargadosPanel = itemsPanel.filter((i) => i.archivo || i.local).length;
+  const elegirDocumento = (clave, archivo) => {
+    if (clave === "socio-frente") {
+      setDniFrenteFile(archivo);
+      setErrorDniFrente(false);
+      setFilesChanged(true);
+    } else if (clave === "socio-dorso") {
+      setDniDorsoFile(archivo);
+      setErrorDniDorso(false);
+      setFilesChanged(true);
+    } else {
+      documentos.elegir(clave, archivo);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -1306,9 +1353,26 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         maxWidth={!afipValidado && !socio ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
+        headerExtra={
+          conPestanas && (afipValidado || socio) ? (
+            <PestanasTercero
+              activa={pestana}
+              onCambiar={setPestana}
+              cargados={cargadosPanel}
+              total={itemsPanel.length}
+              faltan={faltantesPanel.length > 0}
+            />
+          ) : null
+        }
         footer={
           (afipValidado || socio) && (
             <>
+              {conPestanas && pestana === "datos" && faltantesPanel.length > 0 && (
+                <AvisoDocumentacionPie
+                  cantidad={faltantesPanel.length}
+                  onClick={() => setPestana("documentacion")}
+                />
+              )}
               <Button type="button" variant={isAdmin ? "outlineBlue" : "outline"} onClick={handleCerrar} disabled={validando}>
                 Cancelar
               </Button>
@@ -1360,6 +1424,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             </div>
           ) : (
             <>
+              {/* Con pestañas, los datos quedan montados (react-hook-form los
+                  sigue validando) pero ocultos mientras se ve Documentación. */}
+              <div style={{ display: conPestanas && pestana !== "datos" ? "none" : "contents" }}>
               <h4 className={styles.sectionTitle}>
                 <span className={`${styles.sectionNum} ${styles.sectionNumOk}`} aria-hidden="true"><FiCheck /></span>
                 Accionista
@@ -1629,6 +1696,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 />
               </div>
 
+              </div>
+              {!conPestanas && (
+              <>
               <h4 className={styles.sectionTitle}>
                 <span className={styles.sectionNum} aria-hidden="true">4</span>
                 DNI
@@ -1667,6 +1737,18 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   faseDescarga={faseDe('dorso')}
                 />
               </div>
+              </>
+              )}
+              {conPestanas && pestana === "documentacion" && (
+                <DocumentosTerceroPanel
+                  items={itemsPanel}
+                  onElegir={elegirDocumento}
+                  errores={[errorDniFrente && "socio-frente", errorDniDorso && "socio-dorso"].filter(Boolean)}
+                  conAvance
+                  isAdmin={isAdmin}
+                  idBase="doc-accionista"
+                />
+              )}
             </>
           )}
         </form>
@@ -1676,9 +1758,19 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
-        titulo={socio ? "Actualizar Accionista" : "Agregar Accionista"}
         variant={isAdmin ? "blue" : "default"}
-        mensaje={socio ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este accionista?"}
+        {...(conPestanas && faltantesPanel.length > 0
+          ? propsConfirmacionSinDocumentacion({
+              faltantes: faltantesPanel,
+              onCargarAhora: () => {
+                setShowConfirm(false);
+                setPestana("documentacion");
+              },
+            })
+          : {
+              titulo: socio ? "Actualizar Accionista" : "Agregar Accionista",
+              mensaje: socio ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este accionista?",
+            })}
         isLoading={guardando}
       />
       <ProcesamientoModal 
