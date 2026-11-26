@@ -6,6 +6,8 @@ import s from "../TerceroCard/TerceroCard.module.css";
 import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
 import { BolsaModal } from "../BolsaModal/BolsaModal";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
+import { useDocumentacionTerceros } from "../DocumentacionTercero/documentacionTercerosContext";
+import { RELACION_AGENTE_BOLSA_ID } from "../../../../../../constants/tiposRelacionSocio";
 
 export function AgentesBolsaSection({
   loadingSocios,
@@ -19,6 +21,7 @@ export function AgentesBolsaSection({
   const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
+  const documentacion = useDocumentacionTerceros(RELACION_AGENTE_BOLSA_ID, "Agente de bolsa");
 
   return (
     <div className={styles.sociosContainer}>
@@ -49,8 +52,11 @@ export function AgentesBolsaSection({
           ) : (
             <div className={s.lista}>
               {/* Sin validación de datos propia: tarjeta neutra, sin chip de
-                  estado ni detalle desplegable (como antes). */}
-              {agentesBolsa.map((bolsa) => (
+                  estado ni detalle desplegable (como antes). Si la cadena le
+                  pide documentación, el chip pasa a reflejar solo eso. */}
+              {agentesBolsa.map((bolsa) => {
+                const docs = documentacion.resumenDe(bolsa);
+                return (
                 <TerceroCard
                   key={bolsa.id}
                   nombre={bolsa.nombre}
@@ -62,7 +68,10 @@ export function AgentesBolsaSection({
                       </strong>
                     </>
                   }
-                  validado={false}
+                  validado={!!docs}
+                  faltantes={docs?.faltantes}
+                  documentacion={docs}
+                  onDocumentacion={() => documentacion.abrir(bolsa)}
                   isAdmin={isAdmin}
                   onEdit={() => {
                     setEditBolsa(bolsa);
@@ -72,7 +81,8 @@ export function AgentesBolsaSection({
                   editTitle="Editar Cuenta Comitente"
                   deleteTitle="Desvincular Agente"
                 />
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

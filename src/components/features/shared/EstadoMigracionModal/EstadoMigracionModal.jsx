@@ -23,6 +23,7 @@ import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { useEstructuraLegajo } from "../../../../hooks/useEstructuraLegajo";
 import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo.constants";
 import styles from "./EstadoMigracionModal.module.css";
+import { soloArchivosEmpresa } from "../../../../utils/documentacionTerceros";
 
 // Lo pendiente va siempre arriba (con acceso directo a su pestaña) y los
 // completos se agrupan en un desplegable, para que la lista no crezca de
@@ -152,7 +153,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   ).map((doc) => ({
     key: doc.key,
     label: doc.title,
-    done: (archivosBackend || []).some(
+    done: soloArchivosEmpresa(archivosBackend).some(
       (a) => a.tipodocumentoarchivoid === socioArchivoService.TIPO_DOCUMENTO_MAP[doc.key],
     ),
   }));

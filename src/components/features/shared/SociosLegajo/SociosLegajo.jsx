@@ -38,6 +38,13 @@ import FacturacionModal from "../FacturacionModal/FacturacionModal";
 import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSection/AccionistasSection";
 import { RepresentantesSection } from "../DocumentosLegajo/components/RepresentantesSection/RepresentantesSection";
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
+import { DocumentacionTerceroModal } from "../DocumentosLegajo/components/DocumentacionTercero/DocumentacionTerceroModal";
+import { DocumentacionTercerosContext } from "../DocumentosLegajo/components/DocumentacionTercero/documentacionTercerosContext";
+import { useTituloDocumento } from "../../../../hooks/useTipoDocumentoArchivo";
+import {
+  documentosRequeridosDeTercero,
+  estadoDocumentacionTercero,
+} from "../../../../utils/documentacionTerceros";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
 import { CadenaLegajoContext } from "../../../../context/cadenaLegajoContextObject";
@@ -507,6 +514,36 @@ export function SociosLegajo({
     cargarArchivosExistentes();
   }, [socioIdActivo]);
 
+  // Documentación de terceros: una sola modal para todo el legajo, que se
+  // abre desde el botón "Documentación" de cada tarjeta (ver
+  // useDocumentacionTerceros en cada sección).
+  const tituloDocumento = useTituloDocumento();
+  const [documentacionAbierta, setDocumentacionAbierta] = useState(null);
+  const documentacionTerceros = useMemo(
+    () => ({
+      requisitos,
+      archivos: archivosBackend,
+      cargandoArchivos,
+      tituloDe: tituloDocumento,
+      abrir: setDocumentacionAbierta,
+    }),
+    [requisitos, archivosBackend, cargandoArchivos, tituloDocumento],
+  );
+  const estadoDocumentacionAbierta = documentacionAbierta
+    ? estadoDocumentacionTercero({
+        requeridos: documentosRequeridosDeTercero(requisitos, documentacionAbierta.tipoRelacionSocioId),
+        archivos: archivosBackend,
+        persona: documentacionAbierta.persona,
+        tituloDe: tituloDocumento,
+      })
+    : null;
+  const refrescarDocumentacion = async () => {
+    await Promise.all([
+      cargarArchivosExistentes(),
+      queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] }),
+    ]);
+  };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 768 && !activeTab && tabsDisponibles.length > 0) {
@@ -621,6 +658,7 @@ export function SociosLegajo({
 
   return (
     <CadenaLegajoContext.Provider value={adminMode ? cadenaId : null}>
+    <DocumentacionTercerosContext.Provider value={documentacionTerceros}>
     <div className={`${styles.workspace} ${adminMode ? "legajoAdmin" : styles.workspaceCliente}`}>
       <div className={styles.sidebarBg} />
       {/* Columna de navegación propia de escritorio (ver .sidebarNav en el
@@ -934,7 +972,17 @@ export function SociosLegajo({
           onGuardar={handleGuardarFacturacion}
         />
       </FormProvider>
+      <DocumentacionTerceroModal
+        isOpen={!!documentacionAbierta}
+        onClose={() => setDocumentacionAbierta(null)}
+        persona={documentacionAbierta?.persona}
+        etiqueta={documentacionAbierta?.etiqueta}
+        estado={estadoDocumentacionAbierta}
+        socioIdActivo={socioIdActivo}
+        onCambio={refrescarDocumentacion}
+      />
     </div>
+    </DocumentacionTercerosContext.Provider>
     </CadenaLegajoContext.Provider>
   );
 }

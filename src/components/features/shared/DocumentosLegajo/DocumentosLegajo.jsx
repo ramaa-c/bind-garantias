@@ -57,6 +57,7 @@ import {
 } from "../../../../utils/fileUtils";
 import { useEstructuraLegajo } from "../../../../hooks/useEstructuraLegajo";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
+import { soloArchivosEmpresa } from "../../../../utils/documentacionTerceros";
 
 // Ícono de los botones de descarga en ZIP según en qué fase esté
 // (ver useDescargaConFeedback). A diferencia de la descarga de un archivo
@@ -207,10 +208,9 @@ export function DocumentosLegajo({
     queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo, true),
     enabled: !!socioIdActivo,
   });
-  const archivosBackend = useMemo(
-    () => (Array.isArray(archivosBackendData) ? archivosBackendData : []),
-    [archivosBackendData],
-  );
+  // Sin los documentos cargados a terceros (ej. la DDJJ de un fiador): esta
+  // pantalla reconoce los documentos de la empresa solo por su tipo.
+  const archivosBackend = useMemo(() => soloArchivosEmpresa(archivosBackendData), [archivosBackendData]);
   const [activeSubTabs, setActiveSubTabs] = useState({});
   const [metaFecha, setMetaFecha] = useState("");
   const [metaRef, setMetaRef] = useState("");

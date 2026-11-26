@@ -10,18 +10,13 @@ import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 import { AvisoRevisionTercero } from "../EstadoRevisionChip/EstadoRevisionChip";
+import { useDocumentacionTerceros } from "../DocumentacionTercero/documentacionTercerosContext";
+import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
 
-const normalizarTexto = (str) =>
-  String(str || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
-
-// Mismo chequeo que tenía la tarjeta: contacto + domicilio + CUIT y, con CUIT,
-// las fotos de DNI frente (tipo 8) y dorso (tipo 9) buscadas por CUIT o nombre
-// en la descripción del archivo.
-const calcularFaltantes = (socio, archivosBackend) => {
+// Contacto + domicilio + CUIT. La documentación (DNI frente y dorso por
+// defecto, más lo que la cadena configure para accionistas) se suma aparte
+// con useDocumentacionTerceros.
+const calcularFaltantes = (socio) => {
   const faltantes = [];
   const sEmail = socio.email || socio.mail || socio.Mail || "";
   const sCel = socio.celular || socio.telefono || socio.Telefono || "";
@@ -33,24 +28,7 @@ const calcularFaltantes = (socio, archivosBackend) => {
   if (!sDir || !sProv) faltantes.push("Domicilio completo");
 
   const cuitLimpio = String(socio.cuit || "").replace(/\D/g, "");
-  if (!cuitLimpio) {
-    faltantes.push("CUIT válido");
-  } else {
-    const nombreNorm = normalizarTexto(socio.nombre);
-    const tieneDniFrente = (archivosBackend || []).some((a) => {
-      if (a.tipodocumentoarchivoid !== 8) return false;
-      const descNorm = normalizarTexto(a.descripcion);
-      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
-    });
-    const tieneDniDorso = (archivosBackend || []).some((a) => {
-      if (a.tipodocumentoarchivoid !== 9) return false;
-      const descNorm = normalizarTexto(a.descripcion);
-      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
-    });
-
-    if (!tieneDniFrente) faltantes.push("Foto DNI Frente");
-    if (!tieneDniDorso) faltantes.push("Foto DNI Dorso");
-  }
+  if (!cuitLimpio) faltantes.push("CUIT válido");
   return faltantes;
 };
 
@@ -133,14 +111,19 @@ export function AccionistasSection({
   const accionistasPorParticipacion = [...accionistas].sort(
     (a, b) => (Number(b.participacion) || 0) - (Number(a.participacion) || 0),
   );
+  const documentacion = useDocumentacionTerceros(RELACION_ACCIONISTA_ID, "Accionista");
   const entradas = ordenarPendientesPrimero(
-    accionistasPorParticipacion.map((socio, i) => ({
+    accionistasPorParticipacion.map((socio, i) => {
+      const docs = documentacion.resumenDe(socio);
+      return {
       socio,
-      faltantes: calcularFaltantes(socio, archivosBackend),
+      docs,
+      faltantes: [...calcularFaltantes(socio), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(socio.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(socio.id)) === "pendiente",
       color: colorParticipacion(i),
-    })),
+      };
+    }),
   );
 
   return (
@@ -177,7 +160,7 @@ export function AccionistasSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ socio, faltantes, cdaRechazado, cdaPendiente, color }) => (
+              {entradas.map(({ socio, docs, faltantes, cdaRechazado, cdaPendiente, color }) => (
                 <TerceroCard
                   key={socio.id}
                   nombre={socio.nombre}
@@ -197,6 +180,8 @@ export function AccionistasSection({
                     setModalAccionistaOpen(true);
                   }}
                   onDelete={() => handleEliminarRelacion(socio)}
+                  documentacion={docs}
+                  onDocumentacion={() => documentacion.abrir(socio)}
                   editTitle="Editar Accionista"
                   deleteTitle="Eliminar Accionista"
                 >

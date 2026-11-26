@@ -36,6 +36,7 @@ import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 import { useTituloDocumento } from "../../../../hooks/useTipoDocumentoArchivo";
+import { soloArchivosEmpresa } from "../../../../utils/documentacionTerceros";
 
 
 const DOC_ITEMS = [
@@ -143,7 +144,8 @@ export default function Paso5Documentacion({
       try {
         const archivosExistentes =
           await socioArchivoService.obtenerArchivos(socioId);
-        const arr = Array.isArray(archivosExistentes) ? archivosExistentes : [];
+        // Sin los documentos cargados a terceros: acá solo van los de la empresa.
+        const arr = soloArchivosEmpresa(archivosExistentes);
         setArchivosBackend(arr);
 
         if (arr.length > 0) {
