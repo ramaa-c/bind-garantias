@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { FiPlus, FiEdit2, FiSearch, FiInbox, FiCheck, FiRotateCcw, FiAlertCircle } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiSearch, FiInbox, FiCheck, FiRotateCcw, FiAlertCircle, FiFileText } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button, Skeleton } from "../../../components/ui";
 import { TipoRelacionSocioModal } from "../../../components/features/admin/TipoRelacionSocioModal/TipoRelacionSocioModal";
+import { DocumentosTerceroModal } from "../../../components/features/admin/DocumentosTerceroModal/DocumentosTerceroModal";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useTiposRelacionSocioActivos, useRelationMetadata } from "../../../hooks/useTipoRelacionSocio";
@@ -45,6 +46,7 @@ export default function TiposRelacionSocio() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [itemEditar, setItemEditar] = useState(null);
+  const [terceroDocumentos, setTerceroDocumentos] = useState(null);
 
   const { data: activosConsultados, isLoading: cargandoActivos } = useTiposRelacionSocioActivos();
   const activosData = verificando ? undefined : activosConsultados;
@@ -272,6 +274,15 @@ export default function TiposRelacionSocio() {
                   <button
                     type="button"
                     className={styles.editBtn}
+                    onClick={() => setTerceroDocumentos(item)}
+                    title="Documentos que se le piden"
+                    aria-label={`Documentos de ${item.descripcion}`}
+                  >
+                    <FiFileText size={13} aria-hidden="true" /> Documentos
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.editBtn}
                     onClick={() => handleEditar(item)}
                     title="Editar descripción"
                     aria-label={`Editar ${item.descripcion}`}
@@ -407,6 +418,15 @@ export default function TiposRelacionSocio() {
         cancelVariant="outlineBlue"
         isLoading={isUpdating}
       />
+
+      {terceroDocumentos && (
+        <DocumentosTerceroModal
+          key={terceroDocumentos.tiporelacionsocioid}
+          isOpen
+          onClose={() => setTerceroDocumentos(null)}
+          tercero={terceroDocumentos}
+        />
+      )}
 
       <TipoRelacionSocioModal
         key={`${itemEditar?.tiporelacionsocioid ?? "nuevo"}-${modalAbierto ? "open" : "closed"}`}

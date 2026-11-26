@@ -29,7 +29,7 @@
 @media (min-width: 64rem) {
   .layout {
     display: grid;
-    grid-template-columns: 24rem minmax(0, 1fr);
+    grid-template-columns: 32rem minmax(0, 1fr);
     align-items: stretch;
   }
 }
@@ -45,7 +45,7 @@
   .layout {
     flex: 1;
     min-height: 0;
-    grid-template-columns: 26rem minmax(0, 1fr);
+    grid-template-columns: 34rem minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
   }
 
