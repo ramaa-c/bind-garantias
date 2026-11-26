@@ -77,7 +77,9 @@ function FilaDocumento({ item, onElegir, conError, isAdmin, descargar, faseDe, i
       )}
       <CargaArchivos
         variant="fila"
-        title={opcional ? `${item.titulo} (opcional)` : item.titulo}
+        title={item.titulo}
+        etiqueta={opcional ? <EtiquetaOpcional /> : null}
+        discreto={opcional}
         subtitle={esDni ? "Foto clara, sin reflejos" : undefined}
         ilustracion={esDni ? item.clave === "socio-dorso" ? <DibujoDniDorso /> : <DibujoDniFrente /> : null}
         icon={esDni ? undefined : FiFileText}
@@ -122,20 +124,29 @@ function FilaDocumento({ item, onElegir, conError, isAdmin, descargar, faseDe, i
   );
 }
 
-function Seccion({ numero, titulo, items, esDni, filaProps, conSeparador, id }) {
-  const completa = items.every((i) => i.archivo || i.local);
-  const obligatorios = items.filter((i) => i.requerimiento === REQUERIMIENTO_OBLIGATORIO);
-  const pendientes = obligatorios.filter((i) => !i.archivo && !i.local).length;
+export const EtiquetaOpcional = () => <span className={styles.etiquetaOpcional}>Opcional</span>;
+
+const estaCargado = (i) => Boolean(i.archivo || i.local);
+const esObligatorio = (i) => i.requerimiento === REQUERIMIENTO_OBLIGATORIO;
+
+function Seccion({ numero, titulo, items, esDni, filaProps, conSeparador, id, opcionales = false }) {
+  const completa = items.every(estaCargado);
+  const obligatorios = items.filter(esObligatorio);
+  const pendientes = obligatorios.filter((i) => !estaCargado(i)).length;
+  const cargados = items.filter(estaCargado).length;
   const estado =
     obligatorios.length === 0
-      ? "Opcional"
+      ? `${cargados} de ${items.length} · podés no adjuntarlos`
       : pendientes === 0
         ? "Completo"
         : pendientes === 1
           ? "1 obligatorio pendiente"
           : `${pendientes} obligatorios pendientes`;
   return (
-    <section id={id} className={`${styles.seccion} ${conSeparador ? styles.seccionSeparada : ""}`}>
+    <section
+      id={id}
+      className={`${styles.seccion} ${conSeparador ? styles.seccionSeparada : ""} ${opcionales ? styles.seccionOpcional : ""}`}
+    >
       <h4 className={styles.seccionTitulo}>
         <span className={`${styles.seccionNum} ${completa ? styles.seccionNumOk : ""}`} aria-hidden="true">
           {completa ? <FiCheck /> : numero}
@@ -178,8 +189,16 @@ export function DocumentosTerceroPanel({
   const { descargar, faseDe } = useDescargaConFeedback();
   const dni = items.filter((i) => esDocumentoDni(i.tipoDocumentoId));
   const otros = items.filter((i) => !esDocumentoDni(i.tipoDocumentoId));
-  const cargados = items.filter((i) => i.archivo || i.local).length;
+  const otrosObligatorios = otros.filter(esObligatorio);
+  const otrosOpcionales = otros.filter((i) => !esObligatorio(i));
+  const obligatorios = items.filter(esObligatorio);
+  const opcionales = items.filter((i) => !esObligatorio(i));
+  const base = obligatorios.length > 0 ? obligatorios : items;
+  const cargadosBase = base.filter(estaCargado).length;
+  const cargadosOpcionales = opcionales.filter(estaCargado).length;
   const filaProps = { onElegir, errores, isAdmin, descargar, faseDe, idBase };
+  const numeroObligatorios = numeroInicial + (dni.length > 0 ? 1 : 0);
+  const numeroOpcionales = numeroObligatorios + (otrosObligatorios.length > 0 ? 1 : 0);
 
   return (
     <div className={styles.cuerpo}>
@@ -187,20 +206,25 @@ export function DocumentosTerceroPanel({
         <div className={styles.avance}>
           <span>
             <b>
-              {cargados} de {items.length}
+              {cargadosBase} de {base.length}
             </b>{" "}
-            cargados
+            {obligatorios.length > 0 ? "obligatorios" : "cargados"}
           </span>
           <span
             className={styles.avanceBarra}
             role="progressbar"
             aria-valuemin={0}
-            aria-valuemax={items.length}
-            aria-valuenow={cargados}
-            aria-label="Documentos cargados"
+            aria-valuemax={base.length}
+            aria-valuenow={cargadosBase}
+            aria-label={obligatorios.length > 0 ? "Documentos obligatorios cargados" : "Documentos cargados"}
           >
-            <i style={{ width: `${Math.round((cargados / items.length) * 100)}%` }} />
+            <i style={{ width: `${Math.round((cargadosBase / base.length) * 100)}%` }} />
           </span>
+          {obligatorios.length > 0 && opcionales.length > 0 && (
+            <span className={styles.avanceOpcionales}>
+              {cargadosOpcionales}/{opcionales.length} {opcionales.length === 1 ? "opcional" : "opcionales"}
+            </span>
+          )}
         </div>
       )}
       {dni.length > 0 && (
@@ -214,12 +238,21 @@ export function DocumentosTerceroPanel({
           id={idSeccion}
         />
       )}
-      {otros.length > 0 && (
+      {otrosObligatorios.length > 0 && (
         <Seccion
-          numero={numeroInicial + (dni.length > 0 ? 1 : 0)}
+          numero={numeroObligatorios}
           titulo={dni.length > 0 ? "Otros documentos" : "Documentos"}
-          items={otros}
+          items={otrosObligatorios}
           filaProps={filaProps}
+        />
+      )}
+      {otrosOpcionales.length > 0 && (
+        <Seccion
+          numero={numeroOpcionales}
+          titulo="Opcionales"
+          items={otrosOpcionales}
+          filaProps={filaProps}
+          opcionales
         />
       )}
     </div>

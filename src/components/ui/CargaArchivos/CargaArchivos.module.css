@@ -834,3 +834,43 @@
     height: 1.75rem;
   }
 }
+
+.tituloFila {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  min-width: 0;
+}
+
+.discreto {
+  border-style: solid;
+  border-color: rgba(var(--overlay-rgb), 0.07);
+  background: transparent;
+}
+
+.discreto.vacio .titulo {
+  color: rgba(var(--overlay-rgb), 0.78);
+  font-weight: 600;
+}
+
+.discreto.vacio .tileChico,
+.discreto.vacio .ilustracion {
+  opacity: 0.6;
+}
+
+.discreto .btnSubir {
+  color: var(--text-muted);
+  border-color: rgba(var(--overlay-rgb), 0.16);
+}
+
+.discreto .btnSubir:hover,
+.discreto .btnSubir:focus-visible {
+  color: var(--cz-acento-texto);
+  border-color: rgba(var(--cz-acento-rgb), 0.45);
+}
+
+.discreto.vacio:hover {
+  border-color: rgba(var(--overlay-rgb), 0.18);
+  background: rgba(var(--overlay-rgb), 0.02);
+}

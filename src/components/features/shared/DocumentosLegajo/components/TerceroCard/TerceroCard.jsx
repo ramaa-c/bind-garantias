@@ -142,7 +142,7 @@ export function TerceroCard({
               className={`${s.btnDocs} ${s.btnDocsPendiente}`}
               onClick={onDocumentacion}
               title={`Documentación de ${nombre}`}
-              aria-label={`Documentación de ${nombre}: ${documentacion.cargados} de ${documentacion.total} cargados`}
+              aria-label={`Documentación de ${nombre}: ${documentacion.cargados} de ${documentacion.total} obligatorios cargados`}
             >
               <FiFileText size={13} aria-hidden="true" />
               <span className={s.btnDocsTexto}>Documentación</span>

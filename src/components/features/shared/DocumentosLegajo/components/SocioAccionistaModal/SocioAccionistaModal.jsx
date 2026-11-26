@@ -29,12 +29,13 @@ import { SugerenciasTerceros } from "../TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import { DibujoDniDorso, DibujoDniFrente } from "../DocumentacionTercero/DibujosDni";
 import { useDocumentosEnModal, useIrASeccionDocumentos, MODO_PESTANAS, MODO_SOLO_DNI } from "../DocumentacionTercero/useDocumentosEnModal";
-import { archivoDeTercero, descripcionArchivoTercero, requerimientoDe, REQUERIMIENTO_OBLIGATORIO } from "../../../../../../utils/documentacionTerceros";
+import { archivoDeTercero, cuentaDocumentos, descripcionArchivoTercero, requerimientoDe, REQUERIMIENTO_OBLIGATORIO } from "../../../../../../utils/documentacionTerceros";
 import { DOCUMENTO_DNI_FRENTE_ID, DOCUMENTO_DNI_DORSO_ID } from "../../../../../../constants/tiposDocumentoArchivo";
 import {
   AvisoDocumentacionPie,
   DocumentosTerceroPanel,
   PestanasTercero,
+  EtiquetaOpcional,
 } from "../DocumentacionTercero/DocumentosTerceroPanel";
 import { propsConfirmacionSinDocumentacion } from "../DocumentacionTercero/confirmacionDocumentacion";
 
@@ -51,7 +52,7 @@ const ACCIONISTA_FORM_ID = "accionista-modal-form";
 
 
 
-const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
+const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading, opcional = false }) => {
   const [isDragging, setIsDragging] = useState(false);
   // Motivo del último archivo rechazado (formato/tamaño): las validaciones ya
   // avisan con un toast, pero el toast se va y la fila tiene que seguir
@@ -102,6 +103,8 @@ const DropzoneField = ({ file, title, onChange, onEdit, onView, onDownload, fase
       <CargaArchivos
         variant="fila"
         title={title}
+        etiqueta={opcional ? <EtiquetaOpcional /> : null}
+        discreto={opcional}
         subtitle="Foto clara, sin reflejos"
         ilustracion={fileKey === "dorso" ? <DibujoDniDorso /> : <DibujoDniFrente />}
         // El límite de 50MB es un dato de archivos sueltos, no de una foto
@@ -1288,7 +1291,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const faltantesPanel = itemsPanel
     .filter((i) => i.requerimiento === 1 && !i.archivo && !i.local)
     .map((i) => i.titulo);
-  const cargadosPanel = itemsPanel.filter((i) => i.archivo || i.local).length;
+  const { cargados: cargadosPanel, total: totalPanel } = cuentaDocumentos(itemsPanel);
   const elegirDocumento = (clave, archivo) => {
     if (clave === "socio-frente") {
       setDniFrenteFile(archivo);
@@ -1320,7 +1323,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               activa={pestana}
               onCambiar={setPestana}
               cargados={cargadosPanel}
-              total={itemsPanel.length}
+              total={totalPanel}
               faltan={faltantesPanel.length > 0}
               datosCompletos={datosCompletos}
               admin={isAdmin}
@@ -1670,7 +1673,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 {reqDniFrente > 0 && (
                 <DropzoneField
                   file={dniFrenteFile}
-                  title={reqDniFrente === REQUERIMIENTO_OBLIGATORIO ? "DNI Frente" : "DNI Frente (opcional)"}
+                  title="DNI Frente"
+                  opcional={reqDniFrente !== REQUERIMIENTO_OBLIGATORIO}
                   fileKey="frente"
                   isLoading={cargandoArchivos && !dniFrenteFile}
                   hasError={errorDniFrente}
@@ -1688,7 +1692,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 {reqDniDorso > 0 && (
                 <DropzoneField
                   file={dniDorsoFile}
-                  title={reqDniDorso === REQUERIMIENTO_OBLIGATORIO ? "DNI Dorso" : "DNI Dorso (opcional)"}
+                  title="DNI Dorso"
+                  opcional={reqDniDorso !== REQUERIMIENTO_OBLIGATORIO}
                   fileKey="dorso"
                   isLoading={cargandoArchivos && !dniDorsoFile}
                   hasError={errorDniDorso}

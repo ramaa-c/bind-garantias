@@ -6,6 +6,7 @@ import { useTituloDocumento } from "../../../../../../hooks/useTipoDocumentoArch
 import {
   REQUERIMIENTO_OBLIGATORIO,
   archivoDeTercero,
+  cuentaDocumentos,
   descripcionArchivoTercero,
   documentosRequeridosDeTercero,
   esDocumentoDni,
@@ -68,7 +69,7 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen, arc
   const faltantes = items
     .filter((i) => i.requerimiento === REQUERIMIENTO_OBLIGATORIO && !i.archivo && !i.local)
     .map((i) => i.titulo);
-  const cargados = items.filter((i) => i.archivo || i.local).length;
+  const { cargados, total } = cuentaDocumentos(items);
 
   const elegir = (clave, archivo) => setLocales((prev) => ({ ...prev, [clave]: archivo }));
 
@@ -102,7 +103,7 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen, arc
     items,
     faltantes,
     cargados,
-    total: items.length,
+    total,
     hayCambios: Object.values(locales).some((f) => f instanceof File),
     elegir,
     subirPendientes,

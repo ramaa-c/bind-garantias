@@ -171,6 +171,8 @@ export const CargaArchivos = ({
   admin = false,
   // "cargando" | "listo" | null - ver useDescargaConFeedback.
   faseDescarga = null,
+  etiqueta = null,
+  discreto = false,
   className = "",
   style = {}
 }) => {
@@ -192,6 +194,7 @@ export const CargaArchivos = ({
     esFila ? styles.fila : styles.zona,
     admin ? styles.admin : "",
     disabled ? styles.deshabilitado : "",
+    discreto ? styles.discreto : "",
     className,
   ].join(" ");
 
@@ -282,7 +285,10 @@ export const CargaArchivos = ({
           <span className={styles.textos}>
             {esFila && title ? (
               <>
-                <strong className={styles.titulo}>{title}</strong>
+                <span className={styles.tituloFila}>
+                  <strong className={styles.titulo}>{title}</strong>
+                  {etiqueta}
+                </span>
                 <span className={`${styles.hint} ${styles.ellipsis}`} title={file.name}>
                   {file.name}{tamanio ? ` · ${tamanio}` : ""}
                 </span>
@@ -382,9 +388,12 @@ export const CargaArchivos = ({
         <div className={styles.filaInterna}>
           {izquierdaFila}
           <span className={styles.textos}>
-            <strong className={styles.titulo}>
-              {activeIsDragging ? "Soltá el archivo acá" : title}
-            </strong>
+            <span className={styles.tituloFila}>
+              <strong className={styles.titulo}>
+                {activeIsDragging ? "Soltá el archivo acá" : title}
+              </strong>
+              {!activeIsDragging && etiqueta}
+            </span>
             {hint && (
               <span className={`${styles.hint} ${hasError ? styles.hintError : ""}`}>
                 {mensajeError && <FiAlertCircle aria-hidden="true" />}

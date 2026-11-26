@@ -142,17 +142,27 @@ export const archivoDeTercero = (archivos, tipoDocumentoId, persona) => {
  * Estado de la documentación de una persona. `faltantes` son los títulos de
  * los obligatorios sin cargar.
  */
+export const cuentaDocumentos = (items) => {
+  const obligatorios = items.filter((i) => i.requerimiento === REQUERIMIENTO_OBLIGATORIO);
+  const base = obligatorios.length > 0 ? obligatorios : items;
+  return {
+    cargados: base.filter((i) => i.archivo || i.local).length,
+    total: base.length,
+    soloObligatorios: obligatorios.length > 0,
+  };
+};
+
 export const estadoDocumentacionTercero = ({ requeridos, archivos, persona, tituloDe }) => {
   const items = requeridos.map((req) => ({
     ...req,
     titulo: tituloDocumentoTercero(req.clave, tituloDe, req.tipoDocumentoId),
     archivo: archivoDeTercero(archivos, req.tipoDocumentoId, persona),
   }));
-  const cargados = items.filter((i) => i.archivo).length;
+  const { cargados, total } = cuentaDocumentos(items);
   const faltantes = items
     .filter((i) => !i.archivo && i.requerimiento === REQUERIMIENTO_OBLIGATORIO)
     .map((i) => i.titulo);
-  return { items, total: items.length, cargados, faltantes };
+  return { items, total, cargados, faltantes };
 };
 
 export const mensajeFaltaDocumento = (documento, nombre) => `Falta ${documento} de ${nombre}`;

@@ -310,3 +310,44 @@
     animation: none;
   }
 }
+
+.avanceOpcionales {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.seccionOpcional {
+  padding-top: 0.875rem;
+  border-top: 1px dashed rgba(var(--overlay-rgb), 0.08);
+}
+
+.seccionOpcional .seccionTitulo {
+  color: var(--text-muted);
+}
+
+.seccionOpcional .seccionNum {
+  background: transparent;
+  border: 1px dashed rgba(var(--overlay-rgb), 0.2);
+}
+
+.seccionOpcional .seccionNumOk {
+  border-style: solid;
+  border-color: rgba(61, 220, 132, 0.35);
+}
+
+.etiquetaOpcional {
+  display: inline-flex;
+  align-items: center;
+  height: 1.125rem;
+  padding: 0 0.45rem;
+  border: 1px solid rgba(var(--overlay-rgb), 0.16);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
