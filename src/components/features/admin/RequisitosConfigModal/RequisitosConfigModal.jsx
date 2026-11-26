@@ -5,7 +5,7 @@ import { Button } from "../../../ui/Button/Button";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useRelationMetadata } from "../../../../hooks/useTipoRelacionSocio";
-import { useTituloDocumento } from "../../../../hooks/useCatalogos";
+import { useDocumentMetadata } from "../../../../hooks/useTipoDocumentoArchivo";
 import {
   TABS_TIPO_PERSONA,
   esRelacionVisible,
@@ -13,24 +13,10 @@ import {
 import { FiSave, FiHelpCircle, FiRotateCcw, FiList } from "react-icons/fi";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./RequisitosConfigModal.module.css";
+import { DOCUMENTOS_REQUISITOS } from "../../../../constants/documentosRequisitos";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 
-const DOCUMENT_METADATA = [
-  { key: "estatuto", desc: "Normas constitutivas de la entidad legal." },
-  { key: "eecc", desc: "Estados contables auditados de los últimos ejercicios." },
-  { key: "balance", desc: "Estado de sumas y saldos firmado por contador público." },
-  { key: "ddjjIva", desc: "Últimas declaraciones juradas de IVA presentadas." },
-  { key: "poderes", desc: "Copia de representación legal para firmantes." },
-  { key: "certificadoPyme", desc: "Certificado oficial emitido por el Ministerio de Producción / ARCA." },
-  { key: "actaDesignacion", desc: "Acta de designación de autoridades vigente." },
-  { key: "actaSocios", desc: "Acta de última reunión de socios o asamblea de la sociedad." },
-  { key: "f1272", desc: "Formulario de declaración de PyME ante la ARCA." },
-  { key: "ddjjGanancias", desc: "Última declaración jurada de Ganancias presentada (Física)." },
-  { key: "manifestacionBienes", desc: "Manifestación de bienes o DDJJ de Bienes Personales (Física)." },
-  { key: "constanciaMonotributo", desc: "Constancia de opción al Monotributo de ARCA (Física)." },
-  { key: "cartasDocumento", desc: "Cartas documento operativas relacionadas." },
-  { key: "otrosDocumentos", desc: "Cualquier otra documentación de respaldo del legajo." }
-];
+const DOCUMENT_METADATA = DOCUMENTOS_REQUISITOS;
 
 const TABS = TABS_TIPO_PERSONA;
 
@@ -43,9 +29,12 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   // Compartida con la mini parametrización de
   // terceros en TiposRelacionSocio.jsx - ver useRelationMetadata.
   const { relationMetadata } = useRelationMetadata();
-  const tituloDe = useTituloDocumento();
+  const { tituloDe, estaHabilitado } = useDocumentMetadata();
 
-  const documentMetadata = DOCUMENT_METADATA.map((doc) => ({ ...doc, title: tituloDe(doc.key) }));
+  const documentMetadata = DOCUMENT_METADATA.filter(({ key }) => estaHabilitado(key)).map((doc) => ({
+    ...doc,
+    title: tituloDe(doc.key),
+  }));
 
   // Solapa activa actual
   const [activeTab, setActiveTab] = useState("sa");
@@ -98,7 +87,7 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   const handleSetTodos = (type, value) => {
     setLocalConfig(prev => {
       if (!prev) return prev;
-      const metadata = type === "documentos" ? DOCUMENT_METADATA : relationMetadata;
+      const metadata = type === "documentos" ? documentMetadata : relationMetadata;
       const claves = metadata
         .map(({ key }) => key)
         .filter((key) => type === "documentos" || esRelacionVisible(key, activeTab));

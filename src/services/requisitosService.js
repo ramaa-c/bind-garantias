@@ -1,6 +1,7 @@
 import { requisitosAdapter } from "../adapters/requisitosAdapter";
 import api from "../api/axios";
 import { RELACIONES_TERCEROS_BASE, RELACION_USUARIOS_ID } from "../constants/tiposRelacionSocio";
+import { TIPOS_DOCUMENTO_LEGAJO } from "../constants/tiposDocumentoArchivo";
 
 // Configuración por defecto para Persona Física (Individual)
 export const DEFAULT_PHYSICAL_CONFIG = {
@@ -116,22 +117,15 @@ export const getFallbackConfig = (tipoPersonaId, sociedad) => {
   return DEFAULT_OTRAS_CONFIG;
 };
 
-// Mapeos a los IDs correspondientes en el catálogo
-export const TIPO_DOCUMENTO_MAP = {
-  estatuto: 1,
-  balance: 2,
-  ddjjIva: 3,
-  cartasDocumento: 4,
-  poderes: 5,
-  certificadoPyme: 6,
-  otrosDocumentos: 7,
-  eecc: 10,
-  actaDesignacion: 11,
-  actaSocios: 12,
-  f1272: 13,
-  ddjjGanancias: 14,
-  manifestacionBienes: 15,
-  constanciaMonotributo: 16,
+export const TIPO_DOCUMENTO_MAP = TIPOS_DOCUMENTO_LEGAJO;
+
+export const ocultarDocumentosNoHabilitados = (config, idsHabilitados) => {
+  if (!config?.documentos || !idsHabilitados) return config;
+  const documentos = { ...config.documentos };
+  Object.keys(documentos).forEach((key) => {
+    if (!idsHabilitados.has(TIPO_DOCUMENTO_MAP[key])) documentos[key] = 0;
+  });
+  return { ...config, documentos };
 };
 
 // Antes era un objeto fijo a mano acá mismo - ahora se arma desde la única
@@ -339,7 +333,7 @@ export const requisitosService = {
     }
   },
 
-  guardarRequisitos: async (cadenaId, configuracionCompleta) => {
+  guardarRequisitos: async (cadenaId, configuracionCompleta, idsDocumentoHabilitados = null) => {
     if (!cadenaId) return;
 
     // 1. Obtener registros existentes para decidir entre POST (nuevo) o PUT (actualizar)
@@ -373,6 +367,7 @@ export const requisitosService = {
       Object.entries(config.documentos).forEach(([key, value]) => {
         const docId = TIPO_DOCUMENTO_MAP[key];
         if (!docId) return;
+        if (idsDocumentoHabilitados && !idsDocumentoHabilitados.has(docId)) return;
 
         // Intentar encontrar un registro existente coincidente
         let existente = existentes.find(

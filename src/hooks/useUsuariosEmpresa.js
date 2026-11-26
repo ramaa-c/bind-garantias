@@ -104,13 +104,14 @@ export const useUsuariosEmpresa = ({ socioId, cuit, esVendor = false }) => {
         desde: null,
         esVos: false,
       }));
-    const ordenados = [...vinculados].sort((a, b) => {
+    const visibles = esVendor ? vinculados : vinculados.filter((u) => u.rol !== ROL_VENDOR);
+    const ordenados = [...visibles].sort((a, b) => {
       if (a.esVos !== b.esVos) return a.esVos ? -1 : 1;
       if (a.rol !== b.rol) return a.rol === ROL_ADMIN ? -1 : 1;
       return a.email.localeCompare(b.email, "es");
     });
     return [...ordenados, ...invitados];
-  }, [vinculados, invitacionesApi]);
+  }, [vinculados, invitacionesApi, esVendor]);
 
   const cantidadAdmins = vinculados.filter((u) => u.rol === ROL_ADMIN).length;
 

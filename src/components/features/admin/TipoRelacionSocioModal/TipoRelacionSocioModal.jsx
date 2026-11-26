@@ -13,6 +13,8 @@ import {
 } from "../../../../hooks/useTipoRelacionSocio";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 
+const LARGO_MAXIMO_DESCRIPCION = 50;
+
 // Alta y edición de una relación curada (api/TipoRelacionSocio): en alta se
 // elige un ID todavía no activado del catálogo real de SGR+ y se le escribe
 // la Descripcion que va a usar la web; en edición el ID queda fijo (nunca se
@@ -136,7 +138,7 @@ export const TipoRelacionSocioModal = ({
             onChange={(value) => {
               setTipoRelacionSocioId(value);
               const opcion = opcionesCatalogo.find((o) => String(o.value) === String(value));
-              if (opcion && !descripcion.trim()) setDescripcion(opcion.descripcion);
+              if (opcion && !descripcion.trim()) setDescripcion(opcion.descripcion.slice(0, LARGO_MAXIMO_DESCRIPCION));
             }}
             options={opcionesCatalogo}
             isSearchable
@@ -147,9 +149,10 @@ export const TipoRelacionSocioModal = ({
         )}
 
         <InputSimple
-          label="Descripción para la web"
+          label={`Descripción para la web (${descripcion.length}/${LARGO_MAXIMO_DESCRIPCION})`}
           value={descripcion}
           onChange={setDescripcion}
+          maxLength={LARGO_MAXIMO_DESCRIPCION}
           variant="admin"
         />
       </div>

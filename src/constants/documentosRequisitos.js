@@ -1,0 +1,16 @@
+export const DOCUMENTOS_REQUISITOS = [
+  { key: "estatuto", desc: "Normas constitutivas de la entidad legal." },
+  { key: "eecc", desc: "Estados contables auditados de los últimos ejercicios." },
+  { key: "balance", desc: "Estado de sumas y saldos firmado por contador público." },
+  { key: "ddjjIva", desc: "Últimas declaraciones juradas de IVA presentadas." },
+  { key: "poderes", desc: "Copia de representación legal para firmantes." },
+  { key: "certificadoPyme", desc: "Certificado oficial emitido por el Ministerio de Producción / ARCA." },
+  { key: "actaDesignacion", desc: "Acta de designación de autoridades vigente." },
+  { key: "actaSocios", desc: "Acta de última reunión de socios o asamblea de la sociedad." },
+  { key: "f1272", desc: "Formulario de declaración de PyME ante la ARCA." },
+  { key: "ddjjGanancias", desc: "Última declaración jurada de Ganancias presentada (Física)." },
+  { key: "manifestacionBienes", desc: "Manifestación de bienes o DDJJ de Bienes Personales (Física)." },
+  { key: "constanciaMonotributo", desc: "Constancia de opción al Monotributo de ARCA (Física)." },
+  { key: "cartasDocumento", desc: "Cartas documento operativas relacionadas." },
+  { key: "otrosDocumentos", desc: "Cualquier otra documentación de respaldo del legajo." },
+];
