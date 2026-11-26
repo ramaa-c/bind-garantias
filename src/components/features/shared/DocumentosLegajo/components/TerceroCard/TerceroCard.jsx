@@ -29,8 +29,10 @@ const textoFaltantes = (faltantes) => {
  *   tercero no tiene documentación configurada). Lo que falta de
  *   documentación llega también sumado a `faltantes` (chip "Falta:"). El
  *   botón principal cambia según lo que falte: con datos pendientes,
- *   "Editar" marcado (abre Datos); con los datos completos, "Documentación
- *   n/n" (abre la pestaña Documentación) y "Editar" queda como ícono.
+ *   "Editar" marcado (abre Datos); con los datos completos y documentación
+ *   obligatoria pendiente, "Documentación n/n" (abre la pestaña
+ *   Documentación) y "Editar" queda como ícono. Con todo cargado no se
+ *   muestra: la documentación sigue a mano desde "Editar".
  */
 export function TerceroCard({
   nombre,
@@ -58,7 +60,7 @@ export function TerceroCard({
   const faltanDatos = documentacion
     ? faltantes.some((f) => !documentacion.faltantes.includes(f))
     : tieneFaltantes;
-  const mostrarDocumentacion = Boolean(documentacion) && !faltanDatos;
+  const mostrarDocumentacion = Boolean(documentacion) && !faltanDatos && documentacion.faltantes.length > 0;
 
   // El CDA rechazado manda sobre faltantes/completo (mismo criterio que la
   // tarjeta anterior). El cliente lo ve como "en revisión" en azul: no es
@@ -137,13 +139,7 @@ export function TerceroCard({
           {mostrarDocumentacion && (
             <button
               type="button"
-              className={`${s.btnDocs} ${
-                documentacion.faltantes.length > 0
-                  ? s.btnDocsPendiente
-                  : documentacion.cargados === documentacion.total
-                    ? s.btnDocsCompleto
-                    : ""
-              }`}
+              className={`${s.btnDocs} ${s.btnDocsPendiente}`}
               onClick={onDocumentacion}
               title={`Documentación de ${nombre}`}
               aria-label={`Documentación de ${nombre}: ${documentacion.cargados} de ${documentacion.total} cargados`}
@@ -153,7 +149,7 @@ export function TerceroCard({
               <span className={s.btnDocsCuenta} aria-hidden="true">
                 {documentacion.cargados}/{documentacion.total}
               </span>
-              {documentacion.faltantes.length > 0 && <span className={s.btnEditarDot} aria-hidden="true" />}
+              <span className={s.btnEditarDot} aria-hidden="true" />
             </button>
           )}
           {faltanDatos ? (

@@ -221,6 +221,17 @@
   color: var(--acento);
 }
 
+/* Activa y completa: el resaltado pasa a verde. */
+.pestanaActivaOk,
+.pestanaActivaOk:hover {
+  border-color: rgba(61, 220, 132, 0.45);
+  background: rgba(61, 220, 132, 0.12);
+}
+
+.pestanaActivaOk .pestanaIcono {
+  color: var(--success-green, #3ddc84);
+}
+
 .pestanaEstado {
   display: grid;
   place-items: center;
