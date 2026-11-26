@@ -261,6 +261,9 @@ export function RepresentanteModal({
   const currentCiudad = useWatch({ control, name: "ciudad" });
   const currentCiudadId = useWatch({ control, name: "ciudadid" });
   const currentCalle = useWatch({ control, name: "calle" });
+  const telefonoValue = useWatch({ control, name: "telefono" });
+  // Para el tilde de la pestaña Datos (mismos obligatorios que valida el form).
+  const datosCompletos = Boolean(emailValue && telefonoValue && currentCalle && currentProvincia && currentCiudadId);
 
   // Ciudad se filtra por la provincia elegida (useCiudades recibe
   // currentProvincia) - ver useSincronizarCatalogoPorTexto para el detalle
@@ -1199,6 +1202,8 @@ export function RepresentanteModal({
               cargados={documentos.cargados}
               total={documentos.total}
               faltan={documentos.faltantes.length > 0}
+              datosCompletos={datosCompletos}
+              admin={isAdmin}
             />
           ) : null
         }

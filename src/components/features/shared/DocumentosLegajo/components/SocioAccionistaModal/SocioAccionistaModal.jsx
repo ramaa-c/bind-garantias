@@ -282,6 +282,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const currentCiudad = useWatch({ control, name: "ciudad" });
   const currentCiudadId = useWatch({ control, name: "ciudadid" });
   const currentCalle = useWatch({ control, name: "calle" });
+  const emailWatch = useWatch({ control, name: "email" });
+  const celularWatch = useWatch({ control, name: "celular" });
+  // Para el tilde de la pestaña Datos (mismos obligatorios que valida el form).
+  const datosCompletos = Boolean(emailWatch && celularWatch && currentCalle && currentProvincia && currentCiudadId);
 
   // Ciudad se filtra por la provincia elegida (useCiudades recibe
   // currentProvincia) - ver useSincronizarCatalogoPorTexto para el detalle
@@ -1312,6 +1316,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               cargados={cargadosPanel}
               total={itemsPanel.length}
               faltan={faltantesPanel.length > 0}
+              datosCompletos={datosCompletos}
+              admin={isAdmin}
             />
           ) : null
         }

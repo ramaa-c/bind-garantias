@@ -14,4 +14,7 @@ export const propsConfirmacionSinDocumentacion = ({ faltantes, onCargarAhora }) 
   confirmText: "Guardar sin documentación",
   cancelText: "Cargar ahora",
   onClose: onCargarAhora,
+  // Más ancha que la confirmación de siempre (420px): con los dos textos
+  // largos el segundo botón bajaba a otra fila.
+  maxWidth: "31rem",
 });

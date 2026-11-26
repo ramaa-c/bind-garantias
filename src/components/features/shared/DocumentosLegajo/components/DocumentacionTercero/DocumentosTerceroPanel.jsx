@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiAlertCircle, FiCheck, FiFileText } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiFileText, FiUser } from "react-icons/fi";
 import { CargaArchivos } from "../../../../../ui/CargaArchivos/CargaArchivos";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import {
@@ -236,34 +236,54 @@ export function AvisoDocumentacionPie({ cantidad, onClick }) {
   );
 }
 
-/** Pestañas de la cabecera: Datos | Documentación (con la cuenta). */
-export function PestanasTercero({ activa, onCambiar, cargados, total, faltan }) {
+/**
+ * Pestañas de la cabecera: Datos | Documentación. Con ícono y estado en cada
+ * una (tilde si los datos están completos; cuenta en amarillo con punto si
+ * falta documentación obligatoria, en verde si está todo) para que se vean
+ * de un vistazo, y la activa resaltada (en verde si lo suyo está completo).
+ */
+export function PestanasTercero({ activa, onCambiar, cargados, total, faltan, datosCompletos, admin = false }) {
+  const docCompleta = !faltan && cargados === total;
   return (
-    <div className={styles.pestanas} role="tablist" aria-label="Secciones del tercero">
+    <div className={`${styles.pestanas} ${admin ? styles.pestanasAdmin : ""}`} role="tablist" aria-label="Secciones del tercero">
       <button
         type="button"
         role="tab"
         aria-selected={activa === "datos"}
-        className={`${styles.pestana} ${activa === "datos" ? styles.pestanaActiva : ""}`}
+        className={`${styles.pestana} ${
+          activa === "datos" ? `${styles.pestanaActiva} ${datosCompletos ? styles.pestanaActivaOk : ""}` : ""
+        }`}
         onClick={() => onCambiar("datos")}
       >
+        <FiUser className={styles.pestanaIcono} aria-hidden="true" />
         Datos
+        {datosCompletos && (
+          <span className={`${styles.pestanaEstado} ${styles.pestanaEstadoOk}`} aria-label="completos">
+            <FiCheck aria-hidden="true" />
+          </span>
+        )}
       </button>
       <button
         type="button"
         role="tab"
         aria-selected={activa === "documentacion"}
-        className={`${styles.pestana} ${activa === "documentacion" ? styles.pestanaActiva : ""}`}
+        className={`${styles.pestana} ${
+          activa === "documentacion" ? `${styles.pestanaActiva} ${docCompleta ? styles.pestanaActivaOk : ""}` : ""
+        }`}
         onClick={() => onCambiar("documentacion")}
       >
+        <FiFileText className={styles.pestanaIcono} aria-hidden="true" />
         Documentación
         <span
           className={`${styles.pestanaCuenta} ${
-            faltan ? styles.pestanaCuentaPendiente : cargados === total ? styles.pestanaCuentaOk : ""
+            faltan ? styles.pestanaCuentaPendiente : docCompleta ? styles.pestanaCuentaOk : ""
           }`}
+          aria-label={`${cargados} de ${total} cargados`}
         >
+          {docCompleta && <FiCheck aria-hidden="true" />}
           {cargados}/{total}
         </span>
+        {faltan && <span className={styles.pestanaPunto} aria-hidden="true" />}
       </button>
     </div>
   );
