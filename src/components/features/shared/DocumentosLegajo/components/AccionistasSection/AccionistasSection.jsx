@@ -98,6 +98,8 @@ export function AccionistasSection({
   const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
   const [editAccionista, setEditAccionista] = useState(null);
   const [expandedSocio, setExpandedSocio] = useState(null);
+  // "Editar" abre la pestaña Datos; "Documentación", la pestaña Documentación.
+  const [pestanaInicial, setPestanaInicial] = useState("datos");
   const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
@@ -117,6 +119,7 @@ export function AccionistasSection({
       const docs = documentacion.resumenDe(socio);
       return {
       socio,
+      docs,
       faltantes: [...calcularFaltantes(socio), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(socio.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(socio.id)) === "pendiente",
@@ -159,7 +162,7 @@ export function AccionistasSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ socio, faltantes, cdaRechazado, cdaPendiente, color }) => (
+              {entradas.map(({ socio, docs, faltantes, cdaRechazado, cdaPendiente, color }) => (
                 <TerceroCard
                   key={socio.id}
                   nombre={socio.nombre}
@@ -176,9 +179,16 @@ export function AccionistasSection({
                   }
                   onEdit={() => {
                     setEditAccionista(socio);
+                    setPestanaInicial("datos");
                     setModalAccionistaOpen(true);
                   }}
                   onDelete={() => handleEliminarRelacion(socio)}
+                  documentacion={docs}
+                  onDocumentacion={() => {
+                    setEditAccionista(socio);
+                    setPestanaInicial("documentacion");
+                    setModalAccionistaOpen(true);
+                  }}
                   editTitle="Editar Accionista"
                   deleteTitle="Eliminar Accionista"
                 >
@@ -233,6 +243,7 @@ export function AccionistasSection({
       )}
 
       <SocioAccionistaModal
+        pestanaInicial={pestanaInicial}
         sugerencias={sugerenciasPara(personasLegajo, accionistas)}
         isOpen={modalAccionistaOpen}
         onClose={() => {

@@ -12,7 +12,12 @@ import { tercerosService } from "../../../../../../services/tercerosService";
 import { RELACION_AGENTE_BOLSA_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { mensajeNegocio } from "../../../../../../utils/mensajesError";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
-import { useDocumentosEnModal, MODO_PESTANAS, MODO_SOLO_DNI } from "../DocumentacionTercero/useDocumentosEnModal";
+import {
+  useDocumentosEnModal,
+  useIrASeccionDocumentos,
+  MODO_PESTANAS,
+  MODO_SOLO_DNI,
+} from "../DocumentacionTercero/useDocumentosEnModal";
 import {
   AvisoDocumentacionPie,
   DocumentosTerceroPanel,
@@ -21,7 +26,7 @@ import {
 import { propsConfirmacionSinDocumentacion } from "../DocumentacionTercero/confirmacionDocumentacion";
 import styles from "./BolsaModal.module.css";
 
-export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdActivo }) {
+export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdActivo, pestanaInicial = "datos" }) {
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [showConfirm, setShowConfirm] = useState(false);
@@ -34,7 +39,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
     setPrevIsOpen(isOpen);
     if (isOpen) {
       setShowConfirm(false);
-      setPestana("datos");
+      setPestana(pestanaInicial);
       setErroresDocumentos([]);
     }
   }
@@ -66,6 +71,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
     isOpen,
   });
   const conPestanas = documentos.modo === MODO_PESTANAS;
+  useIrASeccionDocumentos({ isOpen, pestanaInicial, modo: documentos.modo, idSeccion: "agente-seccion-dni" });
   const elegirDocumento = (clave, archivo) => {
     documentos.elegir(clave, archivo);
     setErroresDocumentos((prev) => prev.filter((c) => c !== clave));
@@ -276,6 +282,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
                 errores={erroresDocumentos}
                 isAdmin={isAdmin}
                 idBase="doc-agente"
+                idSeccion="agente-seccion-dni"
               />
             )}
           </div>

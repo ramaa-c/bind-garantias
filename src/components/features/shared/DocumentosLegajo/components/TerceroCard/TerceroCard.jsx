@@ -1,5 +1,5 @@
 import React, { useId } from "react";
-import { FiCheck, FiChevronDown, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiCheck, FiChevronDown, FiEdit2, FiFileText, FiTrash2 } from "react-icons/fi";
 import s from "./TerceroCard.module.css";
 import { inicialesDe } from "./terceroCardUtils";
 import { EstadoRevisionChip } from "../EstadoRevisionChip/EstadoRevisionChip";
@@ -25,9 +25,12 @@ const textoFaltantes = (faltantes) => {
  *   tarjeta neutra, sin chip de estado.
  * - `children` es el detalle desplegable; sin children la tarjeta no se expande.
  * - `participacion` + `colorParticipacion` solo los pasa Accionistas.
- * - La documentación pendiente del tercero (ver useDocumentacionTerceros)
- *   llega sumada a `faltantes`: se completa desde "Editar", en la pestaña
- *   Documentación de su modal.
+ * - `documentacion` ({ total, cargados, faltantes }, o null si ese tipo de
+ *   tercero no tiene documentación configurada). Lo que falta de
+ *   documentación llega también sumado a `faltantes` (chip "Falta:"). El
+ *   botón principal cambia según lo que falte: con datos pendientes,
+ *   "Editar" marcado (abre Datos); con los datos completos, "Documentación
+ *   n/n" (abre la pestaña Documentación) y "Editar" queda como ícono.
  */
 export function TerceroCard({
   nombre,
@@ -45,11 +48,17 @@ export function TerceroCard({
   onDelete,
   editTitle,
   deleteTitle,
+  documentacion = null,
+  onDocumentacion,
   children,
 }) {
   const detalleId = useId();
   const expandible = Boolean(children);
   const tieneFaltantes = faltantes.length > 0;
+  const faltanDatos = documentacion
+    ? faltantes.some((f) => !documentacion.faltantes.includes(f))
+    : tieneFaltantes;
+  const mostrarDocumentacion = Boolean(documentacion) && !faltanDatos;
 
   // El CDA rechazado manda sobre faltantes/completo (mismo criterio que la
   // tarjeta anterior). El cliente lo ve como "en revisión" en azul: no es
@@ -125,7 +134,29 @@ export function TerceroCard({
         )}
 
         <div className={s.actions}>
-          {tieneFaltantes ? (
+          {mostrarDocumentacion && (
+            <button
+              type="button"
+              className={`${s.btnDocs} ${
+                documentacion.faltantes.length > 0
+                  ? s.btnDocsPendiente
+                  : documentacion.cargados === documentacion.total
+                    ? s.btnDocsCompleto
+                    : ""
+              }`}
+              onClick={onDocumentacion}
+              title={`Documentación de ${nombre}`}
+              aria-label={`Documentación de ${nombre}: ${documentacion.cargados} de ${documentacion.total} cargados`}
+            >
+              <FiFileText size={13} aria-hidden="true" />
+              <span className={s.btnDocsTexto}>Documentación</span>
+              <span className={s.btnDocsCuenta} aria-hidden="true">
+                {documentacion.cargados}/{documentacion.total}
+              </span>
+              {documentacion.faltantes.length > 0 && <span className={s.btnEditarDot} aria-hidden="true" />}
+            </button>
+          )}
+          {faltanDatos ? (
             <button type="button" className={s.btnEditarPendiente} onClick={onEdit} title={editTitle}>
               <FiEdit2 size={13} aria-hidden="true" /> Editar
               <span className={s.btnEditarDot} aria-hidden="true" />

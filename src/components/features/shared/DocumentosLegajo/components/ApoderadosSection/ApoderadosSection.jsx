@@ -58,6 +58,7 @@ export function ApoderadosSection({
       const docs = documentacion.resumenDe(rep);
       return {
       rep,
+      docs,
       faltantes: [...calcularFaltantes(rep), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(rep.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(rep.id)) === "pendiente",
@@ -65,8 +66,12 @@ export function ApoderadosSection({
     }),
   );
 
-  const abrirModal = (rep = null) => {
+  // "Editar" abre la pestaña Datos; el botón "Documentación" de la tarjeta,
+  // la pestaña Documentación (ver TerceroCard).
+  const [pestanaInicial, setPestanaInicial] = useState("datos");
+  const abrirModal = (rep = null, pestana = "datos") => {
     setEditApoderado(rep);
+    setPestanaInicial(pestana);
     setModalOpen(true);
   };
   const cerrarModal = () => {
@@ -99,7 +104,7 @@ export function ApoderadosSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ rep, faltantes, cdaRechazado, cdaPendiente }) => (
+              {entradas.map(({ rep, docs, faltantes, cdaRechazado, cdaPendiente }) => (
                 <TerceroCard
                   key={rep.id}
                   nombre={rep.nombre}
@@ -114,6 +119,8 @@ export function ApoderadosSection({
                   }
                   onEdit={() => abrirModal(rep)}
                   onDelete={() => handleEliminarRelacion(rep)}
+                  documentacion={docs}
+                  onDocumentacion={() => abrirModal(rep, "documentacion")}
                   editTitle="Editar Apoderado"
                   deleteTitle="Eliminar Apoderado"
                 >
@@ -171,6 +178,7 @@ export function ApoderadosSection({
       )}
 
       <ApoderadoModal
+        pestanaInicial={pestanaInicial}
         sugerencias={sugerenciasPara(personasLegajo, apoderados)}
         isOpen={modalOpen}
         onClose={cerrarModal}

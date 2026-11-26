@@ -29,6 +29,7 @@ import {
   useDocumentosEnModal,
   MODO_PESTANAS,
   MODO_SOLO_DNI,
+  useIrASeccionDocumentos,
 } from "../DocumentosLegajo/components/DocumentacionTercero/useDocumentosEnModal";
 import {
   AvisoDocumentacionPie,
@@ -69,6 +70,7 @@ export function RepresentanteModal({
   evitarCoincidenciaCon,  // { cuit, email } a rechazar si coinciden (ver Fiador con accionista único, SGRPLUSPLA-137)
   sugerencias = [],       // Personas ya cargadas en otras pestañas que se pueden reutilizar (ver SugerenciasTerceros)
   itemsExistentes = [],   // Resto de los items ya cargados para este mismo tipoRelacionSocioId (ver duplicado de email entre Fiadores, SGRPLUSPLA-137)
+  pestanaInicial = "datos", // "documentacion" desde el botón Documentación de la tarjeta
 }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaLegajo = useContext(CadenaLegajoContext);
@@ -221,10 +223,11 @@ export function RepresentanteModal({
   if (isOpen !== prevAbiertaDocumentos) {
     setPrevAbiertaDocumentos(isOpen);
     if (isOpen) {
-      setPestana("datos");
+      setPestana(pestanaInicial);
       setErroresDocumentos([]);
     }
   }
+  useIrASeccionDocumentos({ isOpen, pestanaInicial, modo: documentos.modo, idSeccion: "tercero-seccion-dni" });
   const elegirDocumento = (clave, archivo) => {
     documentos.elegir(clave, archivo);
     setErroresDocumentos((prev) => prev.filter((c) => c !== clave));
@@ -1506,6 +1509,7 @@ export function RepresentanteModal({
                   errores={erroresDocumentos}
                   numeroInicial={4}
                   conSeparador
+                  idSeccion="tercero-seccion-dni"
                   isAdmin={isAdmin}
                   idBase="doc-tercero"
                 />

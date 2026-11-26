@@ -18,6 +18,7 @@ export function AgentesBolsaSection({
 }) {
   const [modalBolsaOpen, setModalBolsaOpen] = useState(false);
   const [editBolsa, setEditBolsa] = useState(null);
+  const [pestanaInicial, setPestanaInicial] = useState("datos");
   const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
@@ -74,6 +75,13 @@ export function AgentesBolsaSection({
                   isAdmin={isAdmin}
                   onEdit={() => {
                     setEditBolsa(bolsa);
+                    setPestanaInicial("datos");
+                    setModalBolsaOpen(true);
+                  }}
+                  documentacion={docs}
+                  onDocumentacion={() => {
+                    setEditBolsa(bolsa);
+                    setPestanaInicial("documentacion");
                     setModalBolsaOpen(true);
                   }}
                   onDelete={() => handleEliminarRelacion(bolsa)}
@@ -88,6 +96,7 @@ export function AgentesBolsaSection({
       )}
 
       <BolsaModal
+        pestanaInicial={pestanaInicial}
         isOpen={modalBolsaOpen}
         onClose={() => {
           setModalBolsaOpen(false);

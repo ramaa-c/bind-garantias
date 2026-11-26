@@ -28,7 +28,7 @@ import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresa
 import { SugerenciasTerceros } from "../TerceroCard/SugerenciasTerceros";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import { DibujoDniDorso, DibujoDniFrente } from "../DocumentacionTercero/DibujosDni";
-import { useDocumentosEnModal, MODO_PESTANAS } from "../DocumentacionTercero/useDocumentosEnModal";
+import { useDocumentosEnModal, useIrASeccionDocumentos, MODO_PESTANAS } from "../DocumentacionTercero/useDocumentosEnModal";
 import {
   AvisoDocumentacionPie,
   DocumentosTerceroPanel,
@@ -156,7 +156,7 @@ const DEFAULT_ACCIONISTAS = [];
 
 const DEFAULT_SUGERENCIAS = [];
 
-export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS, sugerencias = DEFAULT_SUGERENCIAS }) {
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS, sugerencias = DEFAULT_SUGERENCIAS, pestanaInicial = "datos" }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaLegajo = useContext(CadenaLegajoContext);
   const cadenaValorIdParam = Number(cadenaLegajo ?? cadenaSlug) || 0;
@@ -273,8 +273,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [prevAbiertaDocumentos, setPrevAbiertaDocumentos] = useState(isOpen);
   if (isOpen !== prevAbiertaDocumentos) {
     setPrevAbiertaDocumentos(isOpen);
-    if (isOpen) setPestana("datos");
+    if (isOpen) setPestana(pestanaInicial);
   }
+  useIrASeccionDocumentos({ isOpen, pestanaInicial, modo: documentos.modo, idSeccion: "accionista-seccion-dni" });
 
   const currentProvincia = useWatch({ control, name: "provinciaid" });
 
@@ -1699,7 +1700,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               </div>
               {!conPestanas && (
               <>
-              <h4 className={styles.sectionTitle}>
+              <h4 id="accionista-seccion-dni" className={styles.sectionTitle}>
                 <span className={styles.sectionNum} aria-hidden="true">4</span>
                 DNI
               </h4>
