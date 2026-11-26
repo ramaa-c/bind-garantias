@@ -56,6 +56,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
 
   const rawAgentes = agentesData?.items || agentesData?.data || agentesData || [];
   const sociedadElegida = useWatch({ control, name: "sociedadBolsa" });
+  const cuentaBolsa = useWatch({ control, name: "numeroCuentaBolsa" });
   const agenteElegido = Array.isArray(rawAgentes)
     ? rawAgentes.find((a) => String(a.tercerorelacionadoid || a.id) === String(sociedadElegida))
     : null;
@@ -219,6 +220,8 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
               cargados={documentos.cargados}
               total={documentos.total}
               faltan={documentos.faltantes.length > 0}
+              datosCompletos={Boolean(sociedadElegida && cuentaBolsa)}
+              admin={isAdmin}
             />
           ) : null
         }
