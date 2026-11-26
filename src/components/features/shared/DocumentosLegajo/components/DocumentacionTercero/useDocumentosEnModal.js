@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { DocumentacionTercerosContext } from "./documentacionTercerosContext";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import {
@@ -103,4 +103,27 @@ export const useDocumentosEnModal = ({ tipoRelacionSocioId, persona, isOpen }) =
     elegir,
     subirPendientes,
   };
+};
+
+/**
+ * Abierta desde el botón "Documentación" de la tarjeta con solo DNI (que va
+ * dentro del formulario, sin pestañas): baja hasta esa sección. Se espera a
+ * que el formulario esté montado (la edición puede tardar un instante).
+ */
+export const useIrASeccionDocumentos = ({ isOpen, pestanaInicial, modo, idSeccion }) => {
+  useEffect(() => {
+    if (!isOpen || pestanaInicial !== "documentacion" || modo !== MODO_SOLO_DNI) return undefined;
+    let intentos = 0;
+    const timer = setInterval(() => {
+      const seccion = document.getElementById(idSeccion);
+      intentos += 1;
+      if (seccion) {
+        seccion.scrollIntoView({ behavior: "smooth", block: "center" });
+        clearInterval(timer);
+      } else if (intentos > 20) {
+        clearInterval(timer);
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, [isOpen, pestanaInicial, modo, idSeccion]);
 };

@@ -63,6 +63,7 @@ export function TerceroRelacionSection({
       const docs = documentacion.resumenDe(item);
       return {
       item,
+      docs,
       faltantes: [...calcularFaltantes(item), ...(docs?.faltantes || [])],
       cdaRechazado: estadoCdaMap?.get(Number(item.id)) === "rechazado",
       cdaPendiente: estadoCdaMap?.get(Number(item.id)) === "pendiente",
@@ -70,8 +71,12 @@ export function TerceroRelacionSection({
     }),
   );
 
-  const abrirModal = (item = null) => {
+  // "Editar" abre la pestaña Datos; el botón "Documentación" de la tarjeta,
+  // la pestaña Documentación (ver TerceroCard).
+  const [pestanaInicial, setPestanaInicial] = useState("datos");
+  const abrirModal = (item = null, pestana = "datos") => {
     setEditItem(item);
+    setPestanaInicial(pestana);
     setModalOpen(true);
   };
   const cerrarModal = () => {
@@ -106,7 +111,7 @@ export function TerceroRelacionSection({
             />
           ) : (
             <div className={s.lista}>
-              {entradas.map(({ item, faltantes, cdaRechazado, cdaPendiente }) => (
+              {entradas.map(({ item, docs, faltantes, cdaRechazado, cdaPendiente }) => (
                 <TerceroCard
                   key={item.id}
                   nombre={item.nombre}
@@ -121,6 +126,8 @@ export function TerceroRelacionSection({
                   }
                   onEdit={() => abrirModal(item)}
                   onDelete={() => handleEliminarRelacion(item)}
+                  documentacion={docs}
+                  onDocumentacion={() => abrirModal(item, "documentacion")}
                   editTitle={`Editar ${titulo}`}
                   deleteTitle={`Eliminar ${titulo}`}
                 >
@@ -178,6 +185,7 @@ export function TerceroRelacionSection({
       )}
 
       <RepresentanteModal
+        pestanaInicial={pestanaInicial}
         sugerencias={sugerenciasPara(personasLegajo, items, evitarCoincidenciaCon?.cuit)}
         isOpen={modalOpen}
         onClose={cerrarModal}

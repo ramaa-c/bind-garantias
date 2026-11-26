@@ -122,7 +122,7 @@ function FilaDocumento({ item, onElegir, conError, isAdmin, descargar, faseDe, i
   );
 }
 
-function Seccion({ numero, titulo, items, esDni, filaProps, conSeparador }) {
+function Seccion({ numero, titulo, items, esDni, filaProps, conSeparador, id }) {
   const completa = items.every((i) => i.archivo || i.local);
   const obligatorios = items.filter((i) => i.requerimiento === REQUERIMIENTO_OBLIGATORIO);
   const pendientes = obligatorios.filter((i) => !i.archivo && !i.local).length;
@@ -135,7 +135,7 @@ function Seccion({ numero, titulo, items, esDni, filaProps, conSeparador }) {
           ? "1 obligatorio pendiente"
           : `${pendientes} obligatorios pendientes`;
   return (
-    <section className={`${styles.seccion} ${conSeparador ? styles.seccionSeparada : ""}`}>
+    <section id={id} className={`${styles.seccion} ${conSeparador ? styles.seccionSeparada : ""}`}>
       <h4 className={styles.seccionTitulo}>
         <span className={`${styles.seccionNum} ${completa ? styles.seccionNumOk : ""}`} aria-hidden="true">
           {completa ? <FiCheck /> : numero}
@@ -170,6 +170,8 @@ export function DocumentosTerceroPanel({
   conAvance = false,
   // Como sección más del formulario (solo DNI): mismo separador que el resto.
   conSeparador = false,
+  // id de la sección DNI (para bajar hasta ella, ver useIrASeccionDocumentos).
+  idSeccion,
   isAdmin = false,
   idBase = "doc-tercero",
 }) {
@@ -209,6 +211,7 @@ export function DocumentosTerceroPanel({
           esDni
           filaProps={filaProps}
           conSeparador={conSeparador}
+          id={idSeccion}
         />
       )}
       {otros.length > 0 && (
